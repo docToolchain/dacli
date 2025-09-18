@@ -45,3 +45,30 @@ def test_get_structure_endpoint(monkeypatch): # Added monkeypatch
         assert data[2]["subsections"][0]["title"] == "Included Section" # Added check for subsection
         assert data[2]["subsections"][0]["level"] == 3 # Added check for subsection level
 
+def test_get_section_endpoint(monkeypatch):
+    """Tests the /get_section endpoint to retrieve a specific section by path."""
+    monkeypatch.setenv("MCP_DOC_ROOT", str(FIXTURE_DIR))
+
+    with TestClient(app) as client:
+        # Test with a top-level section
+        response = client.get("/get_section?path=level-1-title")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == "Level 1 Title"
+        assert data["level"] == 2
+        assert "Some content in level 1.\n" in data["content"]
+        assert len(data["subsections"]) == 1
+
+        # Test with a subsection
+        response = client.get("/get_section?path=level-1-title/level-2-title")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == "Level 2 Title"
+        assert data["level"] == 3
+        assert "Some content in level 2.\n" in data["content"]
+        assert len(data["subsections"]) == 0
+
+        # Test with a non-existent path
+        response = client.get("/get_section?path=non-existent-section")
+        assert response.status_code == 404
+

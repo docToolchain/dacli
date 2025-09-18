@@ -72,3 +72,17 @@ def get_structure():
     
     # Return all top-level sections from the index
     return document_index.get_all_top_level_sections()
+
+@app.get("/get_section", response_model=Section)
+def get_section(path: str):
+    """
+    Retrieves a specific section by its hierarchical path.
+    """
+    if document_index is None:
+        raise HTTPException(status_code=503, detail="Document index not initialized.")
+    
+    section = document_index.get_section_by_path(path)
+    if section is None:
+        raise HTTPException(status_code=404, detail=f"Section not found: {path}")
+    
+    return section
