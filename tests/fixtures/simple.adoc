@@ -1,9 +1,0 @@
-== Level 1 Title
-
-Some content in level 1.
-
-=== Level 2 Title
-
-Some content in level 2.
-
-== Another Level 1 Title
