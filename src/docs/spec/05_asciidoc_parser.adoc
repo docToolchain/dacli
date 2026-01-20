@@ -1,0 +1,874 @@
+:jbake-title: AsciiDoc Parser Specification
+:jbake-type: page_toc
+:jbake-status: published
+:jbake-order: 5
+ifndef::imagesdir[:imagesdir: ../../images]
+
+:toc:
+
+= AsciiDoc Parser - Komponentenspezifikation
+:sectnums:
+:icons: font
+
+== Einführung
+
+Diese Spezifikation definiert den **AsciiDocParser** - eine schlanke Komponente zum Parsen von AsciiDoc-Dokumenten. Der Parser ist bewusst auf die Anforderungen dieses Projekts zugeschnitten und kein vollständiger Asciidoctor-kompatibler Parser.
+
+=== Zweck
+
+Der AsciiDocParser dient dazu:
+
+1. **Dokumentstruktur erfassen**: Sektionen extrahieren und hierarchische Struktur aufbauen
+2. **Includes auflösen**: `include::[]`-Direktiven rekursiv verarbeiten mit Source-Mapping
+3. **Elemente identifizieren**: Code-Blöcke, Tabellen, Bilder, Admonitions und PlantUML als adressierbare Blöcke erkennen
+4. **Attribute verwalten**: Dokument-Attribute setzen und in Pfaden/Inhalten auflösen
+5. **Cross-References erfassen**: `<<anchor>>` und `xref:[]` für Link-Validierung sammeln
+6. **Quelldatei-Mapping**: Zeilennummern und Quelldatei für jedes Element erfassen
+
+=== Abgrenzung
+
+Der Parser ist **kein** vollständiger Asciidoctor-Renderer. Er:
+
+* Rendert kein HTML/PDF
+* Parst keine Inline-Formatierung (bold, italic, monospace)
+* Analysiert keine Tabelleninhalte im Detail
+* Verarbeitet keine komplexen Listen-Strukturen
+* Unterstützt **keine** bedingten Blöcke (`ifdef::`, `ifndef::`, `ifeval::`)
+
+== Technische Schulden
+
+[WARNING]
+====
+**TD-ADOC-001: Bedingte Blöcke nicht unterstützt**
+
+Die folgenden AsciiDoc-Features werden in dieser Version **nicht** unterstützt:
+
+* `ifdef::attr[]` / `endif::[]`
+* `ifndef::attr[]` / `endif::[]`
+* `ifeval::[]`
+
+Diese Features sind für komplexe Dokumentationsprojekte mit bedingter Ausgabe relevant. Eine spätere Implementierung sollte:
+
+1. Attribute-basierte Bedingungen auswerten
+2. Bedingte Blöcke ein-/ausblenden können
+3. Verschachtelte Bedingungen handhaben
+
+**Priorität:** Niedrig (für MVP nicht erforderlich)
+====
+
+== Unterstützte AsciiDoc-Features
+
+=== Vollständig unterstützt
+
+[cols="2,3,2"]
+|===
+| Feature | Beschreibung | Verwendung
+
+| **Sektionen**
+| `= Title` bis `====== Level 5`
+| Dokumentstruktur
+
+| **Document Header**
+| Titel und Attribute vor erstem Content
+| Metadaten
+
+| **Dokument-Attribute**
+| `:attribut: wert`
+| Konfiguration, Metadaten
+
+| **Attribut-Referenzen**
+| `{attribut}` in Text und Pfaden
+| Dynamische Werte
+
+| **Include-Direktive**
+| `include::pfad[]` mit Attribut-Substitution
+| Dokumentkomposition
+
+| **Source-Blöcke**
+| `[source,language]` mit `----`
+| Element-Extraktion
+
+| **PlantUML-Blöcke**
+| `[plantuml,name,format]` mit `----`
+| Element-Extraktion
+
+| **Bilder**
+| `image::pfad[alt]` (Block) und `image:pfad[alt]` (Inline)
+| Element-Extraktion
+
+| **Admonitions**
+| `NOTE:`, `TIP:`, `WARNING:`, `CAUTION:`, `IMPORTANT:`
+| Element-Extraktion
+
+| **Cross-References**
+| `<<anchor>>` und `xref:file#anchor[]`
+| Link-Erfassung
+|===
+
+=== Erkannt (nicht detailliert geparst)
+
+[cols="2,3,2"]
+|===
+| Feature | Beschreibung | Behandlung
+
+| **Tabellen**
+| `\|===` Block-Tabellen
+| Als Block erkannt, Inhalt nicht analysiert
+
+| **Listing-Blöcke**
+| `----` ohne `[source]`
+| Als generischer Block erkannt
+
+| **Sidebar-Blöcke**
+| `****` Blöcke
+| Als Block erkannt
+
+| **Example-Blöcke**
+| `====` Blöcke
+| Als Block erkannt
+
+| **Quote-Blöcke**
+| `____` Blöcke
+| Als Block erkannt
+|===
+
+=== Nicht unterstützt
+
+* Bedingte Blöcke (`ifdef::`, `ifndef::`, `ifeval::`) - siehe Technische Schulden
+* Inline-Formatierung (`*bold*`, `_italic_`, `+mono+`)
+* Footnotes
+* Bibliographie
+* Index-Einträge
+* Komplexe Tabellen-Formatierung (colspan, rowspan)
+* Passthrough-Blöcke (`++++`)
+
+== Include-Auflösung
+
+Der AsciiDocParser unterstützt die rekursive Auflösung von `include::[]`-Direktiven mit vollständigem Source-Mapping.
+
+=== Syntax
+
+[source,asciidoc]
+----
+\include::pfad/zur/datei.adoc[]
+\include::{includedir}/datei.adoc[]
+\include::kapitel.adoc[leveloffset=+1]
+\include::code.py[lines=5..10]
+----
+
+=== Attribut-Substitution in Pfaden
+
+Attribute werden **vor** der Pfadauflösung substituiert:
+
+[source,asciidoc]
+----
+:includedir: chapters
+:lang: de
+
+\include::{includedir}/{lang}/intro.adoc[]
+// Wird aufgelöst zu: chapters/de/intro.adoc
+----
+
+=== Include-Optionen
+
+[cols="2,3,2"]
+|===
+| Option | Beschreibung | Unterstützung
+
+| `leveloffset=+n`
+| Sektion-Level um n erhöhen
+| ✓ Vollständig
+
+| `leveloffset=-n`
+| Sektion-Level um n verringern
+| ✓ Vollständig
+
+| `lines=n..m`
+| Nur Zeilen n bis m einbinden
+| ✓ Vollständig
+
+| `tag=name`
+| Nur getaggten Bereich einbinden
+| ✗ Nicht unterstützt
+
+| `indent=n`
+| Einrückung hinzufügen
+| ✗ Nicht unterstützt
+|===
+
+=== Source-Mapping
+
+Für jedes Element wird die **ursprüngliche** Quelldatei und Zeilennummer erfasst:
+
+[source,python]
+----
+@dataclass
+class SourceLocation:
+    """Position im Quelldokument."""
+    file: Path              # Ursprüngliche Datei (nicht aufgelöste Include-Datei)
+    line: int               # 1-basierte Zeilennummer in dieser Datei
+    resolved_from: Path | None  # Falls via Include eingebunden
+----
+
+=== Zirkuläre Includes
+
+Der Parser erkennt und verhindert zirkuläre Include-Ketten:
+
+[source,gherkin]
+----
+Scenario: Zirkuläre Includes werden erkannt
+  Given Datei A enthält "include::B.adoc[]"
+  And Datei B enthält "include::A.adoc[]"
+  When der Parser Datei A verarbeitet
+  Then wird ein CircularIncludeError geworfen
+  And die Include-Kette wird im Fehler angegeben
+----
+
+== Dokument-Attribute
+
+=== Syntax
+
+[source,asciidoc]
+----
+// Attribut setzen
+:author: Max Mustermann
+:revdate: 2024-01-15
+:imagesdir: ./images
+
+// Attribut löschen
+:!draft:
+
+// Attribut-Referenz
+Der Autor ist {author}.
+----
+
+=== Standard-Attribute
+
+[cols="1,2,2"]
+|===
+| Attribut | Beschreibung | Standardwert
+
+| `doctype`
+| Dokumenttyp (article, book, etc.)
+| `article`
+
+| `imagesdir`
+| Basis-Pfad für Bilder
+| `.` (aktuelles Verzeichnis)
+
+| `includedir`
+| Basis-Pfad für Includes
+| `.` (aktuelles Verzeichnis)
+
+| `leveloffset`
+| Globaler Sektion-Level-Offset
+| `0`
+|===
+
+=== jbake-Attribute
+
+Für die Integration mit jbake werden folgende Attribute als Metadaten extrahiert:
+
+[source,asciidoc]
+----
+:jbake-title: Mein Dokument
+:jbake-type: page_toc
+:jbake-status: published
+:jbake-menu: main
+:jbake-order: 5
+----
+
+== Extrahierbare Elemente
+
+=== Source-Blöcke (Code)
+
+[source,asciidoc]
+----
+[source,python]
+.Optionaler Titel
+----
+def hello():
+    print("Hello, World!")
+----
+----
+
+.Extrahierte Informationen
+[cols="1,2"]
+|===
+| Attribut | Wert
+
+| `type` | `code`
+| `language` | `python`
+| `title` | `Optionaler Titel` (oder leer)
+| `source_location` | Quelldatei und Zeilennummer
+| `content` | Rohinhalt (ohne Delimiter)
+|===
+
+=== PlantUML-Blöcke
+
+[source,asciidoc]
+-----
+[plantuml, diagram-name, svg]
+----
+@startuml
+Alice -> Bob: Hello
+@enduml
+----
+-----
+
+.Extrahierte Informationen
+[cols="1,2"]
+|===
+| Attribut | Wert
+
+| `type` | `plantuml`
+| `name` | `diagram-name`
+| `format` | `svg`
+| `source_location` | Quelldatei und Zeilennummer
+| `content` | PlantUML-Quellcode
+|===
+
+=== Tabellen
+
+[source,asciidoc]
+----
+.Tabellentitel
+[cols="1,2,3"]
+|===
+| Header 1 | Header 2 | Header 3
+
+| Cell 1   | Cell 2   | Cell 3
+|===
+----
+
+.Extrahierte Informationen
+[cols="1,2"]
+|===
+| Attribut | Wert
+
+| `type` | `table`
+| `title` | `Tabellentitel` (oder leer)
+| `columns` | Anzahl Spalten (aus cols-Attribut oder Header)
+| `rows` | Anzahl Datenzeilen
+| `source_location` | Quelldatei und Zeilennummer
+|===
+
+NOTE: Tabelleninhalte werden nicht detailliert geparst. Nur Struktur-Metadaten werden erfasst.
+
+=== Bilder
+
+[source,asciidoc]
+----
+// Block-Image
+image::pfad/zum/bild.png[Alt-Text, 400, 300]
+
+// Mit Titel
+.Bildtitel
+image::diagram.svg[Architekturdiagramm]
+----
+
+.Extrahierte Informationen
+[cols="1,2"]
+|===
+| Attribut | Wert
+
+| `type` | `image`
+| `src` | `pfad/zum/bild.png` (mit aufgelöstem `{imagesdir}`)
+| `alt` | `Alt-Text`
+| `title` | `Bildtitel` (oder leer)
+| `width` | `400` (oder leer)
+| `height` | `300` (oder leer)
+| `source_location` | Quelldatei und Zeilennummer
+|===
+
+=== Admonitions
+
+[source,asciidoc]
+----
+NOTE: Dies ist eine Notiz.
+
+WARNING: Dies ist eine Warnung.
+
+[TIP]
+====
+Dies ist ein mehrzeiliger Tipp.
+Mit mehreren Absätzen.
+====
+----
+
+.Extrahierte Informationen
+[cols="1,2"]
+|===
+| Attribut | Wert
+
+| `type` | `admonition`
+| `admonition_type` | `NOTE`, `TIP`, `WARNING`, `CAUTION`, oder `IMPORTANT`
+| `source_location` | Quelldatei und Zeilennummer
+| `content` | Admonition-Inhalt (Rohtext)
+|===
+
+== Cross-References
+
+Der Parser erfasst alle Cross-References für spätere Link-Validierung.
+
+=== Syntax
+
+[source,asciidoc]
+----
+// Interne Referenz
+<<section-anchor>>
+<<section-anchor,Custom Text>>
+
+// Externe Referenz (xref)
+xref:other-file.adoc#anchor[Link Text]
+xref:other-file.adoc[]
+----
+
+=== Erfasste Informationen
+
+[source,python]
+----
+@dataclass
+class CrossReference:
+    """Eine erfasste Cross-Reference."""
+    type: Literal["internal", "external"]
+    target: str                 # Anchor oder Datei#Anchor
+    text: str | None           # Optionaler Link-Text
+    source_location: SourceLocation
+----
+
+== Datenmodelle
+
+=== AsciidocDocument
+
+[source,python]
+----
+@dataclass
+class AsciidocDocument:
+    """Repräsentiert ein geparstes AsciiDoc-Dokument."""
+    file_path: Path
+    title: str
+    attributes: dict[str, str]
+    sections: list[AsciidocSection]
+    elements: list[AsciidocElement]
+    cross_references: list[CrossReference]
+    includes: list[IncludeInfo]         # Alle aufgelösten Includes
+----
+
+=== AsciidocSection
+
+[source,python]
+----
+@dataclass
+class AsciidocSection:
+    """Eine Sektion im Dokument."""
+    title: str
+    level: int                          # 0-5 (0 = Dokumenttitel)
+    anchor: str | None                  # [[anchor]] falls vorhanden
+    source_location: SourceLocation
+    path: str                           # Hierarchischer Pfad
+    children: list[AsciidocSection]
+----
+
+=== AsciidocElement
+
+[source,python]
+----
+@dataclass
+class AsciidocElement:
+    """Ein extrahierbares Element."""
+    type: Literal["code", "plantuml", "table", "image", "admonition"]
+    source_location: SourceLocation
+    attributes: dict[str, Any]          # Typ-spezifische Attribute
+    parent_section: str                 # Pfad der umgebenden Sektion
+----
+
+=== IncludeInfo
+
+[source,python]
+----
+@dataclass
+class IncludeInfo:
+    """Informationen über ein aufgelöstes Include."""
+    source_location: SourceLocation     # Wo das Include steht
+    target_path: Path                   # Aufgelöster Zielpfad
+    options: dict[str, str]             # leveloffset, lines, etc.
+----
+
+== Parser-Verhalten
+
+=== Attribut-Auflösung
+
+Attribute werden **während** des Parsings aufgelöst:
+
+1. Standard-Attribute setzen (`doctype`, `imagesdir`, etc.)
+2. Header-Attribute parsen und setzen
+3. Bei jeder Attribut-Referenz `{name}` den aktuellen Wert einsetzen
+4. Unbekannte Attribute als leeren String behandeln (mit Warnung)
+
+=== Fehlerbehandlung
+
+[cols="2,3"]
+|===
+| Situation | Verhalten
+
+| Include-Datei nicht gefunden
+| `IncludeNotFoundError` mit Pfad und Quelldatei
+
+| Zirkuläres Include
+| `CircularIncludeError` mit Include-Kette
+
+| Ungültige Attribut-Syntax
+| Warnung loggen, Zeile ignorieren
+
+| Ungültige UTF-8 Kodierung
+| `EncodingError` mit Hinweis auf Datei
+
+| Leere Datei
+| Leeres Dokument zurückgeben (keine Sektionen)
+
+| Datei ohne Sektionen
+| Gesamter Inhalt als implizite Root-Sektion
+|===
+
+=== Performance-Anforderungen
+
+* Parsing einer einzelnen Datei (ohne Includes): < 50ms
+* Parsing eines Dokuments mit 50 Include-Dateien: < 2s
+* Speicherverbrauch: < 10KB pro geparster Datei (ohne Inhalt)
+* Include-Tiefe: max. 20 Ebenen (konfigurierbar)
+
+== Acceptance Criteria
+
+=== AC-ADOC-01: Sektion-Extraktion
+
+[source,gherkin]
+----
+Scenario: Sektionen werden korrekt extrahiert
+  Given eine AsciiDoc-Datei mit folgendem Inhalt:
+    """
+    = Haupttitel
+
+    == Kapitel 1
+
+    Text...
+
+    == Kapitel 2
+
+    === Unterkapitel
+    """
+  When der Parser die Datei verarbeitet
+  Then werden 4 Sektionen extrahiert
+  And die Hierarchie ist:
+    | path                        | level |
+    | /haupttitel                 | 0     |
+    | /haupttitel/kapitel-1       | 1     |
+    | /haupttitel/kapitel-2       | 1     |
+    | /haupttitel/kapitel-2/unterkapitel | 2 |
+----
+
+=== AC-ADOC-02: Attribut-Auflösung
+
+[source,gherkin]
+----
+Scenario: Attribute werden korrekt aufgelöst
+  Given eine AsciiDoc-Datei mit folgendem Inhalt:
+    """
+    :author: Max Mustermann
+    :project: MCP Server
+
+    = {project} Dokumentation
+
+    Autor: {author}
+    """
+  When der Parser die Datei verarbeitet
+  Then ist der Dokumenttitel "MCP Server Dokumentation"
+  And attributes["author"] ist "Max Mustermann"
+----
+
+=== AC-ADOC-03: Include-Auflösung
+
+[source,gherkin]
+----
+Scenario: Includes werden rekursiv aufgelöst
+  Given eine Hauptdatei "main.adoc":
+    """
+    = Hauptdokument
+
+    \include::chapter.adoc[leveloffset=+1]
+    """
+  And eine Include-Datei "chapter.adoc":
+    """
+    = Kapitel
+
+    Inhalt des Kapitels.
+    """
+  When der Parser "main.adoc" verarbeitet
+  Then enthält das Dokument 2 Sektionen
+  And die Sektion "Kapitel" hat level 1 (wegen leveloffset)
+  And die source_location von "Kapitel" zeigt auf "chapter.adoc"
+----
+
+=== AC-ADOC-04: Zirkuläre-Include-Erkennung
+
+[source,gherkin]
+----
+Scenario: Zirkuläre Includes werden erkannt
+  Given eine Datei "a.adoc" mit "include::b.adoc[]"
+  And eine Datei "b.adoc" mit "include::a.adoc[]"
+  When der Parser "a.adoc" verarbeitet
+  Then wird ein CircularIncludeError geworfen
+  And die Fehlermeldung enthält "a.adoc -> b.adoc -> a.adoc"
+----
+
+=== AC-ADOC-05: Source-Block-Extraktion
+
+[source,gherkin]
+----
+Scenario: Source-Blöcke werden extrahiert
+  Given eine AsciiDoc-Datei mit einem Python-Source-Block
+  When der Parser die Datei verarbeitet
+  Then enthält elements einen Eintrag vom Typ "code"
+  And ist dessen language gleich "python"
+  And source_location zeigt auf die korrekte Datei und Zeile
+----
+
+=== AC-ADOC-06: PlantUML-Extraktion
+
+[source,gherkin]
+----
+Scenario: PlantUML-Blöcke werden als eigener Typ extrahiert
+  Given eine AsciiDoc-Datei mit:
+    """
+    [plantuml, my-diagram, svg]
+    ----
+    @startuml
+    A -> B
+    @enduml
+    ----
+    """
+  When der Parser die Datei verarbeitet
+  Then enthält elements einen Eintrag vom Typ "plantuml"
+  And ist name gleich "my-diagram"
+  And ist format gleich "svg"
+----
+
+=== AC-ADOC-07: Admonition-Extraktion
+
+[source,gherkin]
+----
+Scenario: Admonitions werden extrahiert
+  Given eine AsciiDoc-Datei mit "WARNING: Wichtiger Hinweis"
+  When der Parser die Datei verarbeitet
+  Then enthält elements einen Eintrag vom Typ "admonition"
+  And ist admonition_type gleich "WARNING"
+----
+
+=== AC-ADOC-08: Cross-Reference-Erfassung
+
+[source,gherkin]
+----
+Scenario: Cross-References werden erfasst
+  Given eine AsciiDoc-Datei mit:
+    """
+    Siehe <<section-a>> und xref:other.adoc#anchor[Link].
+    """
+  When der Parser die Datei verarbeitet
+  Then enthält cross_references 2 Einträge
+  And der erste ist type="internal", target="section-a"
+  And der zweite ist type="external", target="other.adoc#anchor"
+----
+
+=== AC-ADOC-09: Attribut-Substitution in Include-Pfaden
+
+[source,gherkin]
+----
+Scenario: Attribute in Include-Pfaden werden aufgelöst
+  Given eine AsciiDoc-Datei mit:
+    """
+    :chaptersdir: chapters
+
+    \include::{chaptersdir}/intro.adoc[]
+    """
+  And eine Datei "chapters/intro.adoc" existiert
+  When der Parser die Datei verarbeitet
+  Then wird "chapters/intro.adoc" erfolgreich eingebunden
+----
+
+== Schnittstellen
+
+=== Parser-Interface
+
+[source,python]
+----
+class AsciidocParser:
+    """Parser für AsciiDoc-Dokumente."""
+
+    def __init__(self, base_path: Path, max_include_depth: int = 20):
+        """
+        Initialisiert den Parser.
+
+        Args:
+            base_path: Basis-Pfad für relative Include-Auflösung
+            max_include_depth: Maximale Include-Tiefe
+        """
+        ...
+
+    def parse_file(self, file_path: Path) -> AsciidocDocument:
+        """
+        Parst eine AsciiDoc-Datei mit Include-Auflösung.
+
+        Raises:
+            FileNotFoundError: Datei existiert nicht
+            CircularIncludeError: Zirkuläres Include erkannt
+            IncludeNotFoundError: Include-Datei nicht gefunden
+        """
+        ...
+
+    def get_section(self, doc: AsciidocDocument, path: str) -> AsciidocSection | None:
+        """Findet eine Sektion anhand ihres hierarchischen Pfads."""
+        ...
+
+    def get_elements(
+        self,
+        doc: AsciidocDocument,
+        element_type: str | None = None
+    ) -> list[AsciidocElement]:
+        """Gibt alle Elemente zurück, optional gefiltert nach Typ."""
+        ...
+
+    def validate_cross_references(
+        self,
+        doc: AsciidocDocument
+    ) -> list[ValidationError]:
+        """Prüft alle Cross-References auf Gültigkeit."""
+        ...
+----
+
+== Implementierungshinweise
+
+=== Regex-Patterns
+
+[source,python]
+----
+# Sektion (Level 0-5)
+SECTION_PATTERN = r'^(={1,6})\s+(.+?)(?:\s+=*)?$'
+
+# Dokument-Attribut
+ATTRIBUTE_PATTERN = r'^:([a-zA-Z0-9_-]+):\s*(.*)$'
+
+# Attribut löschen
+ATTRIBUTE_UNSET_PATTERN = r'^:!([a-zA-Z0-9_-]+):$'
+
+# Attribut-Referenz
+ATTRIBUTE_REF_PATTERN = r'\{([a-zA-Z0-9_-]+)\}'
+
+# Include-Direktive
+INCLUDE_PATTERN = r'^include::(.+?)\[(.*?)\]$'
+
+# Source-Block Start
+SOURCE_BLOCK_PATTERN = r'^\[source(?:,\s*(\w+))?\]$'
+
+# PlantUML-Block Start
+PLANTUML_PATTERN = r'^\[plantuml(?:,\s*([^,\]]+))?(?:,\s*(\w+))?\]$'
+
+# Block-Delimiter
+BLOCK_DELIMITER = r'^(-{4,}|={4,}|\*{4,}|_{4,})$'
+
+# Block-Image
+BLOCK_IMAGE_PATTERN = r'^image::(.+?)\[(.*)?\]$'
+
+# Admonition (Kurzform)
+ADMONITION_SHORT_PATTERN = r'^(NOTE|TIP|WARNING|CAUTION|IMPORTANT):\s*(.+)$'
+
+# Cross-Reference (intern)
+XREF_INTERNAL_PATTERN = r'<<([^,>]+)(?:,([^>]+))?>>`
+
+# Cross-Reference (extern)
+XREF_EXTERNAL_PATTERN = r'xref:([^#\[]+)?(?:#([^\[]+))?\[([^\]]*)\]'
+
+# Anchor
+ANCHOR_PATTERN = r'^\[\[([^\]]+)\]\]$'
+
+# Tabelle Start/Ende
+TABLE_DELIMITER = r'^\|===$'
+----
+
+=== Zustandsautomat für Parsing
+
+[plantuml, adoc-parser-states, svg]
+----
+@startuml
+skinparam StateBackgroundColor LightYellow
+skinparam StateBorderColor DarkOrange
+
+[*] --> Header
+
+Header --> Header : Attribut gefunden
+Header --> Content : Erste Sektion oder Content
+
+Content --> Section : = gefunden
+Content --> SourceBlock : [source,...] + ----
+Content --> PlantUML : [plantuml,...] + ----
+Content --> Table : |===
+Content --> Admonition : NOTE:/TIP:/etc.
+Content --> Include : include::
+Content --> Content : Andere Zeilen
+
+Section --> Content : Nächste Zeile
+SourceBlock --> SourceBlock : Inhalt
+SourceBlock --> Content : ----
+PlantUML --> PlantUML : Inhalt
+PlantUML --> Content : ----
+Table --> Table : Zeilen
+Table --> Content : |===
+Admonition --> Content : Nächste Zeile
+Include --> ResolveInclude : Datei laden
+ResolveInclude --> Content : Zurück zum Hauptdokument
+
+Content --> [*] : EOF
+@enduml
+----
+
+=== Include-Auflösung Algorithmus
+
+[plantuml, include-resolution, svg]
+----
+@startuml
+start
+:Lese Include-Direktive;
+:Extrahiere Pfad und Optionen;
+
+:Substituiere Attribute im Pfad;
+
+if (Pfad in Include-Stack?) then (ja)
+  :Wirf CircularIncludeError;
+  stop
+endif
+
+:Füge Pfad zu Include-Stack hinzu;
+
+if (Datei existiert?) then (nein)
+  :Wirf IncludeNotFoundError;
+  stop
+endif
+
+:Lade Datei-Inhalt;
+
+if (lines-Option vorhanden?) then (ja)
+  :Extrahiere angegebene Zeilen;
+endif
+
+:Parse Include-Inhalt rekursiv;
+
+if (leveloffset-Option vorhanden?) then (ja)
+  :Passe Sektion-Level an;
+endif
+
+:Füge geparsten Inhalt ein;
+:Setze Source-Location auf Original-Datei;
+:Entferne Pfad von Include-Stack;
+
+stop
+@enduml
+----
