@@ -1,3 +1,0 @@
-=== Included Section
-
-This content comes from the partial file.
