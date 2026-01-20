@@ -1,0 +1,724 @@
+:jbake-title: API Specification
+:jbake-type: page_toc
+:jbake-status: published
+:jbake-order: 2
+ifndef::imagesdir[:imagesdir: ../../images]
+
+:toc:
+
+= MCP Documentation Server - API Specification
+:sectnums:
+:icons: font
+
+== Übersicht
+
+Diese Spezifikation definiert die API-Endpunkte des MCP Documentation Servers im OpenAPI-Stil.
+
+=== Basis-URL
+
+[source]
+----
+Base URL: http://localhost:8000/api/v1
+Protocol: MCP over HTTP/JSON
+----
+
+=== Authentifizierung
+
+[NOTE]
+====
+Die aktuelle Version erfordert keine Authentifizierung (Single-Tenant).
+Für zukünftige Versionen ist API-Key-Authentifizierung vorgesehen.
+====
+
+== Datenmodelle
+
+=== SectionLocation
+
+Beschreibt die Position einer Sektion in einer Quelldatei.
+
+[source,json]
+----
+{
+  "file": "string",        // Relativer Pfad zur Datei
+  "start_line": "integer", // 1-basierte Startzeile
+  "end_line": "integer"    // 1-basierte Endzeile (inklusiv)
+}
+----
+
+=== Section
+
+Repräsentiert eine Sektion im Dokument.
+
+[source,json]
+----
+{
+  "path": "string",           // Hierarchischer Pfad (z.B. "chapter-1.section-2")
+  "title": "string",          // Titel der Sektion
+  "level": "integer",         // Verschachtelungstiefe (1 = Kapitel)
+  "location": "SectionLocation",
+  "children": ["Section"]     // Unterabschnitte (optional)
+}
+----
+
+=== Element
+
+Repräsentiert ein spezielles Element (Tabelle, Code, Diagramm).
+
+[source,json]
+----
+{
+  "type": "string",           // "table" | "code" | "diagram" | "list" | "image"
+  "path": "string",           // Pfad zur enthaltenden Sektion
+  "index": "integer",         // Index innerhalb der Sektion
+  "location": "SectionLocation",
+  "preview": "string"         // Vorschau/Titel (optional)
+}
+----
+
+=== SearchResult
+
+Suchergebnis mit Kontext.
+
+[source,json]
+----
+{
+  "path": "string",           // Pfad zur Fundstelle
+  "line": "integer",          // Zeilennummer
+  "context": "string",        // Umgebender Text
+  "score": "number"           // Relevanz-Score (0-1)
+}
+----
+
+=== Metadata
+
+Metadaten eines Dokuments oder einer Sektion.
+
+[source,json]
+----
+{
+  "path": "string",           // Pfad (oder null für Projekt)
+  "file": "string",           // Quelldatei
+  "word_count": "integer",    // Wortanzahl
+  "last_modified": "datetime",// Letzte Änderung (ISO 8601)
+  "subsection_count": "integer",
+  "includes": ["string"]      // Liste der Include-Pfade
+}
+----
+
+=== ValidationResult
+
+Ergebnis der Strukturvalidierung.
+
+[source,json]
+----
+{
+  "valid": "boolean",
+  "errors": [{
+    "type": "string",         // "unresolved_include" | "circular_include" | ...
+    "path": "string",
+    "message": "string"
+  }],
+  "warnings": [{
+    "type": "string",
+    "path": "string", 
+    "message": "string"
+  }]
+}
+----
+
+=== ErrorResponse
+
+Standardisierte Fehlerantwort.
+
+[source,json]
+----
+{
+  "error": {
+    "code": "string",         // Fehlercode (z.B. "PATH_NOT_FOUND")
+    "message": "string",      // Menschenlesbare Fehlermeldung
+    "details": "object"       // Zusätzliche Details (optional)
+  }
+}
+----
+
+== API-Endpunkte
+
+=== Navigation API
+
+==== GET /structure
+
+Ruft die hierarchische Dokumentstruktur ab.
+
+**Use-Case:** UC-01
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `max_depth` (query, optional)
+| Maximale Tiefe der zurückgegebenen Struktur. Default: unbegrenzt.
+|===
+
+**Response 200:**
+[source,json]
+----
+{
+  "root": {
+    "path": "",
+    "title": "MCP Documentation Server",
+    "level": 0,
+    "children": [
+      {
+        "path": "introduction",
+        "title": "1. Introduction",
+        "level": 1,
+        "children": [
+          {
+            "path": "introduction.goals",
+            "title": "1.1 Goals",
+            "level": 2,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "total_sections": 42
+}
+----
+
+**Response 500:**
+[source,json]
+----
+{
+  "error": {
+    "code": "INDEX_NOT_READY",
+    "message": "Server index is not initialized"
+  }
+}
+----
+
+'''
+
+==== GET /section/{path}
+
+Liest den Inhalt einer spezifischen Sektion.
+
+**Use-Case:** UC-02
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `path` (path, required)
+| Hierarchischer Pfad zur Sektion (URL-encoded)
+|===
+
+**Response 200:**
+[source,json]
+----
+{
+  "path": "introduction.goals",
+  "title": "1.1 Goals",
+  "content": "= Goals\n\nThe main goals of this project are...",
+  "location": {
+    "file": "chapters/01_introduction.adoc",
+    "start_line": 15,
+    "end_line": 42
+  },
+  "format": "asciidoc"
+}
+----
+
+**Response 404:**
+[source,json]
+----
+{
+  "error": {
+    "code": "PATH_NOT_FOUND",
+    "message": "Section 'introduction.goals' not found",
+    "details": {
+      "requested_path": "introduction.goals",
+      "suggestions": ["introduction.quality-goals", "introduction.stakeholders"]
+    }
+  }
+}
+----
+
+'''
+
+==== GET /sections
+
+Ruft alle Sektionen einer bestimmten Ebene ab.
+
+**Use-Case:** UC-01 (Erweiterung)
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `level` (query, required)
+| Gewünschte Verschachtelungstiefe (1 = Kapitel)
+|===
+
+**Response 200:**
+[source,json]
+----
+{
+  "level": 1,
+  "sections": [
+    {
+      "path": "introduction",
+      "title": "1. Introduction"
+    },
+    {
+      "path": "constraints",
+      "title": "2. Constraints"
+    }
+  ],
+  "count": 12
+}
+----
+
+=== Content Access API
+
+==== GET /elements
+
+Ruft Elemente eines bestimmten Typs ab.
+
+**Use-Case:** UC-05
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `type` (query, required)
+| Elementtyp: `diagram`, `table`, `code`, `list`, `image`
+
+| `path` (query, optional)
+| Einschränkung auf bestimmte Sektion
+|===
+
+**Response 200:**
+[source,json]
+----
+{
+  "type": "diagram",
+  "elements": [
+    {
+      "type": "diagram",
+      "path": "context.technical",
+      "index": 0,
+      "location": {
+        "file": "chapters/03_context.adoc",
+        "start_line": 25,
+        "end_line": 45
+      },
+      "preview": "[plantuml, technical-context, svg]"
+    }
+  ],
+  "count": 8
+}
+----
+
+**Response 400:**
+[source,json]
+----
+{
+  "error": {
+    "code": "INVALID_TYPE",
+    "message": "Unknown element type 'charts'",
+    "details": {
+      "valid_types": ["diagram", "table", "code", "list", "image"]
+    }
+  }
+}
+----
+
+'''
+
+==== POST /search
+
+Durchsucht den Dokumentationsinhalt.
+
+**Use-Case:** UC-04
+
+**Request Body:**
+[source,json]
+----
+{
+  "query": "string",          // Suchbegriff (required)
+  "scope": "string",          // Einschränkung auf Pfad (optional)
+  "case_sensitive": false,    // Groß-/Kleinschreibung (optional)
+  "max_results": 50           // Maximale Ergebnisse (optional)
+}
+----
+
+**Response 200:**
+[source,json]
+----
+{
+  "query": "atomic write",
+  "results": [
+    {
+      "path": "decisions.adr-004",
+      "line": 12,
+      "context": "...implements atomic writes using a backup-and-replace strategy...",
+      "score": 0.95
+    },
+    {
+      "path": "runtime.update-scenario",
+      "line": 5,
+      "context": "...The process must be atomic to ensure data integrity...",
+      "score": 0.78
+    }
+  ],
+  "total_results": 2,
+  "search_time_ms": 45
+}
+----
+
+=== Content Manipulation API
+
+==== PUT /section/{path}
+
+Aktualisiert den Inhalt einer Sektion.
+
+**Use-Case:** UC-03
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `path` (path, required)
+| Hierarchischer Pfad zur Sektion
+|===
+
+**Request Body:**
+[source,json]
+----
+{
+  "content": "string",        // Neuer Sektionsinhalt (required)
+  "preserve_title": true      // Titel beibehalten (optional, default: true)
+}
+----
+
+**Response 200:**
+[source,json]
+----
+{
+  "success": true,
+  "path": "introduction.goals",
+  "location": {
+    "file": "chapters/01_introduction.adoc",
+    "start_line": 15,
+    "end_line": 38
+  },
+  "previous_hash": "a1b2c3d4",
+  "new_hash": "e5f6g7h8"
+}
+----
+
+**Response 404:**
+[source,json]
+----
+{
+  "error": {
+    "code": "PATH_NOT_FOUND",
+    "message": "Section 'introduction.goals' not found"
+  }
+}
+----
+
+**Response 500:**
+[source,json]
+----
+{
+  "error": {
+    "code": "WRITE_FAILED",
+    "message": "Failed to write changes to file",
+    "details": {
+      "file": "chapters/01_introduction.adoc",
+      "reason": "Permission denied"
+    }
+  }
+}
+----
+
+'''
+
+==== POST /section/{path}/insert
+
+Fügt Inhalt relativ zu einer Sektion ein.
+
+**Use-Case:** UC-09
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `path` (path, required)
+| Hierarchischer Pfad zur Referenz-Sektion
+|===
+
+**Request Body:**
+[source,json]
+----
+{
+  "position": "string",       // "before" | "after" | "append" (required)
+  "content": "string"         // Einzufügender Inhalt (required)
+}
+----
+
+**Response 200:**
+[source,json]
+----
+{
+  "success": true,
+  "inserted_at": {
+    "file": "chapters/01_introduction.adoc",
+    "line": 43
+  }
+}
+----
+
+'''
+
+==== PUT /element/{path}/{index}
+
+Ersetzt ein spezifisches Element.
+
+**Use-Case:** UC-10
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `path` (path, required)
+| Hierarchischer Pfad zur Sektion
+
+| `index` (path, required)
+| Index des Elements innerhalb der Sektion (0-basiert)
+|===
+
+**Request Body:**
+[source,json]
+----
+{
+  "content": "string"         // Neuer Element-Inhalt (required)
+}
+----
+
+**Response 200:**
+[source,json]
+----
+{
+  "success": true,
+  "element": {
+    "type": "table",
+    "path": "quality.performance",
+    "index": 0
+  }
+}
+----
+
+**Response 404:**
+[source,json]
+----
+{
+  "error": {
+    "code": "ELEMENT_NOT_FOUND",
+    "message": "No element at index 2 in section 'quality.performance'"
+  }
+}
+----
+
+=== Meta-Information API
+
+==== GET /metadata
+
+Ruft Metadaten ab.
+
+**Use-Case:** UC-06
+
+[cols="1,3"]
+|===
+| Parameter | Beschreibung
+
+| `path` (query, optional)
+| Pfad zur Sektion. Ohne Angabe: Projekt-Metadaten
+|===
+
+**Response 200 (Projekt):**
+[source,json]
+----
+{
+  "path": null,
+  "project_name": "MCP Documentation Server",
+  "total_files": 15,
+  "total_sections": 87,
+  "total_words": 12450,
+  "last_modified": "2026-01-20T14:30:00Z",
+  "formats": ["asciidoc", "markdown"]
+}
+----
+
+**Response 200 (Sektion):**
+[source,json]
+----
+{
+  "path": "decisions",
+  "title": "9. Architecture Decisions",
+  "file": "chapters/09_decisions.adoc",
+  "word_count": 2340,
+  "last_modified": "2026-01-19T10:15:00Z",
+  "subsection_count": 5,
+  "includes": []
+}
+----
+
+'''
+
+==== GET /dependencies
+
+Ruft Include-Abhängigkeiten ab.
+
+**Use-Case:** UC-06 (Erweiterung)
+
+**Response 200:**
+[source,json]
+----
+{
+  "include_tree": {
+    "arc42.adoc": [
+      "chapters/01_introduction.adoc",
+      "chapters/02_constraints.adoc",
+      "chapters/03_context.adoc"
+    ]
+  },
+  "cross_references": [
+    {
+      "from": "decisions.adr-001",
+      "to": "constraints.technical",
+      "type": "reference"
+    }
+  ]
+}
+----
+
+'''
+
+==== POST /validate
+
+Validiert die Dokumentstruktur.
+
+**Use-Case:** UC-07
+
+**Response 200:**
+[source,json]
+----
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "type": "orphaned_file",
+      "path": "chapters/unused.adoc",
+      "message": "File is not included in any document"
+    }
+  ],
+  "validation_time_ms": 120
+}
+----
+
+**Response 200 (mit Fehlern):**
+[source,json]
+----
+{
+  "valid": false,
+  "errors": [
+    {
+      "type": "unresolved_include",
+      "path": "chapters/01_introduction.adoc:15",
+      "message": "Cannot resolve include: 'missing.adoc'"
+    },
+    {
+      "type": "circular_include",
+      "path": "chapters/03_context.adoc",
+      "message": "Circular include detected: context.adoc -> technical.adoc -> context.adoc"
+    }
+  ],
+  "warnings": []
+}
+----
+
+=== System API
+
+==== GET /health
+
+Health-Check-Endpunkt.
+
+**Response 200:**
+[source,json]
+----
+{
+  "status": "healthy",
+  "index_ready": true,
+  "indexed_files": 15,
+  "uptime_seconds": 3600
+}
+----
+
+'''
+
+==== POST /reindex
+
+Triggert eine Neu-Indizierung.
+
+**Response 202:**
+[source,json]
+----
+{
+  "status": "reindexing",
+  "message": "Reindexing started in background"
+}
+----
+
+== Fehlercode-Referenz
+
+[cols="1,1,3"]
+|===
+| Code | HTTP Status | Beschreibung
+
+| `PATH_NOT_FOUND` | 404 | Angefragter Pfad existiert nicht
+| `ELEMENT_NOT_FOUND` | 404 | Element an angegebenem Index existiert nicht
+| `INVALID_TYPE` | 400 | Unbekannter Elementtyp
+| `INVALID_POSITION` | 400 | Ungültige Einfügeposition
+| `INVALID_QUERY` | 400 | Ungültige Suchanfrage
+| `WRITE_FAILED` | 500 | Schreiboperation fehlgeschlagen
+| `INDEX_NOT_READY` | 503 | Index noch nicht initialisiert
+| `PARSE_ERROR` | 500 | Fehler beim Parsen einer Datei
+|===
+
+== Rate Limiting
+
+[NOTE]
+====
+In der aktuellen Version gibt es kein Rate Limiting.
+Für Produktionsumgebungen wird empfohlen:
+
+* 100 Requests/Minute für lesende Operationen
+* 20 Requests/Minute für schreibende Operationen
+====
+
+== Versionierung
+
+Die API verwendet URL-basierte Versionierung (`/api/v1/`).
+
+Änderungen innerhalb einer Version sind abwärtskompatibel:
+
+* Neue optionale Parameter
+* Neue Response-Felder
+* Neue Endpunkte
+
+Breaking Changes erfordern eine neue Version (`/api/v2/`).
