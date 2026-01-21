@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MCP Documentation Server - enables LLM interaction with large AsciiDoc/Markdown documentation projects through hierarchical, content-aware access via the Model Context Protocol (MCP).
 
-**Current State:** Documentation and specification phase. Architecture (arc42) and API specs are complete; implementation pending.
+**Current State:** Core implementation complete. AsciiDoc/Markdown parsers, Structure Index, and MCP tools are working. Some tech-debt issues remain for advanced features.
 
 ## Technology Stack
 
 - **Language:** Python 3.12+
 - **Package Manager:** uv (https://github.com/astral-sh/uv)
-- **Web Framework:** FastAPI
+- **MCP Framework:** FastMCP (https://github.com/jlowin/fastmcp)
 - **MCP SDK:** mcp[cli]
 
 ## Conventions
@@ -65,9 +65,16 @@ uv run pytest tests/path/to/test.py::test_function_name
 
 ### Key Data Models
 
-- **Section:** Hierarchical document section with path, title, level, location
-- **SectionLocation:** File path + line range (start_line, end_line)
-- **Element:** Typed content (code, table, image) with location
+- **Section:** Hierarchical document section with path (dot-notation), title, level, location
+- **SourceLocation:** File path + line range (line, end_line, resolved_from for includes)
+- **Element:** Typed content (code, table, image, list, plantuml, admonition) with location and index
+
+### Path Format Convention
+
+Section paths use dot-notation without document title prefix:
+- Level 0 (document title): empty path `""`
+- Level 1 (chapters): slug only, e.g., `"introduction"`
+- Level 2+ (nested): parent.slug, e.g., `"introduction.goals"`
 
 ## Documentation Structure
 
