@@ -69,8 +69,9 @@ def _find_section_end_line(index: StructureIndex, section_path: str) -> int:
 
     # Find all sections in the same file, sorted by line number
     all_sections = []
-    for path, sec in index.get_sections_by_file(file_path):
-        all_sections.append((sec.source_location.line, path))
+    for path, sec in index._path_to_section.items():
+        if sec.source_location.file == file_path:
+            all_sections.append((sec.source_location.line, path))
 
     all_sections.sort()
 
