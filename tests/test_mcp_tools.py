@@ -131,7 +131,7 @@ class TestGetSection:
         )
 
         # FastMCP returns error in result
-        assert result.data is None or "error" in result.data
+        assert "error" in result.data
 
 
 # =============================================================================
