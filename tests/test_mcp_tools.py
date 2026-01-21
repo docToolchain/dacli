@@ -223,7 +223,6 @@ class TestInsertContent:
     async def test_insert_after_section(self, mcp_client: Client, temp_doc_dir: Path):
         """insert_content adds content after section."""
         doc_file = temp_doc_dir / "test.adoc"
-        original_content = doc_file.read_text(encoding="utf-8")
 
         result = await mcp_client.call_tool(
             "insert_content",
@@ -246,7 +245,6 @@ class TestInsertContent:
         # New section should be after Introduction's content
         intro_pos = content.find("== Introduction")
         new_section_pos = content.find("== New Section")
-        constraints_pos = content.find("== Constraints")
         assert intro_pos < new_section_pos
 
     async def test_insert_before_section(self, mcp_client: Client, temp_doc_dir: Path):
