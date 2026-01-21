@@ -27,9 +27,6 @@ _index: StructureIndex | None = None
 # File handler for atomic operations
 _file_handler: FileSystemHandler = FileSystemHandler()
 
-# Valid positions for insert
-VALID_POSITIONS = frozenset(["before", "after", "append"])
-
 
 def set_index(index: StructureIndex) -> None:
     """Set the global structure index."""
@@ -182,7 +179,6 @@ def update_section(
     "/section/{path:path}/insert",
     response_model=InsertContentResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid position"},
         404: {"model": ErrorResponse, "description": "Section not found"},
         500: {"model": ErrorResponse, "description": "Write operation failed"},
     },
@@ -195,21 +191,6 @@ def insert_content(
 ) -> InsertContentResponse:
     """Insert content relative to a section."""
     index = get_index()
-
-    # Validate position
-    if request.position not in VALID_POSITIONS:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error": {
-                    "code": "INVALID_POSITION",
-                    "message": f"Invalid position '{request.position}'",
-                    "details": {
-                        "valid_positions": list(VALID_POSITIONS),
-                    },
-                }
-            },
-        )
 
     # Normalize path
     normalized_path = f"/{path}" if not path.startswith("/") else path
