@@ -40,8 +40,8 @@ def slugify(text: str) -> str:
     Returns:
         Lowercase, hyphenated slug
     """
-    # Remove special characters, replace spaces with hyphens
-    slug = re.sub(r"[^\w\s-]", "", text.lower())
+    # Remove special characters (ASCII-only word chars), replace spaces with hyphens
+    slug = re.sub(r"[^\w\s-]", "", text.lower(), flags=re.ASCII)
     slug = re.sub(r"[\s_]+", "-", slug)
     slug = re.sub(r"-+", "-", slug)
     return slug.strip("-")
