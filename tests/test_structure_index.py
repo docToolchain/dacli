@@ -6,10 +6,8 @@ of document structure and sections.
 
 from pathlib import Path
 
-import pytest
-
 from mcp_server.models import Document, Element, Section, SourceLocation
-from mcp_server.structure_index import SearchResult, StructureIndex
+from mcp_server.structure_index import StructureIndex
 
 
 class TestStructureIndexBasic:

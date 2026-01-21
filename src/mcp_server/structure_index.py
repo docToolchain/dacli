@@ -12,10 +12,9 @@ Key features:
 """
 
 import logging
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 
-from mcp_server.models import Document, Element, Section, SourceLocation, model_to_dict
+from mcp_server.models import Document, Element, Section
 
 logger = logging.getLogger(__name__)
 
