@@ -179,7 +179,6 @@ def update_section(
     "/section/{path:path}/insert",
     response_model=InsertContentResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid position"},
         404: {"model": ErrorResponse, "description": "Section not found"},
         500: {"model": ErrorResponse, "description": "Write operation failed"},
     },
