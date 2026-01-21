@@ -143,15 +143,15 @@ def get_elements(
     if type not in VALID_ELEMENT_TYPES:
         raise HTTPException(
             status_code=400,
-            detail={
-                "error": {
-                    "code": "INVALID_TYPE",
-                    "message": f"Unknown element type '{type}'",
-                    "details": {
+            detail=ErrorResponse(
+                error=ErrorDetail(
+                    code="INVALID_TYPE",
+                    message=f"Unknown element type '{type}'",
+                    details={
                         "valid_types": list(VALID_ELEMENT_TYPES),
                     },
-                }
-            },
+                )
+            ).model_dump(),
         )
 
     index = get_index()
