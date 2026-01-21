@@ -292,6 +292,8 @@ class MarkdownParser:
 
         return sections, document_title
 
+    # NOTE: `file_path` is accepted for API compatibility with the AsciiDoc
+    # parser but is not used by the Markdown implementation.
     def _compute_end_lines(
         self, sections: list[Section], file_path: Path, total_lines: int
     ) -> None:
