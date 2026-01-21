@@ -30,6 +30,9 @@ TABLE_DELIMITER_PATTERN = re.compile(r"^\|===$")
 IMAGE_PATTERN = re.compile(r"^image::(.+?)\[(.*)?\]$")
 ADMONITION_PATTERN = re.compile(r"^(NOTE|TIP|IMPORTANT|WARNING|CAUTION):\s*(.*)$")
 
+# Cross-reference pattern: <<target>> or <<target,display text>>
+XREF_PATTERN = re.compile(r"<<([^,>]+)(?:,([^>]+))?>>", re.MULTILINE)
+
 
 def _title_to_slug(title: str) -> str:
     """Convert a section title to a URL-friendly slug.
@@ -137,13 +140,16 @@ class AsciidocParser:
         # Parse elements with section context
         elements = self._parse_elements(expanded_lines, sections)
 
+        # Parse cross-references
+        cross_references = self._parse_cross_references(expanded_lines)
+
         return AsciidocDocument(
             file_path=file_path,
             title=title,
             sections=sections,
             elements=elements,
             attributes=attributes,
-            cross_references=[],
+            cross_references=cross_references,
             includes=includes,
         )
 
@@ -468,3 +474,42 @@ class AsciidocParser:
             if result:
                 return result
         return ""
+
+    def _parse_cross_references(
+        self,
+        lines: list[tuple[str, Path, int, SourceLocation | None]],
+    ) -> list[CrossReference]:
+        """Parse cross-references from document lines.
+
+        Args:
+            lines: Expanded lines with source info
+
+        Returns:
+            List of extracted cross-references
+        """
+        cross_references: list[CrossReference] = []
+
+        for line_text, source_file, line_num, resolved_from in lines:
+            # Find all cross-references in the line
+            for match in XREF_PATTERN.finditer(line_text):
+                target = match.group(1).strip()
+                display_text = match.group(2)
+                if display_text:
+                    display_text = display_text.strip()
+
+                source_location = SourceLocation(
+                    file=source_file,
+                    line=line_num,
+                    resolved_from=resolved_from,
+                )
+
+                cross_references.append(
+                    CrossReference(
+                        type="internal",
+                        target=target,
+                        source_location=source_location,
+                        text=display_text,
+                    )
+                )
+
+        return cross_references

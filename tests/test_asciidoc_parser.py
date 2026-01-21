@@ -337,6 +337,54 @@ class TestElementExtraction:
         assert len(admonition_elements) == 2  # NOTE and WARNING
 
 
+class TestCrossReferences:
+    """Tests for cross-reference extraction (AC-ADOC-08)."""
+
+    def test_cross_reference_is_extracted(self):
+        """Test that cross-references are extracted."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_xrefs.adoc")
+
+        assert len(doc.cross_references) >= 1
+
+    def test_cross_reference_target(self):
+        """Test that cross-reference target is captured."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_xrefs.adoc")
+
+        targets = [xref.target for xref in doc.cross_references]
+        assert "details" in targets
+        assert "intro" in targets
+
+    def test_cross_reference_with_text(self):
+        """Test that cross-reference display text is captured."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_xrefs.adoc")
+
+        # Find xref with custom text
+        xref_with_text = next(
+            (x for x in doc.cross_references if x.text), None
+        )
+        assert xref_with_text is not None
+        assert xref_with_text.text in ["Einleitung", "den Details"]
+
+    def test_cross_reference_source_location(self):
+        """Test that cross-reference has source location."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_xrefs.adoc")
+
+        assert doc.cross_references[0].source_location is not None
+        assert doc.cross_references[0].source_location.file == FIXTURES_DIR / "with_xrefs.adoc"
+
+
 class TestEdgeCases:
     """Tests for edge cases."""
 
