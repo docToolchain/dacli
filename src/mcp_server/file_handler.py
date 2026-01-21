@@ -111,11 +111,6 @@ class FileSystemHandler:
         content = self.read_file(path)
         lines = content.splitlines(keepends=True)
 
-        # Handle file without trailing newline
-        if content and not content.endswith("\n"):
-            # Last line doesn't have newline, that's okay
-            pass
-
         total_lines = len(lines)
         if end > total_lines:
             raise ValueError(
