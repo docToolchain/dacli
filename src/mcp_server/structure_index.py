@@ -279,6 +279,12 @@ class StructureIndex:
                 f"{self._path_to_section[section.path].source_location.line}, "
                 f"duplicate at {section.source_location.file}:{section.source_location.line})"
             )
+            # Reject the duplicate - do not add to any index
+            # Still index children recursively in case they have unique paths
+            for child in section.children:
+                child_warnings = self._index_section(child)
+                warnings.extend(child_warnings)
+            return warnings
 
         # Index by path
         self._path_to_section[section.path] = section

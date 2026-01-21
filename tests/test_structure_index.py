@@ -676,6 +676,43 @@ class TestDuplicateDetection:
         assert len(warnings) > 0
         assert any("duplicate" in w.lower() for w in warnings)
 
+    def test_duplicate_paths_rejected_consistently(self):
+        """Duplicates are rejected from both path and level indexes."""
+        index = StructureIndex()
+        doc = Document(
+            file_path=Path("test.adoc"),
+            title="Test",
+            sections=[
+                Section(
+                    title="Section A",
+                    level=1,
+                    path="/section",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=1),
+                ),
+                Section(
+                    title="Section B",
+                    level=1,
+                    path="/section",  # Duplicate path!
+                    source_location=SourceLocation(file=Path("test.adoc"), line=20),
+                ),
+            ],
+        )
+
+        # Build should report duplicates
+        warnings = index.build_from_documents([doc])
+        assert len(warnings) == 1
+
+        # Only first section should be indexed
+        section = index.get_section("/section")
+        assert section is not None
+        assert section.title == "Section A"
+        assert section.source_location.line == 1
+
+        # Level index should only contain the first section
+        level_1_sections = index.get_sections_at_level(1)
+        assert len(level_1_sections) == 1
+        assert level_1_sections[0].title == "Section A"
+
 
 class TestClearAndStats:
     """Tests for clear() and stats() methods."""
