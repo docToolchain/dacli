@@ -10,15 +10,21 @@ Key differences from AsciiDoc parser:
 - ATX-style headings only (# to ######)
 """
 
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from mcp_server.models import Element, Section, SourceLocation
+
+logger = logging.getLogger(__name__)
 
 # Regex patterns from spec
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)(?:\s+#+)?$")
+FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
 
 def slugify(text: str) -> str:
@@ -92,15 +98,27 @@ class MarkdownParser:
             UnicodeDecodeError: If file has invalid encoding
         """
         content = file_path.read_text(encoding="utf-8")
-        lines = content.splitlines()
+
+        # Parse frontmatter first
+        frontmatter, content_without_frontmatter = self._parse_frontmatter(content)
+
+        lines = content_without_frontmatter.splitlines()
+
+        # Calculate line offset from frontmatter
+        frontmatter_lines = len(content.splitlines()) - len(lines)
 
         # Parse sections (headings)
-        sections, title = self._parse_sections(lines, file_path)
+        sections, heading_title = self._parse_sections(
+            lines, file_path, line_offset=frontmatter_lines
+        )
+
+        # Title priority: frontmatter > first H1 > empty
+        title = frontmatter.get("title", heading_title)
 
         return MarkdownDocument(
             file_path=file_path,
             title=title,
-            frontmatter={},
+            frontmatter=frontmatter,
             sections=sections,
             elements=[],
         )
@@ -147,14 +165,45 @@ class MarkdownParser:
             return doc.elements
         return [e for e in doc.elements if e.type == element_type]
 
+    def _parse_frontmatter(self, content: str) -> tuple[dict[str, Any], str]:
+        """Parse YAML frontmatter from content.
+
+        Args:
+            content: Full file content
+
+        Returns:
+            Tuple of (frontmatter dict, content without frontmatter)
+        """
+        # Check if content starts with frontmatter delimiter
+        if not content.startswith("---"):
+            return {}, content
+
+        match = FRONTMATTER_PATTERN.match(content)
+        if not match:
+            return {}, content
+
+        yaml_content = match.group(1)
+        try:
+            frontmatter = yaml.safe_load(yaml_content)
+            if frontmatter is None:
+                frontmatter = {}
+        except yaml.YAMLError as e:
+            logger.warning(f"Invalid YAML frontmatter: {e}")
+            frontmatter = {}
+
+        # Remove frontmatter from content
+        content_without_frontmatter = content[match.end():]
+        return frontmatter, content_without_frontmatter
+
     def _parse_sections(
-        self, lines: list[str], file_path: Path
+        self, lines: list[str], file_path: Path, line_offset: int = 0
     ) -> tuple[list[Section], str]:
         """Parse headings into hierarchical sections.
 
         Args:
             lines: Document lines
             file_path: Source file path
+            line_offset: Line offset from frontmatter
 
         Returns:
             Tuple of (sections list, document title)
@@ -163,7 +212,7 @@ class MarkdownParser:
         section_stack: list[Section] = []
         document_title = ""
 
-        for line_num, line in enumerate(lines, start=1):
+        for line_num, line in enumerate(lines, start=1 + line_offset):
             match = HEADING_PATTERN.match(line)
             if not match:
                 continue

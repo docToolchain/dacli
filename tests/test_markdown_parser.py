@@ -233,3 +233,158 @@ class TestSourceLocation:
 
         chapter = root.children[0]
         assert chapter.source_location.line == 3
+
+
+class TestFrontmatterParsing:
+    """AC-MD-02: YAML Frontmatter is correctly parsed."""
+
+    def test_parses_simple_frontmatter(self):
+        """Simple string frontmatter is parsed."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+title: Mein Dokument
+author: Max Mustermann
+---
+
+# Content
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert doc.frontmatter["title"] == "Mein Dokument"
+        assert doc.frontmatter["author"] == "Max Mustermann"
+
+    def test_parses_list_in_frontmatter(self):
+        """List values in frontmatter are parsed."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+tags: [design, architecture]
+---
+
+# Content
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert doc.frontmatter["tags"] == ["design", "architecture"]
+        assert len(doc.frontmatter["tags"]) == 2
+
+    def test_parses_nested_object_in_frontmatter(self):
+        """Nested objects in frontmatter are parsed."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+author:
+  name: Max
+  email: max@example.com
+---
+
+# Content
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert doc.frontmatter["author"]["name"] == "Max"
+        assert doc.frontmatter["author"]["email"] == "max@example.com"
+
+    def test_frontmatter_title_overrides_heading(self):
+        """Title from frontmatter takes precedence over H1."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+title: Frontmatter Title
+---
+
+# Heading Title
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert doc.title == "Frontmatter Title"
+
+    def test_no_frontmatter_is_empty_dict(self):
+        """Document without frontmatter has empty frontmatter dict."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """# Just a heading
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert doc.frontmatter == {}
+
+    def test_invalid_frontmatter_is_empty_dict(self):
+        """Invalid YAML in frontmatter results in empty dict (with warning)."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+invalid: [not closed
+---
+
+# Content
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        # Should not raise, just return empty frontmatter
+        assert doc.frontmatter == {}
+
+    def test_headings_after_frontmatter_have_correct_line_numbers(self):
+        """Line numbers account for frontmatter offset."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """---
+title: Test
+---
+
+# Heading
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        # Heading is on line 5 (after frontmatter)
+        assert doc.sections[0].source_location.line == 5
