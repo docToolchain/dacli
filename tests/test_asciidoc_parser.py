@@ -207,6 +207,70 @@ class TestDocumentAttributes:
         assert doc.title == "MCP Server Dokumentation"
 
 
+class TestIncludeDirectives:
+    """Tests for include directive handling (AC-ADOC-03, AC-ADOC-04)."""
+
+    def test_include_directive_is_recorded(self):
+        """Test that include directives are recorded in includes list."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_include.adoc")
+
+        assert len(doc.includes) == 1
+        assert doc.includes[0].target_path == FIXTURES_DIR / "include_partial.adoc"
+
+    def test_include_directive_source_location(self):
+        """Test that include directive has correct source location."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_include.adoc")
+
+        assert doc.includes[0].source_location.line == 7
+        assert doc.includes[0].source_location.file == FIXTURES_DIR / "with_include.adoc"
+
+    def test_included_sections_are_merged(self):
+        """Test that sections from included file are merged into document."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_include.adoc")
+
+        # Document should have root section with 4 children:
+        # Erstes Kapitel, Eingebundener Abschnitt (from include), Letztes Kapitel
+        root = doc.sections[0]
+        section_titles = [s.title for s in root.children]
+
+        assert "Erstes Kapitel" in section_titles
+        assert "Eingebundener Abschnitt" in section_titles
+        assert "Letztes Kapitel" in section_titles
+
+    def test_included_section_has_resolved_from_info(self):
+        """Test that included sections track their source file."""
+        from mcp_server.asciidoc_parser import AsciidocParser
+
+        parser = AsciidocParser(base_path=FIXTURES_DIR)
+        doc = parser.parse_file(FIXTURES_DIR / "with_include.adoc")
+
+        root = doc.sections[0]
+        # Find the included section
+        included_section = next(
+            s for s in root.children if s.title == "Eingebundener Abschnitt"
+        )
+
+        # Source location should reference the included file
+        assert (
+            included_section.source_location.file
+            == FIXTURES_DIR / "include_partial.adoc"
+        )
+        assert included_section.source_location.resolved_from is not None
+        assert (
+            included_section.source_location.resolved_from.file
+            == FIXTURES_DIR / "with_include.adoc"
+        )
+
+
 class TestEdgeCases:
     """Tests for edge cases."""
 

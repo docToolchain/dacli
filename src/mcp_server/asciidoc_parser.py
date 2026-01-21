@@ -20,6 +20,7 @@ from mcp_server.models import (
 # Regex patterns from specification
 SECTION_PATTERN = re.compile(r"^(={1,6})\s+(.+?)(?:\s+=*)?$")
 ATTRIBUTE_PATTERN = re.compile(r"^:([a-zA-Z0-9_-]+):\s*(.*)$")
+INCLUDE_PATTERN = re.compile(r"^include::(.+?)\[(.*)\]$")
 
 
 def _title_to_slug(title: str) -> str:
@@ -91,11 +92,14 @@ class AsciidocParser:
         self.base_path = base_path
         self.max_include_depth = max_include_depth
 
-    def parse_file(self, file_path: Path) -> AsciidocDocument:
+    def parse_file(
+        self, file_path: Path, _depth: int = 0
+    ) -> AsciidocDocument:
         """Parse an AsciiDoc file.
 
         Args:
             file_path: Path to the AsciiDoc file
+            _depth: Internal parameter for tracking include depth
 
         Returns:
             Parsed AsciidocDocument
@@ -112,8 +116,15 @@ class AsciidocParser:
         # Parse attributes first (they can be used in sections)
         attributes = self._parse_attributes(lines)
 
+        # Expand includes and collect include info
+        expanded_lines, includes = self._expand_includes(
+            lines, file_path, _depth
+        )
+
         # Parse sections with attribute substitution
-        sections, title = self._parse_sections(lines, file_path, attributes)
+        sections, title = self._parse_sections(
+            expanded_lines, file_path, attributes
+        )
 
         return AsciidocDocument(
             file_path=file_path,
@@ -122,8 +133,69 @@ class AsciidocParser:
             elements=[],
             attributes=attributes,
             cross_references=[],
-            includes=[],
+            includes=includes,
         )
+
+    def _expand_includes(
+        self,
+        lines: list[str],
+        file_path: Path,
+        depth: int,
+    ) -> tuple[list[tuple[str, Path, int, SourceLocation | None]], list[IncludeInfo]]:
+        """Expand include directives in lines.
+
+        Args:
+            lines: Document lines
+            file_path: Path to the source file
+            depth: Current include depth
+
+        Returns:
+            Tuple of (expanded lines with source info, list of IncludeInfo)
+        """
+        expanded: list[tuple[str, Path, int, SourceLocation | None]] = []
+        includes: list[IncludeInfo] = []
+
+        for line_num, line in enumerate(lines, start=1):
+            match = INCLUDE_PATTERN.match(line)
+            if match and depth < self.max_include_depth:
+                include_path = match.group(1)
+                options_str = match.group(2)
+
+                # Parse options
+                options: dict[str, str] = {}
+                if options_str:
+                    for opt in options_str.split(","):
+                        if "=" in opt:
+                            key, value = opt.split("=", 1)
+                            options[key.strip()] = value.strip()
+
+                # Resolve include path relative to current file
+                target_path = (file_path.parent / include_path).resolve()
+
+                # Record include info
+                include_info = IncludeInfo(
+                    source_location=SourceLocation(file=file_path, line=line_num),
+                    target_path=target_path,
+                    options=options,
+                )
+                includes.append(include_info)
+
+                # Expand the included file
+                if target_path.exists():
+                    included_content = target_path.read_text(encoding="utf-8")
+                    included_lines = included_content.splitlines()
+
+                    # Create resolved_from reference
+                    resolved_from = SourceLocation(file=file_path, line=line_num)
+
+                    for inc_line_num, inc_line in enumerate(included_lines, start=1):
+                        expanded.append(
+                            (inc_line, target_path, inc_line_num, resolved_from)
+                        )
+            else:
+                expanded.append((line, file_path, line_num, None))
+
+        return expanded, includes
 
     def _parse_attributes(self, lines: list[str]) -> dict[str, str]:
         """Parse document attributes from lines.
@@ -171,15 +243,15 @@ class AsciidocParser:
 
     def _parse_sections(
         self,
-        lines: list[str],
+        lines: list[tuple[str, Path, int, SourceLocation | None]],
         file_path: Path,
         attributes: dict[str, str] | None = None,
     ) -> tuple[list[Section], str]:
         """Parse sections from document lines.
 
         Args:
-            lines: Document lines
-            file_path: Path to the source file
+            lines: Expanded lines with source info (line, file, line_num, resolved_from)
+            file_path: Path to the main source file
             attributes: Document attributes for substitution
 
         Returns:
@@ -195,8 +267,8 @@ class AsciidocParser:
         section_stack: list[Section] = []
         document_title = ""
 
-        for line_num, line in enumerate(lines, start=1):
-            match = SECTION_PATTERN.match(line)
+        for line_text, source_file, line_num, resolved_from in lines:
+            match = SECTION_PATTERN.match(line_text)
             if match:
                 equals = match.group(1)
                 raw_title = match.group(2).strip()
@@ -204,12 +276,18 @@ class AsciidocParser:
                 title = self._substitute_attributes(raw_title, attributes)
                 level = len(equals) - 1  # = is level 0, == is level 1, etc.
 
-                # Create section
+                # Create section with proper source location
+                source_location = SourceLocation(
+                    file=source_file,
+                    line=line_num,
+                    resolved_from=resolved_from,
+                )
+
                 section = Section(
                     title=title,
                     level=level,
                     path="",  # Will be set below
-                    source_location=SourceLocation(file=file_path, line=line_num),
+                    source_location=source_location,
                     children=[],
                     anchor=None,
                 )
