@@ -18,6 +18,13 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 
+from mcp_server import __version__
+from mcp_server.asciidoc_parser import AsciidocParser
+from mcp_server.file_handler import FileReadError, FileSystemHandler, FileWriteError
+from mcp_server.markdown_parser import MarkdownParser
+from mcp_server.models import Document, Section
+from mcp_server.structure_index import StructureIndex
+
 # Configure logging to stderr (stdout is reserved for MCP protocol)
 logging.basicConfig(
     level=logging.WARNING,
@@ -25,13 +32,6 @@ logging.basicConfig(
     stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
-
-from mcp_server import __version__
-from mcp_server.asciidoc_parser import AsciidocParser
-from mcp_server.file_handler import FileReadError, FileSystemHandler, FileWriteError
-from mcp_server.markdown_parser import MarkdownParser
-from mcp_server.models import Document, Section
-from mcp_server.structure_index import StructureIndex
 
 
 def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
