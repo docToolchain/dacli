@@ -70,16 +70,18 @@ class Element:
     PlantUML diagrams, or admonitions.
 
     Attributes:
-        type: Element type (code, table, image, plantuml, admonition)
+        type: Element type (code, table, image, plantuml, admonition, list)
         source_location: Position in the source file
         attributes: Type-specific attributes (e.g., language for code)
         parent_section: Path of the containing section
+        index: 0-based index within the parent section (set during indexing)
     """
 
     type: Literal["code", "table", "image", "plantuml", "admonition", "list"]
     source_location: SourceLocation
     attributes: dict[str, Any]
     parent_section: str
+    index: int = 0
 
 
 @dataclass

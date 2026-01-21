@@ -13,6 +13,7 @@ Key features:
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 from mcp_server.models import Document, Element, Section
 
@@ -49,6 +50,7 @@ class StructureIndex:
         _elements: List of all elements
         _type_to_elements: Mapping of element type to list of Elements
         _section_to_elements: Mapping of section path to list of Elements
+        _file_to_sections: Mapping of file path to list of Sections
         _documents: List of indexed documents
         _index_ready: Whether the index has been built
     """
@@ -60,6 +62,7 @@ class StructureIndex:
         self._elements: list[Element] = []
         self._type_to_elements: dict[str, list[Element]] = {}
         self._section_to_elements: dict[str, list[Element]] = {}
+        self._file_to_sections: dict[Path, list[Section]] = {}
         self._documents: list[Document] = []
         self._top_level_sections: list[Section] = []
         self._index_ready: bool = False
@@ -147,6 +150,17 @@ class StructureIndex:
         """
         return self._level_to_sections.get(level, [])
 
+    def get_sections_by_file(self, file_path: Path) -> list[Section]:
+        """Get all sections defined in a specific file.
+
+        Args:
+            file_path: Path to the source file
+
+        Returns:
+            List of sections in the file (empty if file not indexed)
+        """
+        return self._file_to_sections.get(file_path, [])
+
     def get_elements(
         self,
         element_type: str | None = None,
@@ -232,6 +246,7 @@ class StructureIndex:
         self._elements.clear()
         self._type_to_elements.clear()
         self._section_to_elements.clear()
+        self._file_to_sections.clear()
         self._documents.clear()
         self._top_level_sections.clear()
         self._index_ready = False
@@ -291,6 +306,12 @@ class StructureIndex:
             self._level_to_sections[section.level] = []
         self._level_to_sections[section.level].append(section)
 
+        # Index by file
+        file_path = section.source_location.file
+        if file_path not in self._file_to_sections:
+            self._file_to_sections[file_path] = []
+        self._file_to_sections[file_path].append(section)
+
         # Index children recursively
         for child in section.children:
             child_warnings = self._index_section(child)
@@ -304,6 +325,11 @@ class StructureIndex:
         Args:
             element: Element to index
         """
+        # Assign index within parent section (0-based)
+        if element.parent_section not in self._section_to_elements:
+            self._section_to_elements[element.parent_section] = []
+        element.index = len(self._section_to_elements[element.parent_section])
+
         # Add to all elements list
         self._elements.append(element)
 
@@ -313,8 +339,6 @@ class StructureIndex:
         self._type_to_elements[element.type].append(element)
 
         # Index by parent section
-        if element.parent_section not in self._section_to_elements:
-            self._section_to_elements[element.parent_section] = []
         self._section_to_elements[element.parent_section].append(element)
 
     def _section_to_dict(

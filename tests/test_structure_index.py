@@ -714,6 +714,222 @@ class TestDuplicateDetection:
         assert level_1_sections[0].title == "Section A"
 
 
+class TestGetSectionsByFile:
+    """Tests for get_sections_by_file() method."""
+
+    def test_get_sections_by_file_returns_sections_in_file(self):
+        """get_sections_by_file() returns all sections defined in a specific file."""
+        index = StructureIndex()
+        file1 = Path("doc1.adoc")
+        file2 = Path("doc2.adoc")
+        doc1 = Document(
+            file_path=file1,
+            title="Document 1",
+            sections=[
+                Section(
+                    title="Chapter A",
+                    level=1,
+                    path="chapter-a",
+                    source_location=SourceLocation(file=file1, line=1),
+                ),
+                Section(
+                    title="Chapter B",
+                    level=1,
+                    path="chapter-b",
+                    source_location=SourceLocation(file=file1, line=20),
+                ),
+            ],
+        )
+        doc2 = Document(
+            file_path=file2,
+            title="Document 2",
+            sections=[
+                Section(
+                    title="Chapter C",
+                    level=1,
+                    path="chapter-c",
+                    source_location=SourceLocation(file=file2, line=1),
+                )
+            ],
+        )
+        index.build_from_documents([doc1, doc2])
+
+        # Get sections from file1
+        sections = index.get_sections_by_file(file1)
+        assert len(sections) == 2
+        assert all(s.source_location.file == file1 for s in sections)
+        titles = [s.title for s in sections]
+        assert "Chapter A" in titles
+        assert "Chapter B" in titles
+
+        # Get sections from file2
+        sections = index.get_sections_by_file(file2)
+        assert len(sections) == 1
+        assert sections[0].title == "Chapter C"
+
+    def test_get_sections_by_file_includes_nested_sections(self):
+        """get_sections_by_file() includes nested sections in the same file."""
+        index = StructureIndex()
+        file_path = Path("test.adoc")
+        doc = Document(
+            file_path=file_path,
+            title="Test",
+            sections=[
+                Section(
+                    title="Chapter 1",
+                    level=1,
+                    path="chapter-1",
+                    source_location=SourceLocation(file=file_path, line=1),
+                    children=[
+                        Section(
+                            title="Section 1.1",
+                            level=2,
+                            path="chapter-1.section-1-1",
+                            source_location=SourceLocation(file=file_path, line=10),
+                        )
+                    ],
+                )
+            ],
+        )
+        index.build_from_documents([doc])
+
+        sections = index.get_sections_by_file(file_path)
+        assert len(sections) == 2
+        titles = [s.title for s in sections]
+        assert "Chapter 1" in titles
+        assert "Section 1.1" in titles
+
+    def test_get_sections_by_file_returns_empty_for_unknown_file(self):
+        """get_sections_by_file() returns empty list for files not in index."""
+        index = StructureIndex()
+        index.build_from_documents([])
+
+        sections = index.get_sections_by_file(Path("unknown.adoc"))
+        assert sections == []
+
+    def test_get_sections_by_file_after_clear(self):
+        """get_sections_by_file() returns empty after clear()."""
+        index = StructureIndex()
+        file_path = Path("test.adoc")
+        doc = Document(
+            file_path=file_path,
+            title="Test",
+            sections=[
+                Section(
+                    title="Chapter",
+                    level=1,
+                    path="chapter",
+                    source_location=SourceLocation(file=file_path, line=1),
+                )
+            ],
+        )
+        index.build_from_documents([doc])
+        assert len(index.get_sections_by_file(file_path)) == 1
+
+        index.clear()
+        assert index.get_sections_by_file(file_path) == []
+
+
+class TestElementIndex:
+    """Tests for element index tracking within sections."""
+
+    def test_elements_have_index_within_section(self):
+        """Elements have 0-based index within their parent section."""
+        index = StructureIndex()
+        doc = Document(
+            file_path=Path("test.adoc"),
+            title="Test",
+            sections=[],
+            elements=[
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=5),
+                    attributes={"language": "python"},
+                    parent_section="intro",
+                ),
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=15),
+                    attributes={"language": "java"},
+                    parent_section="intro",
+                ),
+                Element(
+                    type="table",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=25),
+                    attributes={},
+                    parent_section="intro",
+                ),
+            ],
+        )
+        index.build_from_documents([doc])
+
+        intro_elements = index.get_elements(section_path="intro")
+        assert len(intro_elements) == 3
+
+        # Elements should have index field
+        for i, elem in enumerate(intro_elements):
+            assert hasattr(elem, "index"), "Element should have index attribute"
+            assert elem.index == i
+
+    def test_element_index_is_per_section(self):
+        """Element index resets for each section."""
+        index = StructureIndex()
+        doc = Document(
+            file_path=Path("test.adoc"),
+            title="Test",
+            sections=[],
+            elements=[
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=5),
+                    attributes={},
+                    parent_section="section-a",
+                ),
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=10),
+                    attributes={},
+                    parent_section="section-a",
+                ),
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=20),
+                    attributes={},
+                    parent_section="section-b",
+                ),
+            ],
+        )
+        index.build_from_documents([doc])
+
+        section_a_elements = index.get_elements(section_path="section-a")
+        assert section_a_elements[0].index == 0
+        assert section_a_elements[1].index == 1
+
+        section_b_elements = index.get_elements(section_path="section-b")
+        assert section_b_elements[0].index == 0  # Index resets for new section
+
+    def test_element_index_in_stats(self):
+        """Stats should include element counts with index info."""
+        index = StructureIndex()
+        doc = Document(
+            file_path=Path("test.adoc"),
+            title="Test",
+            sections=[],
+            elements=[
+                Element(
+                    type="code",
+                    source_location=SourceLocation(file=Path("test.adoc"), line=5),
+                    attributes={},
+                    parent_section="intro",
+                ),
+            ],
+        )
+        index.build_from_documents([doc])
+
+        stats = index.stats()
+        assert stats["total_elements"] == 1
+
+
 class TestClearAndStats:
     """Tests for clear() and stats() methods."""
 
