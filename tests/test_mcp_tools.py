@@ -130,8 +130,8 @@ class TestGetSection:
             "get_section", arguments={"path": "nonexistent"}
         )
 
-        # FastMCP returns error in result
-        assert result.data is None or "error" in result.data
+        # Implementation returns dict with "error" key for not found
+        assert "error" in result.data
 
 
 # =============================================================================
@@ -222,6 +222,9 @@ class TestInsertContent:
 
     async def test_insert_after_section(self, mcp_client: Client, temp_doc_dir: Path):
         """insert_content adds content after section."""
+        doc_file = temp_doc_dir / "test.adoc"
+        original_content = doc_file.read_text(encoding="utf-8")
+
         result = await mcp_client.call_tool(
             "insert_content",
             arguments={
@@ -232,13 +235,24 @@ class TestInsertContent:
         )
 
         assert result.data["success"] is True
+        assert "inserted_at" in result.data
+        assert "line" in result.data["inserted_at"]
 
-        doc_file = temp_doc_dir / "test.adoc"
         content = doc_file.read_text(encoding="utf-8")
         assert "== New Section" in content
+        # Verify original content is preserved
+        assert "== Introduction" in content
+        assert "== Constraints" in content
+        # New section should be after Introduction's content
+        intro_pos = content.find("== Introduction")
+        new_section_pos = content.find("== New Section")
+        constraints_pos = content.find("== Constraints")
+        assert intro_pos < new_section_pos
 
     async def test_insert_before_section(self, mcp_client: Client, temp_doc_dir: Path):
         """insert_content adds content before section."""
+        doc_file = temp_doc_dir / "test.adoc"
+
         result = await mcp_client.call_tool(
             "insert_content",
             arguments={
@@ -249,9 +263,28 @@ class TestInsertContent:
         )
 
         assert result.data["success"] is True
+        assert "inserted_at" in result.data
 
-        doc_file = temp_doc_dir / "test.adoc"
         content = doc_file.read_text(encoding="utf-8")
+        # Verify all sections exist
+        assert "== Preface" in content
+        assert "== Introduction" in content
+        assert "== Constraints" in content
+        # Preface should be before Introduction
         preface_pos = content.find("== Preface")
         intro_pos = content.find("== Introduction")
         assert preface_pos < intro_pos
+
+    async def test_insert_invalid_position(self, mcp_client: Client):
+        """insert_content returns error for invalid position."""
+        result = await mcp_client.call_tool(
+            "insert_content",
+            arguments={
+                "path": "test-document.introduction",
+                "position": "invalid",
+                "content": "Some content",
+            },
+        )
+
+        assert result.data["success"] is False
+        assert "error" in result.data

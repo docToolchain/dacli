@@ -20,7 +20,7 @@ classifiers = [
 
 dependencies = [
     "fastapi>=0.115.0",
-    "fastmcp>=2.0.0,<3",
+    "fastmcp>=2.14.0,<3",
     "pyyaml>=6.0",
     "uvicorn>=0.30.0",
 ]
