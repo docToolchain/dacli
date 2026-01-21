@@ -210,8 +210,8 @@ class TestSearchEndpoint:
         data = response.json()
         assert response.status_code == 200
         # Check that lowercase didn't match capitalized titles
-        for result in data["results"]:
-            assert "performance" in result["context"]
+        assert data["total_results"] == 0
+        assert data["results"] == []
 
     def test_search_max_results(self, client: TestClient):
         """AC-UC04-05: Search with result limit."""
