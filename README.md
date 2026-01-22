@@ -68,7 +68,7 @@ Add to your Claude Desktop config (`~/.config/claude-desktop/config.json` on Lin
 | `update_section` | Update section content with optimistic locking |
 | `insert_content` | Insert new content before/after sections |
 
-For detailed tool documentation, see the [User Manual](docs/user-manual.md).
+For detailed tool documentation, see the [User Manual](src/docs/50-user-manual/).
 
 ## CLI Interface (dacli)
 

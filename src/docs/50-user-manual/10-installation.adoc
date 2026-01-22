@@ -1,0 +1,335 @@
+= Installation Guide
+:toc:
+:toclevels: 3
+
+== Overview
+
+The MCP Documentation Server enables LLM interaction with AsciiDoc and Markdown documentation projects. This guide covers installation on all supported platforms.
+
+== Prerequisites
+
+=== Python 3.12+
+
+The server requires Python 3.12 or later.
+
+**Check your Python version:**
+[source,bash]
+----
+python3 --version
+----
+
+If you need to install or upgrade Python:
+
+[tabs]
+====
+Linux (Ubuntu/Debian)::
++
+[source,bash]
+----
+sudo apt update
+sudo apt install python3.12 python3.12-venv
+----
+
+Linux (Fedora)::
++
+[source,bash]
+----
+sudo dnf install python3.12
+----
+
+macOS::
++
+[source,bash]
+----
+# Using Homebrew
+brew install python@3.12
+----
+
+Windows::
++
+Download from https://www.python.org/downloads/ and run the installer.
+Ensure "Add Python to PATH" is checked during installation.
+====
+
+=== uv Package Manager
+
+The project uses https://github.com/astral-sh/uv[uv] for fast, reliable Python package management.
+
+**Install uv:**
+
+[tabs]
+====
+Linux/macOS::
++
+[source,bash]
+----
+curl -LsSf https://astral.sh/uv/install.sh | sh
+----
+
+Windows (PowerShell)::
++
+[source,powershell]
+----
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+----
+
+Using pip::
++
+[source,bash]
+----
+pip install uv
+----
+====
+
+**Verify installation:**
+[source,bash]
+----
+uv --version
+----
+
+== Installation
+
+=== Clone the Repository
+
+[source,bash]
+----
+git clone https://github.com/rdmueller/AsciiDoc-MCP.git
+cd AsciiDoc-MCP
+----
+
+=== Install Dependencies
+
+[source,bash]
+----
+uv sync
+----
+
+This creates a virtual environment and installs all required packages.
+
+=== Verify Installation
+
+**Check the MCP server:**
+[source,bash]
+----
+uv run python -m mcp_server --help
+----
+
+Expected output:
+----
+usage: mcp_server [-h] [--docs-root DOCS_ROOT]
+
+MCP Documentation Server
+
+options:
+  -h, --help            show this help message and exit
+  --docs-root DOCS_ROOT
+                        Root directory containing documentation files
+----
+
+**Check the CLI:**
+[source,bash]
+----
+uv run dacli --version
+----
+
+Expected output:
+----
+dacli, version 0.1.0
+----
+
+== Configuration
+
+=== Claude Desktop
+
+Add the server to your Claude Desktop configuration file:
+
+[tabs]
+====
+Linux::
++
+`~/.config/claude-desktop/config.json`
+
+macOS::
++
+`~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows::
++
+`%APPDATA%\Claude\claude_desktop_config.json`
+====
+
+**Configuration content:**
+[source,json]
+----
+{
+  "mcpServers": {
+    "asciidoc-mcp": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory", "/path/to/AsciiDoc-MCP",
+        "python", "-m", "mcp_server",
+        "--docs-root", "/path/to/your/documentation"
+      ]
+    }
+  }
+}
+----
+
+IMPORTANT: Replace `/path/to/AsciiDoc-MCP` with the actual path where you cloned the repository, and `/path/to/your/documentation` with the path to your documentation project.
+
+=== Claude Code (CLI)
+
+Add to your Claude Code MCP settings (`~/.config/claude-code/settings.json` or via `claude mcp add`):
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "asciidoc-mcp": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory", "/path/to/AsciiDoc-MCP",
+        "python", "-m", "mcp_server",
+        "--docs-root", "/path/to/your/documentation"
+      ]
+    }
+  }
+}
+----
+
+=== Amazon Q CLI / Kiro
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "asciidoc-mcp": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory", "/path/to/AsciiDoc-MCP",
+        "python", "-m", "mcp_server",
+        "--docs-root", "/path/to/documentation"
+      ]
+    }
+  }
+}
+----
+
+== Running the Server
+
+=== Standalone Mode
+
+For testing or debugging, run the server directly:
+
+[source,bash]
+----
+uv run python -m mcp_server --docs-root /path/to/your/docs
+----
+
+=== Using the CLI
+
+For LLMs without MCP support, use the `dacli` command-line interface:
+
+[source,bash]
+----
+# Get documentation structure
+uv run dacli --docs-root /path/to/docs structure
+
+# Search documentation
+uv run dacli --docs-root /path/to/docs search "authentication"
+
+# Read a section
+uv run dacli --docs-root /path/to/docs section introduction
+----
+
+See the xref:50-tutorial.adoc[CLI Tutorial] for comprehensive examples.
+
+== Troubleshooting
+
+=== Common Issues
+
+==== "uv: command not found"
+
+The uv package manager is not installed or not in your PATH.
+
+**Solution:** Reinstall uv and ensure your shell configuration is reloaded:
+[source,bash]
+----
+# Reinstall
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Reload shell (or open a new terminal)
+source ~/.bashrc  # or ~/.zshrc
+----
+
+==== "Python 3.12 is required"
+
+Your Python version is too old.
+
+**Solution:** Install Python 3.12+ as described in the Prerequisites section.
+
+==== "Module not found" errors
+
+Dependencies are not installed.
+
+**Solution:** Run `uv sync` in the project directory:
+[source,bash]
+----
+cd /path/to/AsciiDoc-MCP
+uv sync
+----
+
+==== MCP server not connecting in Claude Desktop
+
+**Check:**
+
+1. The paths in your config are absolute paths (not relative)
+2. The `--directory` path points to the AsciiDoc-MCP folder
+3. The `--docs-root` path points to your documentation folder
+4. Both paths exist and are accessible
+
+**Debug:** Try running the server manually to see error messages:
+[source,bash]
+----
+uv run --directory /path/to/AsciiDoc-MCP python -m mcp_server --docs-root /path/to/docs
+----
+
+==== "Permission denied" on Linux/macOS
+
+**Solution:** Ensure the files are readable:
+[source,bash]
+----
+chmod -R u+r /path/to/your/docs
+----
+
+=== Getting Help
+
+- GitHub Issues: https://github.com/rdmueller/AsciiDoc-MCP/issues
+- Documentation: See the other files in this user manual
+
+== Updating
+
+To update to the latest version:
+
+[source,bash]
+----
+cd /path/to/AsciiDoc-MCP
+git pull
+uv sync
+----
+
+== Uninstallation
+
+To remove the server:
+
+[source,bash]
+----
+# Remove the repository
+rm -rf /path/to/AsciiDoc-MCP
+
+# Remove MCP configuration from Claude Desktop
+# (Edit your config.json and remove the "asciidoc-mcp" entry)
+----

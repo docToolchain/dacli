@@ -1,0 +1,22 @@
+= User Manual
+:toc:
+
+Welcome to the MCP Documentation Server User Manual.
+
+== Contents
+
+. xref:10-installation.adoc[Installation Guide] - Prerequisites, installation, and configuration
+. xref:20-mcp-tools.adoc[MCP Tools Reference] - Complete reference for all 9 MCP tools
+. xref:50-tutorial.adoc[CLI Tutorial] - Practical examples using the dacli CLI
+
+== Quick Links
+
+* **New users**: Start with the xref:10-installation.adoc[Installation Guide]
+* **MCP integration**: See the xref:20-mcp-tools.adoc[MCP Tools Reference]
+* **CLI usage**: Follow the xref:50-tutorial.adoc[CLI Tutorial]
+
+== About
+
+The MCP Documentation Server enables LLM interaction with AsciiDoc and Markdown documentation projects through the Model Context Protocol (MCP).
+
+For architecture documentation, see the link:../arc42/arc42.adoc[arc42 documentation].

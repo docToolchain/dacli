@@ -82,10 +82,12 @@ Section paths use dot-notation without document title prefix:
 ## Documentation Structure
 
 ```
-docs/
-└── user-manual.md   # User documentation for MCP tools
-
 src/docs/
+├── 50-user-manual/  # User documentation
+│   ├── index.adoc           # User manual index
+│   ├── 10-installation.adoc # Installation guide
+│   ├── 20-mcp-tools.adoc    # MCP tools reference
+│   └── 50-tutorial.adoc     # CLI tutorial
 ├── arc42/           # Architecture documentation (arc42 template)
 │   └── chapters/    # Individual architecture chapters
 └── spec/            # Specifications
@@ -162,5 +164,5 @@ Located in `src/docs/arc42/chapters/09_architecture_decisions.adoc`:
 | `update_section` | Update section content (with optimistic locking) |
 | `insert_content` | Insert content before/after sections |
 
-For detailed tool documentation, see `docs/user-manual.md`.
+For detailed tool documentation, see `src/docs/50-user-manual/`.
 
