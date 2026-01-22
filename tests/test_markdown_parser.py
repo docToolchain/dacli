@@ -625,6 +625,88 @@ def hello():
         assert "will be ignored" in caplog.text
 
 
+class TestCodeBlockContent:
+    """Code block content extraction per spec line 236."""
+
+    def test_code_block_content_is_extracted(self):
+        """Code block content is stored in attributes."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """# Code Examples
+
+```python
+def hello():
+    print("Hello, World!")
+```
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert len(doc.elements) == 1
+        code_block = doc.elements[0]
+        assert "content" in code_block.attributes
+        assert code_block.attributes["content"] == 'def hello():\n    print("Hello, World!")'
+
+    def test_multiline_code_content_preserved(self):
+        """Multi-line code content is preserved with newlines."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """# Multi-line
+
+```javascript
+function test() {
+    const x = 1;
+    const y = 2;
+    return x + y;
+}
+```
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        code_block = doc.elements[0]
+        expected = """function test() {
+    const x = 1;
+    const y = 2;
+    return x + y;
+}"""
+        assert code_block.attributes["content"] == expected
+
+    def test_empty_code_block_has_empty_content(self):
+        """Empty code block has empty string content."""
+        from mcp_server.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        content = """# Empty
+
+```python
+```
+"""
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as f:
+            f.write(content)
+            f.flush()
+            doc = parser.parse_file(Path(f.name))
+
+        assert len(doc.elements) == 1
+        code_block = doc.elements[0]
+        assert code_block.attributes["content"] == ""
+
+
 class TestTableRecognition:
     """AC-MD-04: GFM tables are recognized as blocks."""
 

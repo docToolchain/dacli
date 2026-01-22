@@ -369,6 +369,7 @@ class MarkdownParser:
         code_fence_count = 0
         code_block_start_line = 0
         code_block_language: str | None = None
+        code_block_content: list[str] = []
 
         # Track table state
         in_table = False
@@ -422,6 +423,7 @@ class MarkdownParser:
                     code_fence_count = fence_count
                     code_block_start_line = line_num
                     code_block_language = fence_match.group(2) or None
+                    code_block_content = []
                 elif fence_char == code_fence_char and fence_count >= code_fence_count:
                     # Closing fence
                     elements.append(
@@ -430,15 +432,19 @@ class MarkdownParser:
                             source_location=SourceLocation(
                                 file=file_path, line=code_block_start_line
                             ),
-                            attributes={"language": code_block_language},
+                            attributes={
+                                "language": code_block_language,
+                                "content": "\n".join(code_block_content),
+                            },
                             parent_section=current_section_path,
                         )
                     )
                     in_code_block = False
                 continue
 
-            # Skip content inside code blocks
+            # Collect content inside code blocks
             if in_code_block:
+                code_block_content.append(line)
                 continue
 
             # Handle tables
