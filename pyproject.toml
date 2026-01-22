@@ -36,7 +36,7 @@ dev = [
 
 [project.scripts]
 mcp-docs-server = "mcp_server.main:main"
-mcp-docs = "mcp_server.cli:cli"
+dacli = "mcp_server.cli:cli"
 
 [build-system]
 requires = ["hatchling"]

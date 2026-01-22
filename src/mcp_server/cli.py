@@ -1,10 +1,10 @@
-"""CLI Interface for MCP Documentation Server.
+"""dacli - Docs-As-Code CLI.
 
-This module provides a command-line interface for the MCP documentation tools,
-enabling LLMs without MCP support to use the same functionality via bash/shell.
+Command-line interface for documentation navigation and manipulation.
+Enables LLMs without MCP support to access documentation via bash/shell.
 
 Usage:
-    mcp-docs [OPTIONS] <COMMAND> [ARGS]
+    dacli [OPTIONS] <COMMAND> [ARGS]
 
 Commands:
     structure          Get hierarchical document structure
@@ -115,10 +115,10 @@ pass_context = click.make_pass_decorator(CliContext)
     default=False,
     help="Pretty-print output for human readability",
 )
-@click.version_option(version=__version__, prog_name="mcp-docs")
+@click.version_option(version=__version__, prog_name="dacli")
 @click.pass_context
 def cli(ctx, docs_root: Path, output_format: str, pretty: bool):
-    """MCP Documentation Server CLI.
+    """dacli - Docs-As-Code CLI.
 
     Access documentation structure, content, and metadata from the command line.
     Designed for LLM integration via bash/shell commands.

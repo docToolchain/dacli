@@ -1,17 +1,17 @@
-= CLI Interface Specification
+= dacli - Docs-As-Code CLI Specification
 :toc:
 :toclevels: 3
 
 == Übersicht
 
-Das CLI Interface ermöglicht die Nutzung aller MCP-Tools über die Kommandozeile.
+`dacli` (Docs-As-Code CLI) ermöglicht die Nutzung aller Dokumentations-Tools über die Kommandozeile.
 Dies ist besonders nützlich für LLMs, die keinen MCP-Support haben, aber Bash/Shell-Tools verwenden können.
 
 == Globale Optionen
 
 [source,bash]
 ----
-mcp-docs [OPTIONS] <COMMAND> [ARGS]
+dacli [OPTIONS] <COMMAND> [ARGS]
 
 Options:
   --docs-root PATH    Dokumentations-Wurzelverzeichnis (default: $PROJECT_PATH oder cwd)
@@ -29,13 +29,13 @@ Zeigt die hierarchische Dokumentstruktur.
 
 [source,bash]
 ----
-mcp-docs structure [--max-depth N]
+dacli structure [--max-depth N]
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs structure --max-depth 1
+$ dacli structure --max-depth 1
 {
   "sections": [
     {"path": "introduction", "title": "Introduction", "level": 1},
@@ -51,13 +51,13 @@ Liest den Inhalt einer Sektion.
 
 [source,bash]
 ----
-mcp-docs section <PATH>
+dacli section <PATH>
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs section introduction.goals
+$ dacli section introduction.goals
 {
   "path": "introduction.goals",
   "title": "Goals",
@@ -72,7 +72,7 @@ Zeigt alle Sektionen auf einer bestimmten Ebene.
 
 [source,bash]
 ----
-mcp-docs sections-at-level <LEVEL>
+dacli sections-at-level <LEVEL>
 ----
 
 == Search & Elements Commands
@@ -83,13 +83,13 @@ Durchsucht die Dokumentation.
 
 [source,bash]
 ----
-mcp-docs search <QUERY> [--scope PATH] [--max-results N]
+dacli search <QUERY> [--scope PATH] [--max-results N]
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs search "authentication" --max-results 5
+$ dacli search "authentication" --max-results 5
 {
   "query": "authentication",
   "results": [
@@ -105,7 +105,7 @@ Listet Elemente (Code-Blöcke, Tabellen, etc.).
 
 [source,bash]
 ----
-mcp-docs elements [--type TYPE] [--section PATH]
+dacli elements [--type TYPE] [--section PATH]
 ----
 
 **Type-Optionen:** `code`, `table`, `image`, `diagram`, `list`, `admonition`
@@ -118,13 +118,13 @@ Zeigt Metadaten für Projekt oder Sektion.
 
 [source,bash]
 ----
-mcp-docs metadata [PATH]
+dacli metadata [PATH]
 ----
 
 **Projekt-Metadaten (ohne PATH):**
 [source,bash]
 ----
-$ mcp-docs metadata
+$ dacli metadata
 {
   "total_files": 15,
   "total_sections": 87,
@@ -136,7 +136,7 @@ $ mcp-docs metadata
 **Sektions-Metadaten (mit PATH):**
 [source,bash]
 ----
-$ mcp-docs metadata architecture.decisions
+$ dacli metadata architecture.decisions
 {
   "path": "architecture.decisions",
   "title": "Architecture Decisions",
@@ -151,13 +151,13 @@ Validiert die Dokumentstruktur.
 
 [source,bash]
 ----
-mcp-docs validate
+dacli validate
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs validate
+$ dacli validate
 {
   "valid": true,
   "errors": [],
@@ -176,13 +176,13 @@ Aktualisiert den Inhalt einer Sektion.
 
 [source,bash]
 ----
-mcp-docs update <PATH> --content "..." [--no-preserve-title] [--expected-hash HASH]
+dacli update <PATH> --content "..." [--no-preserve-title] [--expected-hash HASH]
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs update introduction --content "New introduction text..."
+$ dacli update introduction --content "New introduction text..."
 {
   "success": true,
   "path": "introduction",
@@ -197,13 +197,13 @@ Fügt Inhalt relativ zu einer Sektion ein.
 
 [source,bash]
 ----
-mcp-docs insert <PATH> --position before|after|append --content "..."
+dacli insert <PATH> --position before|after|append --content "..."
 ----
 
 **Beispiel:**
 [source,bash]
 ----
-$ mcp-docs insert architecture --position after --content "== New Section\n\nContent..."
+$ dacli insert architecture --position after --content "== New Section\n\nContent..."
 {
   "success": true,
   "inserted_at": {"file": "arc42.adoc", "line": 150}
@@ -231,14 +231,14 @@ Ein LLM kann das CLI über Bash-Tools verwenden:
 [source,bash]
 ----
 # Struktur abfragen
-structure=$(mcp-docs structure --max-depth 2 --docs-root /project/docs)
+structure=$(dacli structure --max-depth 2 --docs-root /project/docs)
 
 # Nach Thema suchen
-results=$(mcp-docs search "database" | jq '.results[].path')
+results=$(dacli search "database" | jq '.results[].path')
 
 # Sektion lesen
-content=$(mcp-docs section architecture.decisions)
+content=$(dacli section architecture.decisions)
 
 # Dokumentation aktualisieren
-mcp-docs update api.endpoints --content "Updated API documentation..."
+dacli update api.endpoints --content "Updated API documentation..."
 ----
