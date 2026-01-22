@@ -704,13 +704,23 @@ def update(ctx: CliContext, path: str, content: str, no_preserve_title: bool,
     if preserve_title:
         stripped_content = new_content.lstrip()
         has_explicit_title = stripped_content.startswith("=") or stripped_content.startswith("#")
-        if not has_explicit_title:
-            file_ext = file_path.suffix.lower()
-            if file_ext in (".adoc", ".asciidoc"):
-                level_markers = "=" * (section_obj.level + 1)
+
+        # If content has a heading, strip it (we always use the original title when preserve_title)
+        if has_explicit_title:
+            lines = stripped_content.split("\n", 1)
+            if len(lines) > 1:
+                # Keep content after heading, strip leading newlines
+                new_content = lines[1].lstrip("\n")
             else:
-                level_markers = "#" * section_obj.level
-            new_content = f"{level_markers} {section_obj.title}\n\n{new_content}"
+                new_content = ""  # Content was just the heading
+
+        # Always prepend the original title
+        file_ext = file_path.suffix.lower()
+        if file_ext in (".adoc", ".asciidoc"):
+            level_markers = "=" * (section_obj.level + 1)
+        else:
+            level_markers = "#" * section_obj.level
+        new_content = f"{level_markers} {section_obj.title}\n\n{new_content}"
 
     if not new_content.endswith("\n"):
         new_content += "\n"
@@ -777,8 +787,27 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
         stripped_insert = insert_content.lstrip()
         starts_with_heading = stripped_insert.startswith("#") or stripped_insert.startswith("=")
 
+        def next_line_is_heading(lines: list, next_idx: int) -> bool:
+            """Check if the line at next_idx starts with a heading marker."""
+            if next_idx < len(lines):
+                next_line = lines[next_idx].lstrip()
+                return next_line.startswith("#") or next_line.startswith("=")
+            return False
+
+        def ensure_trailing_blank_line(content: str) -> str:
+            """Ensure content ends with a blank line (two newlines)."""
+            if not content.endswith("\n\n"):
+                if content.endswith("\n"):
+                    return content + "\n"
+                return content + "\n\n"
+            return content
+
         if position == "before":
             insert_line = start_line
+            # Check if the line we're inserting before is a heading
+            next_line_idx = start_line - 1  # 0-based index
+            if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+                insert_content = ensure_trailing_blank_line(insert_content)
             new_lines = lines[: start_line - 1] + [insert_content] + lines[start_line - 1 :]
         elif position == "after":
             insert_line = end_line + 1
@@ -787,6 +816,10 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
                 prev_line = lines[end_line - 1] if end_line <= len(lines) else ""
                 if prev_line.strip():
                     insert_content = "\n" + insert_content
+            # Add blank line after content if next line is a heading
+            next_line_idx = end_line  # 0-based index (end_line is 1-based, so lines[end_line] is next)
+            if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+                insert_content = ensure_trailing_blank_line(insert_content)
             new_lines = lines[:end_line] + [insert_content] + lines[end_line:]
         else:  # append - insert after all descendants
             append_line = _get_section_append_line(section_obj, ctx.index, ctx.file_handler)
@@ -796,6 +829,10 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
                 prev_line = lines[append_line - 1] if append_line <= len(lines) else ""
                 if prev_line.strip():
                     insert_content = "\n" + insert_content
+            # Add blank line after content if next line is a heading
+            next_line_idx = append_line  # 0-based index
+            if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+                insert_content = ensure_trailing_blank_line(insert_content)
             new_lines = lines[:append_line] + [insert_content] + lines[append_line:]
 
         new_file_content = "".join(new_lines)

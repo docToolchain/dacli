@@ -1128,3 +1128,170 @@ class TestCliUpdateCommand:
         content = doc_file.read_text()
         assert "Updated from stdin" in content
         assert "Original content" not in content
+
+    def test_update_stdin_with_heading_preserves_title(self, tmp_path):
+        """Update with stdin content starting with heading should preserve original title (Issue #120).
+
+        When preserve_title=true (default), the original title should always be kept,
+        even if the stdin content starts with a heading.
+        """
+        from dacli.cli import cli
+
+        doc_file = tmp_path / "test.md"
+        doc_file.write_text("# Title\n\n## Original Section\n\nOriginal content.\n")
+
+        runner = CliRunner()
+        # stdin content has a different heading
+        stdin_content = "## Replacement Title\n\nNew content from stdin.\n"
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root", str(tmp_path),
+                "--format", "json",
+                "update", "original-section",
+                "--content", "-",
+            ],
+            input=stdin_content,
+        )
+
+        assert result.exit_code == 0
+
+        content = doc_file.read_text()
+        # Original title should be preserved, replacement title should be stripped
+        assert "## Original Section" in content
+        assert "Replacement Title" not in content
+        assert "New content from stdin" in content
+
+    def test_update_stdin_with_heading_preserves_title_asciidoc(self, tmp_path):
+        """Update with stdin content starting with heading should preserve title in AsciiDoc (Issue #120)."""
+        from dacli.cli import cli
+
+        doc_file = tmp_path / "test.adoc"
+        doc_file.write_text("= Title\n\n== Original Section\n\nOriginal content.\n")
+
+        runner = CliRunner()
+        # stdin content has a different heading
+        stdin_content = "== Replacement Title\n\nNew content from stdin.\n"
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root", str(tmp_path),
+                "--format", "json",
+                "update", "original-section",
+                "--content", "-",
+            ],
+            input=stdin_content,
+        )
+
+        assert result.exit_code == 0
+
+        content = doc_file.read_text()
+        # Original title should be preserved, replacement title should be stripped
+        assert "== Original Section" in content
+        assert "Replacement Title" not in content
+        assert "New content from stdin" in content
+
+
+class TestCliBugFixes:
+    """Tests for specific bug fixes in CLI commands."""
+
+    def test_insert_adds_blank_line_after_content_before_heading(self, tmp_path):
+        """Insert should add blank line after content when next line is a heading (Issue #119).
+
+        When inserting content that doesn't end with a blank line, and the next line
+        in the document starts with a heading, a blank line should be added after
+        the inserted content.
+        """
+        from dacli.cli import cli
+
+        # Create a doc where section-a is immediately followed by section-b heading
+        doc_file = tmp_path / "test.adoc"
+        doc_file.write_text("""= Title
+
+== Section A
+
+Content A.
+
+== Section B
+
+Content B.
+""")
+
+        runner = CliRunner()
+        # Insert plain text (no heading) after Section A
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root", str(tmp_path),
+                "--format", "json",
+                "insert", "section-a",
+                "--position", "after",
+                "--content", "Additional text without heading.",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        content = doc_file.read_text()
+
+        # There should be a blank line between the inserted text and Section B heading
+        assert "Additional text without heading." in content
+        assert "== Section B" in content
+
+        # Check proper formatting: inserted text should be followed by blank line before heading
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if "Additional text without heading" in line:
+                # Find the next non-empty line index
+                next_content_idx = i + 1
+                while next_content_idx < len(lines) and not lines[next_content_idx].strip():
+                    next_content_idx += 1
+                if next_content_idx < len(lines) and lines[next_content_idx].startswith("=="):
+                    # There should be at least one blank line between
+                    blank_lines = next_content_idx - i - 1
+                    assert blank_lines >= 1, f"Should have blank line before heading, found {blank_lines}"
+                break
+
+    def test_insert_adds_blank_line_after_content_before_heading_markdown(self, tmp_path):
+        """Insert should add blank line after content when next line is a heading (Markdown)."""
+        from dacli.cli import cli
+
+        doc_file = tmp_path / "test.md"
+        doc_file.write_text("""# Title
+
+## Section A
+
+Content A.
+
+## Section B
+
+Content B.
+""")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root", str(tmp_path),
+                "--format", "json",
+                "insert", "section-a",
+                "--position", "after",
+                "--content", "Additional text without heading.",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        content = doc_file.read_text()
+
+        # Check proper formatting
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if "Additional text without heading" in line:
+                next_content_idx = i + 1
+                while next_content_idx < len(lines) and not lines[next_content_idx].strip():
+                    next_content_idx += 1
+                if next_content_idx < len(lines) and lines[next_content_idx].startswith("#"):
+                    blank_lines = next_content_idx - i - 1
+                    assert blank_lines >= 1, f"Should have blank line before heading, found {blank_lines}"
+                break
