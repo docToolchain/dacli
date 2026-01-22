@@ -20,9 +20,9 @@ from pathlib import Path
 from fastmcp import FastMCP
 
 from mcp_server import __version__
-from mcp_server.asciidoc_parser import AsciidocParser
+from mcp_server.asciidoc_parser import AsciidocStructureParser
 from mcp_server.file_handler import FileReadError, FileSystemHandler, FileWriteError
-from mcp_server.markdown_parser import MarkdownParser
+from mcp_server.markdown_parser import MarkdownStructureParser
 from mcp_server.models import Document, Section
 from mcp_server.structure_index import StructureIndex
 
@@ -61,8 +61,8 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
     # Initialize components
     index = StructureIndex()
     file_handler = FileSystemHandler()
-    asciidoc_parser = AsciidocParser(base_path=docs_root)
-    markdown_parser = MarkdownParser()
+    asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
+    markdown_parser = MarkdownStructureParser()
 
     # Build initial index
     _build_index(docs_root, index, asciidoc_parser, markdown_parser)
@@ -505,8 +505,8 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
 def _build_index(
     docs_root: Path,
     index: StructureIndex,
-    asciidoc_parser: AsciidocParser,
-    markdown_parser: MarkdownParser,
+    asciidoc_parser: AsciidocStructureParser,
+    markdown_parser: MarkdownStructureParser,
 ) -> None:
     """Build the structure index from documents in docs_root.
 

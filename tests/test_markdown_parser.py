@@ -7,21 +7,21 @@ import tempfile
 from pathlib import Path
 
 
-class TestMarkdownParserBasic:
+class TestMarkdownStructureParserBasic:
     """Basic parser instantiation tests."""
 
     def test_parser_can_be_instantiated(self):
         """Parser can be created."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         assert parser is not None
 
     def test_parse_file_returns_markdown_document(self):
         """parse_file returns a MarkdownDocument."""
-        from mcp_server.markdown_parser import MarkdownDocument, MarkdownParser
+        from mcp_server.markdown_parser import MarkdownDocument, MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -38,9 +38,9 @@ class TestHeadingExtraction:
 
     def test_extracts_single_h1_heading(self):
         """Single H1 heading is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -56,9 +56,9 @@ class TestHeadingExtraction:
 
     def test_extracts_multiple_headings(self):
         """Multiple headings at different levels are extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Haupttitel
 
 ## Unterkapitel 1
@@ -99,9 +99,9 @@ Text...
 
     def test_heading_levels_1_to_6(self):
         """All heading levels from 1 to 6 are supported."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# H1
 ## H2
 ### H3
@@ -131,9 +131,9 @@ Text...
 
     def test_heading_with_trailing_hashes(self):
         """Trailing hashes in headings are stripped."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -150,9 +150,9 @@ class TestHeadingPaths:
 
     def test_root_heading_path(self):
         """Root heading has correct path."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -166,9 +166,9 @@ class TestHeadingPaths:
 
     def test_nested_heading_paths(self):
         """Nested headings have correct hierarchical paths with dot-separation."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Haupttitel
 
 ## Unterkapitel 1
@@ -196,9 +196,9 @@ class TestHeadingPaths:
 
     def test_path_slugification(self):
         """Paths are properly slugified (lowercase, dashes)."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -216,9 +216,9 @@ class TestSourceLocation:
 
     def test_heading_has_source_location(self):
         """Headings have correct source location."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ## Chapter
@@ -240,9 +240,9 @@ class TestSourceLocation:
 
     def test_section_has_end_line(self):
         """Sections have end_line calculated."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 Some content.
@@ -264,9 +264,9 @@ Chapter content.
 
     def test_section_end_line_is_before_next_section(self):
         """Section end_line is correctly calculated."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ## Chapter 1
@@ -298,9 +298,9 @@ class TestFrontmatterParsing:
 
     def test_parses_simple_frontmatter(self):
         """Simple string frontmatter is parsed."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 title: Mein Dokument
 author: Max Mustermann
@@ -321,9 +321,9 @@ author: Max Mustermann
 
     def test_parses_list_in_frontmatter(self):
         """List values in frontmatter are parsed."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 tags: [design, architecture]
 ---
@@ -343,9 +343,9 @@ tags: [design, architecture]
 
     def test_parses_nested_object_in_frontmatter(self):
         """Nested objects in frontmatter are parsed."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 author:
   name: Max
@@ -367,9 +367,9 @@ author:
 
     def test_frontmatter_title_overrides_heading(self):
         """Title from frontmatter takes precedence over H1."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 title: Frontmatter Title
 ---
@@ -388,9 +388,9 @@ title: Frontmatter Title
 
     def test_no_frontmatter_is_empty_dict(self):
         """Document without frontmatter has empty frontmatter dict."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Just a heading
 """
 
@@ -405,9 +405,9 @@ title: Frontmatter Title
 
     def test_invalid_frontmatter_is_empty_dict(self):
         """Invalid YAML in frontmatter results in empty dict (with warning)."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 invalid: [not closed
 ---
@@ -427,9 +427,9 @@ invalid: [not closed
 
     def test_headings_after_frontmatter_have_correct_line_numbers(self):
         """Line numbers account for frontmatter offset."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """---
 title: Test
 ---
@@ -453,9 +453,9 @@ class TestCodeBlockExtraction:
 
     def test_extracts_code_block_with_language(self):
         """Code block with language is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Code Examples
 
 ```python
@@ -478,9 +478,9 @@ def hello():
 
     def test_code_block_source_location(self):
         """Code block has correct source location."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ```javascript
@@ -501,9 +501,9 @@ console.log("test");
 
     def test_code_block_without_language(self):
         """Code block without language has empty language attribute."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Code
 
 ```
@@ -523,9 +523,9 @@ plain text
 
     def test_code_block_parent_section(self):
         """Code block has correct parent section."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Root
 
 ## Code Section
@@ -547,9 +547,9 @@ code
 
     def test_multiple_code_blocks(self):
         """Multiple code blocks are extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Examples
 
 ```python
@@ -574,9 +574,9 @@ javascript code
 
     def test_code_block_with_tilde_fence(self):
         """Code block with tilde fence is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Code
 
 ~~~ruby
@@ -596,9 +596,9 @@ puts "hello"
 
     def test_unclosed_code_block_logs_warning(self, caplog):
         """Unclosed code block at end of file logs a warning."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Code
 
 ```python
@@ -630,9 +630,9 @@ class TestCodeBlockContent:
 
     def test_code_block_content_is_extracted(self):
         """Code block content is stored in attributes."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Code Examples
 
 ```python
@@ -655,9 +655,9 @@ def hello():
 
     def test_multiline_code_content_preserved(self):
         """Multi-line code content is preserved with newlines."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Multi-line
 
 ```javascript
@@ -686,9 +686,9 @@ function test() {
 
     def test_empty_code_block_has_empty_content(self):
         """Empty code block has empty string content."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Empty
 
 ```python
@@ -712,9 +712,9 @@ class TestTableRecognition:
 
     def test_extracts_simple_table(self):
         """Simple table is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Data
 
 | Header 1 | Header 2 | Header 3 |
@@ -737,9 +737,9 @@ class TestTableRecognition:
 
     def test_table_row_count(self):
         """Table has correct row count (excluding header)."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Data
 
 | A | B |
@@ -761,9 +761,9 @@ class TestTableRecognition:
 
     def test_table_source_location(self):
         """Table has correct source location."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 Some text.
@@ -789,9 +789,9 @@ class TestImageExtraction:
 
     def test_extracts_image(self):
         """Image is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Images
 
 ![Alt text](path/to/image.png)
@@ -812,9 +812,9 @@ class TestImageExtraction:
 
     def test_image_with_title(self):
         """Image with title is extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Images
 
 ![Diagram](diagram.png "A diagram")
@@ -832,9 +832,9 @@ class TestImageExtraction:
 
     def test_image_source_location(self):
         """Image has correct source location."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ![img](test.png)
@@ -856,9 +856,9 @@ class TestListExtraction:
 
     def test_extracts_unordered_list(self):
         """Test that unordered lists (* or -) are extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Document
 
 ## Lists
@@ -878,9 +878,9 @@ class TestListExtraction:
 
     def test_extracts_ordered_list(self):
         """Test that ordered lists (1.) are extracted."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Document
 
 ## Steps
@@ -900,9 +900,9 @@ class TestListExtraction:
 
     def test_list_has_parent_section(self):
         """Test that list element has correct parent section."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Document
 
 ## My Lists
@@ -921,9 +921,9 @@ class TestListExtraction:
 
     def test_list_source_location(self):
         """Test that list has correct source location."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Document
 
 ## Lists
@@ -946,9 +946,9 @@ class TestFolderStructure:
 
     def test_parse_folder_returns_folder_document(self):
         """parse_folder returns a FolderDocument."""
-        from mcp_server.markdown_parser import FolderDocument, MarkdownParser
+        from mcp_server.markdown_parser import FolderDocument, MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -960,9 +960,9 @@ class TestFolderStructure:
 
     def test_parses_single_file_in_folder(self):
         """Single file in folder is parsed."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -975,9 +975,9 @@ class TestFolderStructure:
 
     def test_parses_multiple_files_in_folder(self):
         """Multiple files in folder are parsed."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -990,9 +990,9 @@ class TestFolderStructure:
 
     def test_parses_nested_folders(self):
         """Nested folders are parsed recursively."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1008,9 +1008,9 @@ class TestFolderStructure:
 
     def test_folder_structure_order(self):
         """Files are in correct order (index first, then sorted)."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1035,9 +1035,9 @@ class TestNumericPrefixSorting:
 
     def test_numeric_prefixes_sorted_correctly(self):
         """Files with numeric prefixes are sorted numerically."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1057,9 +1057,9 @@ class TestNumericPrefixSorting:
 
     def test_readme_comes_first(self):
         """README.md comes before other files."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1073,9 +1073,9 @@ class TestNumericPrefixSorting:
 
     def test_index_comes_first(self):
         """index.md comes before other files."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1089,9 +1089,9 @@ class TestNumericPrefixSorting:
 
     def test_mixed_prefixes_and_names(self):
         """Mixed numeric prefixes and plain names are sorted correctly."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Path(tmpdir)
@@ -1112,9 +1112,9 @@ class TestInterfaceMethods:
 
     def test_get_section_returns_section_by_path(self):
         """get_section returns correct section."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Root
 
 ## Chapter
@@ -1133,9 +1133,9 @@ class TestInterfaceMethods:
 
     def test_get_section_returns_none_for_invalid_path(self):
         """get_section returns None for invalid path."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False
@@ -1149,9 +1149,9 @@ class TestInterfaceMethods:
 
     def test_get_elements_returns_all_elements(self):
         """get_elements returns all elements."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ```python
@@ -1173,9 +1173,9 @@ code
 
     def test_get_elements_filters_by_type(self):
         """get_elements filters by type."""
-        from mcp_server.markdown_parser import MarkdownParser
+        from mcp_server.markdown_parser import MarkdownStructureParser
 
-        parser = MarkdownParser()
+        parser = MarkdownStructureParser()
         content = """# Title
 
 ```python

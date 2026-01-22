@@ -88,7 +88,7 @@ class FolderDocument:
     structure: list[Section] = field(default_factory=list)
 
 
-class MarkdownParser:
+class MarkdownStructureParser:
     """Parser for GitHub Flavored Markdown documents.
 
     Parses single files or entire folder hierarchies into structured

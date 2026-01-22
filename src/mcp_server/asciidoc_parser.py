@@ -1,6 +1,6 @@
 """AsciiDoc Parser for MCP Documentation Server.
 
-This module provides the AsciidocParser class for parsing AsciiDoc documents.
+This module provides the AsciidocStructureParser class for parsing AsciiDoc documents.
 It supports section extraction (AC-ADOC-01), attributes (AC-ADOC-02),
 includes (AC-ADOC-03, AC-ADOC-04), structural elements (AC-ADOC-05,
 AC-ADOC-06, AC-ADOC-07), and cross-references (AC-ADOC-08).
@@ -106,7 +106,7 @@ class AsciidocDocument(Document):
     includes: list[IncludeInfo] = field(default_factory=list)
 
 
-class AsciidocParser:
+class AsciidocStructureParser:
     """Parser for AsciiDoc documents.
 
     Parses AsciiDoc files and extracts structure, elements, cross-references,
