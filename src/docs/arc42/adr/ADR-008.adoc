@@ -1,6 +1,6 @@
 === ADR-008: Cross-Document Path Uniqueness Strategy
 
-*Status:* Proposed (2026-01-22)
+*Status:* Accepted (2026-01-22)
 
 *Context:*
 The current path generation creates section paths based solely on heading titles (slugified). This works well within a single document, but when multiple documents are indexed together, sections with identical titles receive identical paths. This causes:
