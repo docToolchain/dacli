@@ -268,3 +268,119 @@ Content.
         # Pretty JSON has newlines and indentation
         assert "\n" in result.output
         json.loads(result.output)  # Still valid JSON
+
+
+class TestCliQuietOption:
+    """Test the --quiet/-q option for suppressing warnings."""
+
+    @pytest.fixture
+    def docs_with_duplicates(self, tmp_path):
+        """Create docs that will generate duplicate section path warnings."""
+        # Create two files with same section titles (will create duplicate paths)
+        doc1 = tmp_path / "doc1.adoc"
+        doc1.write_text("""= Document One
+
+== Introduction
+
+Content from doc1.
+""")
+        doc2 = tmp_path / "doc2.adoc"
+        doc2.write_text("""= Document Two
+
+== Introduction
+
+Content from doc2.
+""")
+        return tmp_path
+
+    def test_quiet_option_in_help(self):
+        """--quiet option should be listed in help."""
+        from mcp_server.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--quiet" in result.output or "-q" in result.output
+
+    def test_quiet_short_option_in_help(self):
+        """Short -q option should be available."""
+        from mcp_server.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--help"])
+
+        assert result.exit_code == 0
+        assert "-q" in result.output
+
+    def test_quiet_suppresses_warnings(self, docs_with_duplicates):
+        """--quiet should suppress warning messages to stderr."""
+        from mcp_server.cli import cli
+
+        runner = CliRunner()
+
+        # Without quiet - command should work
+        result_normal = runner.invoke(
+            cli, ["--docs-root", str(docs_with_duplicates), "structure"]
+        )
+        assert result_normal.exit_code == 0
+
+        # With quiet - command should also work
+        result_quiet = runner.invoke(
+            cli, ["--docs-root", str(docs_with_duplicates), "--quiet", "structure"]
+        )
+        assert result_quiet.exit_code == 0
+        # Output should be valid JSON
+        json.loads(result_quiet.output)
+
+    def test_quiet_short_form_works(self, docs_with_duplicates):
+        """-q short form should work the same as --quiet."""
+        from mcp_server.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["--docs-root", str(docs_with_duplicates), "-q", "structure"]
+        )
+
+        assert result.exit_code == 0
+        # Output should be valid JSON
+        json.loads(result.output)
+
+    def test_quiet_still_shows_errors(self, tmp_path):
+        """--quiet should still show error messages."""
+        from mcp_server.cli import cli
+
+        runner = CliRunner()
+        # Request non-existent section - should still show error
+        doc = tmp_path / "test.adoc"
+        doc.write_text("= Test\n\n== Section\n\nContent.")
+
+        result = runner.invoke(
+            cli,
+            ["--docs-root", str(tmp_path), "--quiet", "section", "nonexistent"],
+        )
+
+        # Should fail with PATH_NOT_FOUND (exit code 3)
+        assert result.exit_code == 3
+
+    def test_quiet_does_not_affect_output(self, tmp_path):
+        """--quiet should not affect the JSON/text output."""
+        from mcp_server.cli import cli
+
+        doc = tmp_path / "test.adoc"
+        doc.write_text("= Test\n\n== Section\n\nContent.")
+
+        runner = CliRunner()
+
+        # Compare output with and without quiet
+        result_normal = runner.invoke(
+            cli, ["--docs-root", str(tmp_path), "structure"]
+        )
+        result_quiet = runner.invoke(
+            cli, ["--docs-root", str(tmp_path), "--quiet", "structure"]
+        )
+
+        assert result_normal.exit_code == 0
+        assert result_quiet.exit_code == 0
+        # Output should be the same
+        assert result_normal.output == result_quiet.output

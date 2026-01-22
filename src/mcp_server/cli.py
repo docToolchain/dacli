@@ -19,6 +19,7 @@ Commands:
 """
 
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -44,10 +45,16 @@ EXIT_WRITE_ERROR = 5
 class CliContext:
     """Shared context for CLI commands."""
 
-    def __init__(self, docs_root: Path, output_format: str, pretty: bool):
+    def __init__(self, docs_root: Path, output_format: str, pretty: bool, quiet: bool = False):
         self.docs_root = docs_root
         self.output_format = output_format
         self.pretty = pretty
+        self.quiet = quiet
+
+        # Configure logging level based on quiet flag
+        if quiet:
+            logging.getLogger().setLevel(logging.ERROR)
+
         self.index = StructureIndex()
         self.file_handler = FileSystemHandler()
         self.asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
@@ -116,15 +123,21 @@ pass_context = click.make_pass_decorator(CliContext)
     default=False,
     help="Pretty-print output for human readability",
 )
+@click.option(
+    "--quiet", "-q",
+    is_flag=True,
+    default=False,
+    help="Suppress warning messages (errors are still shown)",
+)
 @click.version_option(version=__version__, prog_name="dacli")
 @click.pass_context
-def cli(ctx, docs_root: Path, output_format: str, pretty: bool):
+def cli(ctx, docs_root: Path, output_format: str, pretty: bool, quiet: bool):
     """dacli - Docs-As-Code CLI.
 
     Access documentation structure, content, and metadata from the command line.
     Designed for LLM integration via bash/shell commands.
     """
-    ctx.obj = CliContext(docs_root, output_format, pretty)
+    ctx.obj = CliContext(docs_root, output_format, pretty, quiet)
 
 
 @cli.command()
