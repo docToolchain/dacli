@@ -24,6 +24,49 @@ Options:
   --help              Show help
 ----
 
+== Help System
+
+=== Command Groups
+
+Commands are organized into story-based groups in the help output:
+
+[cols="1,3"]
+|===
+| Group | Commands
+
+| **Discover** | `structure`, `metadata` - Understand your documentation
+| **Find** | `search`, `sections-at-level` - Locate specific content
+| **Read** | `section`, `elements` - Access content details
+| **Validate** | `validate` - Check documentation quality
+| **Edit** | `update`, `insert` - Modify content
+|===
+
+=== Typo Correction
+
+If you mistype a command, dacli suggests the correct command:
+
+[source,bash]
+----
+$ dacli serch "API"
+Error: No such command 'serch'.
+
+Did you mean: search
+----
+
+=== Usage Examples
+
+The main help (`dacli --help`) and each command help show usage examples:
+
+[source,bash]
+----
+$ dacli --help
+...
+Examples:
+  dacli --format json structure          # Get document structure as JSON
+  dacli search "authentication"          # Find sections about authentication
+  dacli section api.endpoints            # Read a specific section
+----
+
 == Command Aliases
 
 For faster typing, all commands have short aliases:
