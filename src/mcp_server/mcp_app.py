@@ -16,6 +16,7 @@ Tools:
 import hashlib
 import logging
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -363,8 +364,7 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
             return {
                 "success": False,
                 "error": (
-                    f"Hash conflict: expected '{expected_hash}', "
-                    f"but current is '{previous_hash}'"
+                    f"Hash conflict: expected '{expected_hash}', but current is '{previous_hash}'"
                 ),
                 "current_hash": previous_hash,
             }
@@ -373,9 +373,9 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
         new_content = content
         if preserve_title:
             stripped_content = new_content.lstrip()
-            has_explicit_title = stripped_content.startswith(
-                "="
-            ) or stripped_content.startswith("#")
+            has_explicit_title = stripped_content.startswith("=") or stripped_content.startswith(
+                "#"
+            )
             if not has_explicit_title:
                 # Prepend the original title line
                 file_ext = file_path.suffix.lower()
@@ -575,9 +575,7 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
             last_modified = None
             if file_path.exists():
                 mtime = file_path.stat().st_mtime
-                last_modified = datetime.fromtimestamp(
-                    mtime, tz=UTC
-                ).isoformat()
+                last_modified = datetime.fromtimestamp(mtime, tz=UTC).isoformat()
 
             # Count subsections
             subsection_count = len(section.children)
@@ -590,6 +588,58 @@ def create_mcp_server(docs_root: Path | str | None = None) -> FastMCP:
                 "last_modified": last_modified,
                 "subsection_count": subsection_count,
             }
+
+    @mcp.tool()
+    def validate_structure() -> dict:
+        """Validate the document structure.
+
+        Use this tool to check the documentation for structural issues
+        like unresolved includes, circular includes, or orphaned files.
+
+        Returns:
+            'valid': True if no errors, False otherwise.
+            'errors': List of error objects (unresolved_include, circular_include).
+            'warnings': List of warning objects (orphaned_file).
+            'validation_time_ms': Time taken for validation in milliseconds.
+        """
+        start_time = time.time()
+
+        errors: list[dict] = []
+        warnings: list[dict] = []
+
+        # Get all indexed files
+        indexed_files = set(index._file_to_sections.keys())
+
+        # Get all doc files in docs_root
+        all_doc_files: set[Path] = set()
+        for adoc_file in docs_root.rglob("*.adoc"):
+            all_doc_files.add(adoc_file.resolve())
+        for md_file in docs_root.rglob("*.md"):
+            if md_file.name not in ("CLAUDE.md", "README.md"):
+                all_doc_files.add(md_file.resolve())
+
+        # Check for orphaned files (files not indexed)
+        indexed_resolved = {f.resolve() for f in indexed_files}
+        for doc_file in all_doc_files:
+            if doc_file not in indexed_resolved:
+                rel_path = doc_file.relative_to(docs_root)
+                warnings.append(
+                    {
+                        "type": "orphaned_file",
+                        "path": str(rel_path),
+                        "message": "File is not included in any document",
+                    }
+                )
+
+        # Calculate validation time
+        elapsed_ms = int((time.time() - start_time) * 1000)
+
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings,
+            "validation_time_ms": elapsed_ms,
+        }
 
     return mcp
 

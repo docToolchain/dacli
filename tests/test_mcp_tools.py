@@ -611,3 +611,30 @@ class TestGetMetadata:
         )
 
         assert "error" in result.data
+
+
+class TestValidateStructure:
+    """Tests for validate_structure tool (UC-07)."""
+
+    async def test_validate_structure_returns_valid_true_for_clean_docs(
+        self, mcp_client: Client
+    ):
+        """validate_structure returns valid:true when no errors."""
+        result = await mcp_client.call_tool("validate_structure", arguments={})
+
+        assert "valid" in result.data
+        assert result.data["valid"] is True
+        assert "errors" in result.data
+        assert result.data["errors"] == []
+        assert "warnings" in result.data
+        assert "validation_time_ms" in result.data
+
+    async def test_validate_structure_returns_validation_time(
+        self, mcp_client: Client
+    ):
+        """validate_structure includes validation_time_ms."""
+        result = await mcp_client.call_tool("validate_structure", arguments={})
+
+        assert "validation_time_ms" in result.data
+        assert isinstance(result.data["validation_time_ms"], (int, float))
+        assert result.data["validation_time_ms"] >= 0
