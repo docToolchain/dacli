@@ -1,0 +1,109 @@
+=== ADR-008: Cross-Document Path Uniqueness Strategy
+
+*Status:* Proposed (2026-01-22)
+
+*Context:*
+The current path generation creates section paths based solely on heading titles (slugified). This works well within a single document, but when multiple documents are indexed together, sections with identical titles receive identical paths. This causes:
+
+* Only the first section with a given path is indexed; subsequent ones are rejected with a warning
+* Search results are incomplete (Issue #131)
+* Sections become inaccessible via API (Issue #130)
+* Root documents all have empty path `""` (Issue #129)
+
+Example: Both `guides/installation.adoc` and `guides/advanced.adoc` have a section `== Prerequisites`, resulting in path collision at `prerequisites`.
+
+Issue #123 (now fixed) addressed within-document duplicates by appending `-2`, `-3` suffixes. This ADR addresses the cross-document case.
+
+*Decision:*
+_[To be decided]_
+
+We propose **Option D: File-Scoped Paths with Optional File Filter** as the solution.
+
+*Consequences:*
+
+_Positive:_
+
+* All sections become uniquely addressable
+* Backwards compatible for single-document use cases
+* Search returns all matching sections
+* Clear relationship between file and section path
+
+_Negative:_
+
+* API becomes slightly more complex (optional `file` parameter)
+* Clients may need updates to handle file-scoped results
+* Path alone is no longer a unique identifier (file + path is)
+
+==== Pugh Matrix: Path Uniqueness Strategy
+
+[cols="4,1,1,1,1,1"]
+|===
+| Criterion | Current (Baseline) | A: File Prefix | B: Doc Title Prefix | C: Global Disambig | D: File Filter
+
+| Unique Addressability | 0 | + | + | + | +
+| Backwards Compatibility | 0 | - | - | 0 | +
+| Path Readability | 0 | - | 0 | - | 0
+| API Simplicity | 0 | 0 | 0 | 0 | -
+| Implementation Complexity | 0 | - | - | 0 | -
+| Search Correctness | 0 | + | + | + | +
+| LLM Usability | 0 | 0 | + | - | 0
+| **Total** | **0** | **-1** | **+1** | **0** | **+1**
+|===
+
+_Legend: + better than baseline, 0 same as baseline, - worse than baseline_
+
+==== Option Details
+
+**Option A: File Prefix in Path**
+----
+guides/installation:prerequisites
+guides/advanced:prerequisites
+----
+Paths include file path as prefix. Clear but verbose. Breaking change for all existing paths.
+
+**Option B: Document Title Prefix**
+----
+installation-guide.prerequisites
+advanced-guide.prerequisites
+----
+Uses parent document title as prefix. More readable but depends on unique document titles. Still a breaking change.
+
+**Option C: Global Auto-Disambiguation**
+----
+prerequisites
+prerequisites-2
+----
+Extends Issue #123 fix globally. Simple but arbitrary ordering. Path meaning unclear without context.
+
+**Option D: File-Scoped Paths with Filter (Recommended)**
+----
+Path: prerequisites
+File: guides/installation.adoc
+
+Path: prerequisites  
+File: guides/advanced.adoc
+----
+Keep current path format. Add optional `file` parameter to API. Return `file` in all responses. Composite key (file + path) provides uniqueness. Most backwards compatible.
+
+==== API Changes for Option D
+
+[source,python]
+----
+# Navigation API
+get_section(path: str, file: str | None = None) -> Section
+
+# Search API  
+search(query: str, ...) -> list[SearchResult]
+# SearchResult now includes 'file' field
+
+# Structure API
+get_structure(...) -> Structure
+# Each section includes 'location.file'
+----
+
+==== Migration Path
+
+1. Phase 1: Add `file` field to all API responses (non-breaking)
+2. Phase 2: Add optional `file` parameter to navigation APIs
+3. Phase 3: Update documentation and examples
+4. Phase 4: Consider deprecating path-only access in future major version

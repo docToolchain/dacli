@@ -40,3 +40,7 @@ include::../adr/ADR-006.adoc[]
 ---
 
 include::../adr/ADR-007.adoc[]
+
+---
+
+include::../adr/ADR-008.adoc[]
