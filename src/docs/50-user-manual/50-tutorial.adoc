@@ -1,0 +1,492 @@
+= dacli Tutorial: CLI for Documentation Access
+:toc:
+:toclevels: 3
+:source-highlighter: highlight.js
+
+== Introduction
+
+This tutorial demonstrates how the `dacli` (Docs-As-Code CLI) tool works and what capabilities it provides.
+
+[IMPORTANT]
+====
+This CLI is **not intended for manual use by humans**. It is designed as an interface for Large Language Models (LLMs) that do not have native MCP (Model Context Protocol) support but can execute shell commands.
+
+The examples in this tutorial serve to illustrate the tool's functionality and output formats.
+====
+
+== Prerequisites
+
+The CLI is included with the MCP Documentation Server. Ensure you have:
+
+[source,bash]
+----
+# Install dependencies
+uv sync
+
+# Verify installation
+uv run dacli --version
+----
+
+Expected output:
+----
+dacli, version 0.1.0
+----
+
+== Global Options
+
+All commands support these global options:
+
+[source,bash]
+----
+dacli [OPTIONS] COMMAND [ARGS]
+
+Options:
+  --docs-root DIRECTORY      Documentation root directory (default: current directory)
+  --format [json|yaml|text]  Output format (default: json)
+  --pretty                   Pretty-print output for human readability
+  --version                  Show the version and exit
+  --help                     Show help message
+----
+
+== Tutorial Examples
+
+For these examples, we assume a documentation project at `/path/to/docs`.
+
+=== Example 1: Exploring Document Structure
+
+Get an overview of the documentation hierarchy:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs structure --max-depth 1
+----
+
+Output:
+[source,json]
+----
+{
+  "sections": [
+    {"path": "introduction", "title": "Introduction", "level": 1, "children": []},
+    {"path": "architecture", "title": "Architecture", "level": 1, "children": []},
+    {"path": "api-reference", "title": "API Reference", "level": 1, "children": []}
+  ],
+  "total_sections": 45
+}
+----
+
+To see nested sections, increase the depth:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs structure --max-depth 2
+----
+
+=== Example 2: Reading Section Content
+
+Read a specific section by its path:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs section introduction
+----
+
+Output:
+[source,json]
+----
+{
+  "path": "introduction",
+  "title": "Introduction",
+  "content": "== Introduction\n\nThis document describes...",
+  "location": {
+    "file": "/path/to/docs/chapters/01_intro.adoc",
+    "start_line": 1,
+    "end_line": 25
+  },
+  "format": "asciidoc"
+}
+----
+
+For nested sections, use dot notation:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs section architecture.decisions
+----
+
+=== Example 3: Handling Non-Existent Sections
+
+When requesting a section that doesn't exist, the CLI provides helpful suggestions:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs section intro
+----
+
+Output (exit code 3):
+[source,json]
+----
+{
+  "error": {
+    "code": "PATH_NOT_FOUND",
+    "message": "Section 'intro' not found",
+    "details": {
+      "requested_path": "intro",
+      "suggestions": ["introduction", "intro-page"]
+    }
+  }
+}
+----
+
+=== Example 4: Searching Documentation
+
+Search for content across all documentation:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs search "authentication"
+----
+
+Output:
+[source,json]
+----
+{
+  "query": "authentication",
+  "results": [
+    {
+      "path": "security.authentication",
+      "line": 45,
+      "context": "...implements OAuth2 authentication for all API endpoints...",
+      "score": 0.95
+    },
+    {
+      "path": "api-reference.auth",
+      "line": 12,
+      "context": "...authentication tokens must be included in the header...",
+      "score": 0.82
+    }
+  ],
+  "total_results": 2
+}
+----
+
+Limit results and scope the search:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs search "database" --scope architecture --max-results 5
+----
+
+=== Example 5: Getting Sections at a Specific Level
+
+List all chapters (level 1 sections):
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs sections-at-level 1
+----
+
+Output:
+[source,json]
+----
+{
+  "level": 1,
+  "sections": [
+    {"path": "introduction", "title": "Introduction"},
+    {"path": "architecture", "title": "Architecture"},
+    {"path": "deployment", "title": "Deployment"}
+  ],
+  "count": 3
+}
+----
+
+=== Example 6: Extracting Code Blocks
+
+Get all code blocks from the documentation:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs elements --type code
+----
+
+Output:
+[source,json]
+----
+{
+  "elements": [
+    {
+      "type": "code",
+      "parent_section": "examples.python",
+      "location": {"file": "/path/to/docs/examples.adoc", "start_line": 25},
+      "preview": "[source, python]"
+    },
+    {
+      "type": "code",
+      "parent_section": "api-reference.endpoints",
+      "location": {"file": "/path/to/docs/api.adoc", "start_line": 102},
+      "preview": "[source, bash]"
+    }
+  ],
+  "count": 15
+}
+----
+
+Filter by section:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs elements --type table --section architecture
+----
+
+=== Example 7: Getting Metadata
+
+Get project-level metadata:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs metadata
+----
+
+Output:
+[source,json]
+----
+{
+  "path": null,
+  "total_files": 15,
+  "total_sections": 87,
+  "total_words": 12450,
+  "last_modified": "2026-01-22T10:30:00+00:00",
+  "formats": ["asciidoc", "markdown"]
+}
+----
+
+Get section-level metadata:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs metadata architecture.decisions
+----
+
+Output:
+[source,json]
+----
+{
+  "path": "architecture.decisions",
+  "title": "Architecture Decisions",
+  "file": "/path/to/docs/chapters/09_decisions.adoc",
+  "word_count": 2340,
+  "last_modified": "2026-01-19T10:15:00+00:00",
+  "subsection_count": 7
+}
+----
+
+=== Example 8: Validating Documentation Structure
+
+Check for structural issues:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs validate
+----
+
+Output (when valid):
+[source,json]
+----
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "type": "orphaned_file",
+      "path": "chapters/unused.adoc",
+      "message": "File is not included in any document"
+    }
+  ],
+  "validation_time_ms": 45
+}
+----
+
+=== Example 9: Updating Section Content
+
+Update a section's content:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs update introduction --content "== Introduction
+
+This is the updated introduction content.
+
+It now includes more details about the project."
+----
+
+Output:
+[source,json]
+----
+{
+  "success": true,
+  "path": "introduction",
+  "location": {"file": "/path/to/docs/intro.adoc", "line": 1},
+  "previous_hash": "a1b2c3d4",
+  "new_hash": "e5f6g7h8"
+}
+----
+
+Use optimistic locking to prevent concurrent edit conflicts:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs update introduction \
+  --content "New content..." \
+  --expected-hash a1b2c3d4
+----
+
+=== Example 10: Inserting New Content
+
+Insert a new section after an existing one:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs insert architecture \
+  --position after \
+  --content "== New Architecture Section
+
+This section was added programmatically."
+----
+
+Output:
+[source,json]
+----
+{
+  "success": true,
+  "inserted_at": {"file": "/path/to/docs/architecture.adoc", "line": 150},
+  "previous_hash": "a1b2c3d4",
+  "new_hash": "e5f6g7h8"
+}
+----
+
+Position options:
+- `before` - Insert before the section
+- `after` - Insert after the section
+- `append` - Append at the end of the section (before children)
+
+== Output Formats
+
+=== JSON (Default)
+
+Compact JSON for machine parsing:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs metadata
+----
+
+----
+{"path":null,"total_files":15,"total_sections":87,"total_words":12450}
+----
+
+=== Pretty JSON
+
+Formatted JSON for debugging:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs --pretty metadata
+----
+
+[source,json]
+----
+{
+  "path": null,
+  "total_files": 15,
+  "total_sections": 87,
+  "total_words": 12450
+}
+----
+
+=== YAML
+
+YAML format:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs --format yaml metadata
+----
+
+[source,yaml]
+----
+path: null
+total_files: 15
+total_sections: 87
+total_words: 12450
+----
+
+=== Text
+
+Human-readable text format:
+
+[source,bash]
+----
+uv run dacli --docs-root /path/to/docs --format text metadata
+----
+
+----
+path:
+total_files: 15
+total_sections: 87
+total_words: 12450
+----
+
+== Exit Codes
+
+The CLI uses standardized exit codes for error handling:
+
+[cols="1,3"]
+|===
+| Code | Meaning
+
+| 0 | Success
+| 1 | General error
+| 2 | Invalid arguments
+| 3 | Path not found
+| 4 | Validation error
+| 5 | Write error
+|===
+
+== LLM Integration Pattern
+
+A typical LLM workflow using dacli:
+
+[source,bash]
+----
+# 1. Understand the documentation structure
+structure=$(uv run dacli --docs-root /project/docs structure --max-depth 2)
+
+# 2. Search for relevant content
+results=$(uv run dacli --docs-root /project/docs search "database configuration")
+
+# 3. Read the relevant section
+content=$(uv run dacli --docs-root /project/docs section deployment.database)
+
+# 4. Update the documentation
+uv run dacli --docs-root /project/docs update deployment.database \
+  --content "Updated database configuration documentation..."
+
+# 5. Verify the structure is still valid
+uv run dacli --docs-root /project/docs validate
+----
+
+== Command Reference
+
+[cols="2,3"]
+|===
+| Command | Description
+
+| `structure` | Get hierarchical document structure
+| `section PATH` | Read section content by path
+| `sections-at-level LEVEL` | Get all sections at a nesting level
+| `search QUERY` | Full-text search across documentation
+| `elements` | Get code blocks, tables, images, etc.
+| `metadata [PATH]` | Get project or section metadata
+| `validate` | Validate documentation structure
+| `update PATH` | Update section content
+| `insert PATH` | Insert content before/after a section
+|===
