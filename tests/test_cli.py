@@ -187,7 +187,9 @@ Content.
         from mcp_server.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "metadata"])
+        result = runner.invoke(
+            cli, ["--docs-root", str(sample_docs), "--format", "json", "metadata"]
+        )
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -228,7 +230,9 @@ Content.
         from mcp_server.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "validate"])
+        result = runner.invoke(
+            cli, ["--docs-root", str(sample_docs), "--format", "json", "validate"]
+        )
 
         assert result.exit_code in (0, 4)  # 0 = valid, 4 = validation errors
         data = json.loads(result.output)
@@ -335,7 +339,8 @@ Content from doc2.
 
         # With quiet - command should also work
         result_quiet = runner.invoke(
-            cli, ["--docs-root", str(docs_with_duplicates), "--quiet", "--format", "json", "structure"]
+            cli,
+            ["--docs-root", str(docs_with_duplicates), "--quiet", "--format", "json", "structure"],
         )
         assert result_quiet.exit_code == 0
         # Output should be valid JSON
