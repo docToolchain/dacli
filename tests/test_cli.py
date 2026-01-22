@@ -840,7 +840,10 @@ Final thoughts.
 
         # The new section should appear AFTER Backend, not right after Components header
         backend_pos = content.find("=== Backend")
-        testing_pos = content.find("=== Testing") if "=== Testing" in content else content.find("Testing details")
+        if "=== Testing" in content:
+            testing_pos = content.find("=== Testing")
+        else:
+            testing_pos = content.find("Testing details")
         conclusion_pos = content.find("== Conclusion")
 
         # Testing should be after Backend but before Conclusion
