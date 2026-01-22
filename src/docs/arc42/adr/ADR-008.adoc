@@ -14,96 +14,119 @@ Example: Both `guides/installation.adoc` and `guides/advanced.adoc` have a secti
 
 Issue #123 (now fixed) addressed within-document duplicates by appending `-2`, `-3` suffixes. This ADR addresses the cross-document case.
 
-*Decision:*
-_[To be decided]_
+Note: Backwards compatibility is not a requirement for this decision.
 
-We propose **Option D: File-Scoped Paths with Optional File Filter** as the solution.
+*Decision:*
+We will implement **Option A: File Prefix in Path** as the solution.
+
+Section paths will include the relative file path (without extension) as a prefix, separated by a colon:
+----
+guides/installation:prerequisites
+guides/advanced:prerequisites
+----
+
+For root sections (document titles), the path will be the file path alone:
+----
+guides/installation
+guides/advanced
+----
 
 *Consequences:*
 
 _Positive:_
 
-* All sections become uniquely addressable
-* Backwards compatible for single-document use cases
+* All sections are guaranteed uniquely addressable (file paths are always unique)
+* Path clearly indicates file location - useful for navigation
+* Simple mental model: `file:section` format
 * Search returns all matching sections
-* Clear relationship between file and section path
+* LLM-friendly: paths are self-documenting
+* Single identifier (no composite keys needed)
 
 _Negative:_
 
-* API becomes slightly more complex (optional `file` parameter)
-* Clients may need updates to handle file-scoped results
-* Path alone is no longer a unique identifier (file + path is)
+* All existing paths change (acceptable since backwards compatibility not required)
+* Paths become longer
+* Clients need to handle the new format
 
 ==== Pugh Matrix: Path Uniqueness Strategy
+
+Note: Backwards compatibility removed as criterion per stakeholder decision.
 
 [cols="4,1,1,1,1,1"]
 |===
 | Criterion | Current (Baseline) | A: File Prefix | B: Doc Title Prefix | C: Global Disambig | D: File Filter
 
-| Unique Addressability | 0 | + | + | + | +
-| Backwards Compatibility | 0 | - | - | 0 | +
-| Path Readability | 0 | - | 0 | - | 0
+| Unique Addressability | 0 | + | 0 ^1^ | + | +
+| Path Readability | 0 | 0 | + | - | 0
 | API Simplicity | 0 | 0 | 0 | 0 | -
-| Implementation Complexity | 0 | - | - | 0 | -
+| Implementation Complexity | 0 | 0 | - ^2^ | 0 | -
 | Search Correctness | 0 | + | + | + | +
-| LLM Usability | 0 | 0 | + | - | 0
-| **Total** | **0** | **-1** | **+1** | **0** | **+1**
+| LLM Usability | 0 | + | + | - | 0
+| **Total** | **0** | **+3** | **+2** | **0** | **0**
 |===
 
 _Legend: + better than baseline, 0 same as baseline, - worse than baseline_
 
+^1^ Document titles may not be unique, causing potential collisions
+^2^ Requires handling of duplicate document titles
+
 ==== Option Details
 
-**Option A: File Prefix in Path**
+**Option A: File Prefix in Path (Selected)**
 ----
 guides/installation:prerequisites
 guides/advanced:prerequisites
 ----
-Paths include file path as prefix. Clear but verbose. Breaking change for all existing paths.
+Paths include relative file path (without extension) as prefix, separated by colon. Guarantees uniqueness since file paths are always unique. Clear indication of file location. Best score in Pugh Matrix.
 
 **Option B: Document Title Prefix**
 ----
 installation-guide.prerequisites
 advanced-guide.prerequisites
 ----
-Uses parent document title as prefix. More readable but depends on unique document titles. Still a breaking change.
+Uses parent document title (slugified) as prefix. More readable but depends on unique document titles - if two files have the same title, collisions remain. Requires additional disambiguation logic.
 
 **Option C: Global Auto-Disambiguation**
 ----
 prerequisites
 prerequisites-2
 ----
-Extends Issue #123 fix globally. Simple but arbitrary ordering. Path meaning unclear without context.
+Extends Issue #123 fix globally across all documents. Simple but arbitrary ordering based on parse order. Path meaning unclear without context. Poor LLM usability.
 
-**Option D: File-Scoped Paths with Filter (Recommended)**
+**Option D: File-Scoped Paths with Filter**
 ----
 Path: prerequisites
 File: guides/installation.adoc
-
-Path: prerequisites  
-File: guides/advanced.adoc
 ----
-Keep current path format. Add optional `file` parameter to API. Return `file` in all responses. Composite key (file + path) provides uniqueness. Most backwards compatible.
+Keep current path format, add `file` parameter to APIs. Requires composite key (file + path) for uniqueness. More complex API. No longer recommended since backwards compatibility is not required.
 
-==== API Changes for Option D
+==== Path Format Specification
 
-[source,python]
+[source]
 ----
-# Navigation API
-get_section(path: str, file: str | None = None) -> Section
+<relative-file-path-without-extension>:<section-path>
 
-# Search API  
-search(query: str, ...) -> list[SearchResult]
-# SearchResult now includes 'file' field
-
-# Structure API
-get_structure(...) -> Structure
-# Each section includes 'location.file'
+Examples:
+  guides/installation:prerequisites
+  guides/installation:prerequisites.python-version
+  api/reference:endpoints.get-section
+  index                                    (root section of index.adoc)
+  guides/advanced                          (root section)
 ----
 
-==== Migration Path
+==== Implementation Notes
 
-1. Phase 1: Add `file` field to all API responses (non-breaking)
-2. Phase 2: Add optional `file` parameter to navigation APIs
-3. Phase 3: Update documentation and examples
-4. Phase 4: Consider deprecating path-only access in future major version
+1. Path generation in parsers:
+   - Compute relative path from docs-root to file
+   - Remove file extension
+   - Prepend to existing section path with `:` separator
+   - Root sections (level 0) use file path only (no trailing `:`)
+
+2. StructureIndex changes:
+   - Paths are now guaranteed unique
+   - Remove duplicate detection warnings for paths
+   - Update path-based lookups
+
+3. API changes:
+   - All endpoints accept new path format
+   - Response `location.file` becomes redundant but kept for clarity
