@@ -19,6 +19,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "click>=8.3.1",
     "fastapi>=0.115.0",
     "fastmcp>=2.14.0,<3",
     "pyyaml>=6.0",
@@ -35,6 +36,7 @@ dev = [
 
 [project.scripts]
 mcp-docs-server = "mcp_server.main:main"
+mcp-docs = "mcp_server.cli:cli"
 
 [build-system]
 requires = ["hatchling"]
