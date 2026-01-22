@@ -391,7 +391,7 @@ def validate(ctx: CliContext):
     indexed_resolved = {f.resolve() for f in indexed_files}
     for doc_file in all_doc_files:
         if doc_file not in indexed_resolved:
-            rel_path = doc_file.relative_to(ctx.docs_root)
+            rel_path = doc_file.relative_to(ctx.docs_root.resolve())
             warnings.append({
                 "type": "orphaned_file",
                 "path": str(rel_path),
