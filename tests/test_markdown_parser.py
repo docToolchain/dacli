@@ -216,6 +216,37 @@ class TestHeadingPaths:
         # Document title has file prefix as path (Issue #130, ADR-008)
         assert doc.sections[0].path == file_prefix
 
+    def test_path_preserves_umlauts(self):
+        """Paths preserve German umlauts (Issue #138).
+
+        Umlauts should be preserved in paths to be consistent with AsciiDoc
+        behavior and to make paths typeable/predictable.
+        """
+        from dacli.markdown_parser import MarkdownStructureParser
+
+        parser = MarkdownStructureParser()
+        content = """# Dokumentation
+
+## Einführung
+
+Content about introduction.
+
+## Übersicht
+
+Content about overview.
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+            file_path = Path(f.name)
+            file_prefix = file_path.stem
+            doc = parser.parse_file(file_path)
+
+        root = doc.sections[0]
+        # Umlauts should be preserved in paths, just lowercased
+        assert root.children[0].path == f"{file_prefix}:einführung"
+        assert root.children[1].path == f"{file_prefix}:übersicht"
+
     def test_duplicate_heading_titles_get_disambiguated_paths(self):
         """Test that headings with same title at same level get disambiguated paths.
 
