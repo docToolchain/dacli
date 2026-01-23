@@ -1243,3 +1243,55 @@ class TestEmptyFileHandling:
 
         root = doc.sections[0]
         assert root.path == "docs/guide/empty"  # Full relative path
+
+
+class TestUnclosedCodeBlocks:
+    """Tests for unclosed code blocks (Issue #146).
+
+    When a code block is not properly closed, end_line should be set to
+    the last line of the file instead of None.
+    """
+
+    EDGE_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "edge"
+
+    def test_unclosed_code_block_has_end_line_set_to_file_end(self):
+        """Unclosed code block should have end_line set to last line of file."""
+        from dacli.asciidoc_parser import AsciidocStructureParser
+
+        parser = AsciidocStructureParser(base_path=self.EDGE_FIXTURES_DIR)
+        doc = parser.parse_file(self.EDGE_FIXTURES_DIR / "unclosed_code_block.adoc")
+
+        # Find the code element
+        code_elements = [e for e in doc.elements if e.type == "code"]
+        assert len(code_elements) == 1
+
+        code_block = code_elements[0]
+        # end_line should NOT be None - it should be the last line of the file
+        assert code_block.source_location.end_line is not None
+        # The file has 13 lines, so end_line should be 13
+        assert code_block.source_location.end_line == 13
+
+    def test_unclosed_code_block_in_temp_file(self, tmp_path):
+        """Unclosed code block in temporary file has end_line set correctly."""
+        from dacli.asciidoc_parser import AsciidocStructureParser
+
+        test_file = tmp_path / "unclosed.adoc"
+        test_file.write_text("""= Test Document
+
+== Section
+
+[source,python]
+----
+def test():
+    pass
+""")
+        parser = AsciidocStructureParser(base_path=tmp_path)
+        doc = parser.parse_file(test_file)
+
+        code_elements = [e for e in doc.elements if e.type == "code"]
+        assert len(code_elements) == 1
+
+        code_block = code_elements[0]
+        assert code_block.source_location.end_line is not None
+        # File has 8 lines (triple-quoted string starts at line 1)
+        assert code_block.source_location.end_line == 8

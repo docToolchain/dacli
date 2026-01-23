@@ -1,0 +1,13 @@
+= Document with Unclosed Code Block
+
+== Introduction
+
+Some introductory text.
+
+== Unclosed Code Block
+
+[source,python]
+----
+def hello():
+    print("Hello, World!")
+    # This code block is never closed

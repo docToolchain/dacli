@@ -916,6 +916,15 @@ class AsciidocStructureParser:
             if line_text.strip():
                 current_list_type = None
 
+        # Handle unclosed blocks - set end_line to last line of their source file
+        # This fixes Issue #146: unclosed code blocks should not have end_line: None
+        if current_block_element is not None:
+            source_file = current_block_element.source_location.file
+            max_line = max(
+                line_num for _, file, line_num, _ in lines if file == source_file
+            )
+            current_block_element.source_location.end_line = max_line
+
         return elements
 
     def _find_section_path(self, sections: list[Section], title: str) -> str:
