@@ -507,126 +507,54 @@ Content from doc2.
         assert result_default.output == result_verbose.output
 
 
-class TestMarkdownElementPreview:
-    """Tests for Markdown element preview format (Issue #137).
+class TestElementsNoPreview:
+    """Tests that elements response does not include preview field (Issue #142).
 
-    Element previews should use Markdown syntax for Markdown files,
-    not AsciiDoc syntax.
+    The preview field was removed as it provided no useful information -
+    the type field already indicates what kind of element it is.
     """
 
-    def test_code_block_preview_uses_markdown_syntax(self, tmp_path):
-        """Code block preview should use ```language syntax for Markdown files."""
+    def test_elements_response_has_no_preview_field(self, tmp_path):
+        """Element responses should not include a preview field."""
         from dacli.cli import cli
 
-        # Create Markdown file with code block
-        md_file = tmp_path / "test.md"
-        md_file.write_text("""# Test Document
+        # Create file with various elements
+        doc_file = tmp_path / "test.adoc"
+        doc_file.write_text("""= Test Document
 
-## Code Example
+== Code Example
 
-```python
+[source,python]
+----
 def hello():
     print("Hello")
-```
+----
+
+== Table Example
+
+|===
+| Name | Value
+| A    | 1
+|===
 """)
 
         runner = CliRunner()
         result = runner.invoke(
             cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements", "--type", "code"],
+            ["--docs-root", str(tmp_path), "--format", "json", "elements"],
         )
 
         assert result.exit_code == 0
         data = json.loads(result.output)
-        assert data["count"] == 1
-        # Preview should use Markdown syntax, not AsciiDoc
-        preview = data["elements"][0]["preview"]
-        assert preview == "```python", f"Expected '```python', got '{preview}'"
+        assert data["count"] >= 1
 
-    def test_table_preview_uses_markdown_syntax(self, tmp_path):
-        """Table preview should use | Col | syntax for Markdown files."""
-        from dacli.cli import cli
-
-        # Create Markdown file with table
-        md_file = tmp_path / "test.md"
-        md_file.write_text("""# Test Document
-
-## Table Example
-
-| Name | Value |
-|------|-------|
-| A    | 1     |
-| B    | 2     |
-""")
-
-        runner = CliRunner()
-        result = runner.invoke(
-            cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements", "--type", "table"],
-        )
-
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        assert data["count"] == 1
-        # Preview should use Markdown syntax, not AsciiDoc |===
-        preview = data["elements"][0]["preview"]
-        assert preview.startswith("|"), f"Expected preview starting with '|', got '{preview}'"
-        assert "|===" not in preview, "Preview should not contain AsciiDoc '|==='"
-
-    def test_image_preview_uses_markdown_syntax(self, tmp_path):
-        """Image preview should use ![alt](src) syntax for Markdown files."""
-        from dacli.cli import cli
-
-        # Create Markdown file with image
-        md_file = tmp_path / "test.md"
-        md_file.write_text("""# Test Document
-
-## Image Example
-
-![Logo](images/logo.png)
-""")
-
-        runner = CliRunner()
-        result = runner.invoke(
-            cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements", "--type", "image"],
-        )
-
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        assert data["count"] == 1
-        # Preview should use Markdown syntax, not AsciiDoc image::
-        preview = data["elements"][0]["preview"]
-        expected = "![Logo](images/logo.png)"
-        assert preview == expected, f"Expected '{expected}', got '{preview}'"
-
-    def test_list_preview_uses_markdown_syntax(self, tmp_path):
-        """List preview should use - or 1. syntax for Markdown files."""
-        from dacli.cli import cli
-
-        # Create Markdown file with list
-        md_file = tmp_path / "test.md"
-        md_file.write_text("""# Test Document
-
-## List Example
-
-- Item 1
-- Item 2
-- Item 3
-""")
-
-        runner = CliRunner()
-        result = runner.invoke(
-            cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements", "--type", "list"],
-        )
-
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        assert data["count"] == 1
-        # Preview should use Markdown syntax
-        preview = data["elements"][0]["preview"]
-        assert preview == "- ...", f"Expected '- ...', got '{preview}'"
+        # No element should have a preview field
+        for elem in data["elements"]:
+            assert "preview" not in elem, f"Element should not have preview: {elem}"
+            # But should have essential fields
+            assert "type" in elem
+            assert "parent_section" in elem
+            assert "location" in elem
 
 
 class TestCliGitignoreOptions:

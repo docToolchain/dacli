@@ -479,60 +479,8 @@ def elements(ctx: CliContext, element_type: str | None, section_path: str | None
         section_path=section_path,
     )
 
-    def build_preview(elem) -> str | None:
-        """Build preview string from element attributes.
-
-        Generates format-specific previews based on source file type:
-        - Markdown (.md): Uses Markdown syntax
-        - AsciiDoc (.adoc): Uses AsciiDoc syntax
-        """
-        attrs = elem.attributes
-        file_path = str(elem.source_location.file)
-        is_markdown = file_path.endswith(".md")
-
-        if elem.type == "plantuml":
-            # PlantUML is AsciiDoc-specific
-            parts = ["plantuml"]
-            if attrs.get("name"):
-                parts.append(attrs["name"])
-            if attrs.get("format"):
-                parts.append(attrs["format"])
-            return f"[{', '.join(parts)}]"
-        elif elem.type == "code":
-            lang = attrs.get("language", "")
-            if is_markdown:
-                return f"```{lang}" if lang else "```"
-            return f"[source, {lang}]" if lang else "[source]"
-        elif elem.type == "image":
-            # Markdown uses "src", AsciiDoc uses "target"
-            target = attrs.get("src", "") or attrs.get("target", "")
-            alt = attrs.get("alt", "")
-            if is_markdown:
-                return f"![{alt}]({target})"
-            return f"image::{target}[{alt}]"
-        elif elem.type == "table":
-            if is_markdown:
-                # For Markdown, show first header row indicator
-                return "| ... |"
-            return "|==="
-        elif elem.type == "admonition":
-            atype = attrs.get("admonition_type", "NOTE")
-            full_content = attrs.get("content", "")
-            if is_markdown:
-                # Markdown blockquote style
-                if len(full_content) > 30:
-                    return f"> **{atype}:** {full_content[:30]}..."
-                return f"> **{atype}:** {full_content}"
-            if len(full_content) > 30:
-                return f"{atype}: {full_content[:30]}..."
-            return f"{atype}: {full_content}"
-        elif elem.type == "list":
-            list_type = attrs.get("list_type", "unordered")
-            if is_markdown:
-                return "- ..." if list_type == "unordered" else "1. ..."
-            return f"{list_type} list"
-        return None
-
+    # Note: preview field removed in Issue #142 as redundant
+    # The type field is sufficient to identify element kind
     result = {
         "elements": [
             {
@@ -543,7 +491,6 @@ def elements(ctx: CliContext, element_type: str | None, section_path: str | None
                     "start_line": e.source_location.line,
                     "end_line": e.source_location.end_line,
                 },
-                "preview": build_preview(e),
             }
             for e in elems
         ],

@@ -123,7 +123,7 @@ class ElementItem(BaseModel):
     path: str = Field(description="Section path containing this element")
     index: int = Field(description="Index of element within its section")
     location: ElementLocation
-    preview: str | None = Field(default=None, description="Preview text of the element")
+    # Note: preview field removed in Issue #142 as redundant
 
 
 class ElementsResponse(BaseModel):
