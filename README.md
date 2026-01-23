@@ -29,6 +29,12 @@ Part of the [docToolchain](https://doctoolchain.org/) ecosystem.
 >
 > — *Gemini*
 
+> **"After intensive testing: dacli is robust, fast and perfect for LLM integration."**
+>
+> A must-have for modern documentation workflows.
+>
+> — *Kiro, AWS AI Assistant*
+
 ## Features
 
 - **Hierarchical Navigation** - Browse documentation structure with configurable depth
