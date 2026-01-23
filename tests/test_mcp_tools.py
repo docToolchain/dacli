@@ -247,6 +247,93 @@ class TestGetElements:
                     assert "list" in preview
 
 
+class TestMarkdownElementPreview:
+    """Tests for Markdown element preview format (Issue #137).
+
+    Element previews should use Markdown syntax for Markdown files,
+    not AsciiDoc syntax.
+    """
+
+    @pytest_asyncio.fixture
+    async def md_doc_dir(self, tmp_path: Path):
+        """Create temp directory with Markdown documentation."""
+        md_file = tmp_path / "test.md"
+        md_file.write_text("""# Test Document
+
+## Code Example
+
+```python
+def hello():
+    print("Hello")
+```
+
+## Table Example
+
+| Name | Value |
+|------|-------|
+| A    | 1     |
+
+## Image Example
+
+![Logo](images/logo.png)
+
+## List Example
+
+- Item 1
+- Item 2
+""", encoding="utf-8")
+        return tmp_path
+
+    @pytest_asyncio.fixture
+    async def md_mcp_client(self, md_doc_dir: Path):
+        """Create MCP client with Markdown documentation."""
+        mcp = create_mcp_server(docs_root=md_doc_dir)
+        async with Client(transport=mcp) as client:
+            yield client
+
+    async def test_code_preview_markdown_syntax(self, md_mcp_client: Client):
+        """Code block preview uses ```language for Markdown files."""
+        result = await md_mcp_client.call_tool(
+            "get_elements", arguments={"element_type": "code"}
+        )
+
+        assert result.data["count"] == 1
+        preview = result.data["elements"][0]["preview"]
+        assert preview == "```python", f"Expected '```python', got '{preview}'"
+
+    async def test_table_preview_markdown_syntax(self, md_mcp_client: Client):
+        """Table preview uses | Col | for Markdown files."""
+        result = await md_mcp_client.call_tool(
+            "get_elements", arguments={"element_type": "table"}
+        )
+
+        assert result.data["count"] == 1
+        preview = result.data["elements"][0]["preview"]
+        assert preview.startswith("|"), f"Expected '|' prefix, got '{preview}'"
+        assert "|===" not in preview
+
+    async def test_image_preview_markdown_syntax(self, md_mcp_client: Client):
+        """Image preview uses ![alt](src) for Markdown files."""
+        result = await md_mcp_client.call_tool(
+            "get_elements", arguments={"element_type": "image"}
+        )
+
+        assert result.data["count"] == 1
+        preview = result.data["elements"][0]["preview"]
+        expected = "![Logo](images/logo.png)"
+        assert preview == expected, f"Expected '{expected}', got '{preview}'"
+
+    async def test_list_preview_markdown_syntax(self, md_mcp_client: Client):
+        """List preview uses - ... for Markdown files."""
+        result = await md_mcp_client.call_tool(
+            "get_elements", arguments={"element_type": "list"}
+        )
+
+        assert result.data["count"] == 1
+        preview = result.data["elements"][0]["preview"]
+        assert preview == "- ...", f"Expected '- ...', got '{preview}'"
+
+
 # =============================================================================
 # Manipulation Tools Tests
 # =============================================================================
