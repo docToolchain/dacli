@@ -74,8 +74,7 @@ Represents a special element (table, code, diagram).
   "type": "string",           // "table" | "code" | "diagram" | "list" | "image"
   "path": "string",           // Path to containing section
   "index": "integer",         // Index within section
-  "location": "SectionLocation",
-  "preview": "string"         // Preview/title (optional)
+  "location": "SectionLocation"
 }
 ----
 
@@ -306,8 +305,7 @@ Retrieves elements of a specific type.
         "file": "chapters/03_context.adoc",
         "start_line": 25,
         "end_line": 45
-      },
-      "preview": "[plantuml, technical-context, svg]"
+      }
     }
   ],
   "count": 8

@@ -220,14 +220,12 @@ Output:
     {
       "type": "code",
       "parent_section": "examples.python",
-      "location": {"file": "/path/to/docs/examples.adoc", "start_line": 25},
-      "preview": "[source, python]"
+      "location": {"file": "/path/to/docs/examples.adoc", "start_line": 25}
     },
     {
       "type": "code",
       "parent_section": "api-reference.endpoints",
-      "location": {"file": "/path/to/docs/api.adoc", "start_line": 102},
-      "preview": "[source, bash]"
+      "location": {"file": "/path/to/docs/api.adoc", "start_line": 102}
     }
   ],
   "count": 15

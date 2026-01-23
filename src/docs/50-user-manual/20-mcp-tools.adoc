@@ -142,8 +142,7 @@ Get code blocks, tables, images, and other elements.
         "file": "/docs/example.adoc",
         "line": 25
       },
-      "preview": "[python] def hello()...",
-      "section_path": "examples.python"
+      "parent_section": "examples.python"
     }
   ],
   "count": 5

@@ -186,16 +186,7 @@ def get_elements(
         element_index = section_element_counts[section_path]
         section_element_counts[section_path] += 1
 
-        # Build preview from attributes if available
-        preview = None
-        if elem.attributes:
-            # Build preview string from first few attributes
-            attr_parts = []
-            for key, value in list(elem.attributes.items())[:3]:
-                attr_parts.append(f"{key}={value}")
-            if attr_parts:
-                preview = ", ".join(attr_parts)
-
+        # Note: preview field removed in Issue #142 as redundant
         element_items.append(
             ElementItem(
                 type=type,  # Use API type, not internal type
@@ -210,7 +201,6 @@ def get_elements(
                     # TODO: Update this when SourceLocation includes an end_line range.
                     end_line=elem.source_location.line,
                 ),
-                preview=preview,
             )
         )
 
