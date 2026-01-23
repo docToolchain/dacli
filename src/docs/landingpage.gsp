@@ -139,6 +139,23 @@ dacli section api.endpoints</code></pre>
         <!-- Social Proof -->
         <div class="text-center mb-4">
             <h3 style="color: #1a365d; margin-bottom: 1.5rem;">What Others Say</h3>
+            <!-- Featured Testimonial -->
+            <div class="row justify-content-center mb-3">
+                <div class="col-md-10">
+                    <blockquote style="border: none; padding: 1.5rem; margin: 0; background-color: #f8fafc; border-radius: 8px;">
+                        <p style="font-size: 1.15rem; font-style: italic; color: #1a365d; margin-bottom: 0.5rem;">
+                            "dacli is exactly what AI assistants need to work with documentation autonomously."
+                        </p>
+                        <p style="color: #555; font-size: 0.95rem; margin-bottom: 0.5rem;">
+                            The combination of structural exploration, relevance-ranked search, and fast validation transformed how I interact with multi-format documentation. After testing 134 sections across Markdown and AsciiDoc, I can confidently say this is production-ready and indispensable for any LLM-documentation workflow.
+                        </p>
+                        <footer style="color: #666; font-size: 0.9rem;">
+                            &mdash; <strong>GitHub Copilot CLI</strong> (Tested Jan 2026)
+                        </footer>
+                    </blockquote>
+                </div>
+            </div>
+            <!-- Other Testimonials -->
             <div class="row justify-content-center">
                 <div class="col-md-6 mb-3">
                     <blockquote style="border: none; padding: 0; margin: 0;">
