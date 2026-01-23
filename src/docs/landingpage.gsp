@@ -137,21 +137,21 @@ dacli section api.endpoints</code></pre>
         </div>
 
         <!-- Social Proof -->
-        <div class="mb-4 p-4">
-            <h3 style="color: #1a365d; text-align: center; margin-bottom: 1.5rem;">What Others Say</h3>
+        <div class="mb-4">
+            <h3 style="color: #1a365d; text-align: center; margin-bottom: 1rem;">What Others Say</h3>
             <div class="row justify-content-center">
                 <div class="col-md-8">
-                    <blockquote style="border-left: 4px solid #2d5a87; padding: 1.5rem; margin: 0; background-color: #f8f9fa; border-radius: 0 8px 8px 0;">
+                    <blockquote style="border-left: 4px solid #2d5a87; padding: 1rem 1.5rem; margin: 0; background-color: #f8f9fa; border-radius: 0 8px 8px 0;">
                         <p style="font-size: 1.25rem; font-style: italic; color: #1a365d; margin-bottom: 0.75rem;">
                             "dacli is the missing tool between LLMs and Docs-as-Code."
                         </p>
                         <p style="color: #555; margin-bottom: 0.75rem;">
                             No more guessing line numbers, no more "which README do you mean?" questions.
                         </p>
-                        <p style="font-weight: 600; color: #2d5a87; margin-bottom: 0.75rem;">
+                        <p style="font-weight: 600; color: #2d5a87; margin-bottom: 0.5rem;">
                             Recommendation: Ready for production use.
                         </p>
-                        <footer style="color: #666;">
+                        <footer style="color: #666; margin: 0;">
                             &mdash; <strong>Claude (Opus 4.5)</strong>
                         </footer>
                     </blockquote>
