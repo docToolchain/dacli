@@ -618,7 +618,8 @@ class AsciidocStructureParser:
         in_ditaa_block = False
         in_table = False
         current_list_type: str | None = None  # Track if we're in a list
-        current_block_element: Element | None = None  # Track current block for end_line
+        # Track ALL open blocks for end_line (Issue #157: use stack instead of single element)
+        open_blocks: list[Element] = []
 
         for line_text, source_file, line_num, resolved_from in lines:
             # Track current section for parent_section
@@ -694,7 +695,7 @@ class AsciidocStructureParser:
                             parent_section=current_section_path,
                         )
                         elements.append(element)
-                        current_block_element = element
+                        open_blocks.append(element)
                         pending_plantuml_info = None
                     elif pending_mermaid_info is not None:
                         # Start of mermaid block
@@ -717,7 +718,7 @@ class AsciidocStructureParser:
                             parent_section=current_section_path,
                         )
                         elements.append(element)
-                        current_block_element = element
+                        open_blocks.append(element)
                         pending_mermaid_info = None
                     elif pending_ditaa_info is not None:
                         # Start of ditaa block
@@ -740,7 +741,7 @@ class AsciidocStructureParser:
                             parent_section=current_section_path,
                         )
                         elements.append(element)
-                        current_block_element = element
+                        open_blocks.append(element)
                         pending_ditaa_info = None
                     elif pending_code_language is not None:
                         # Start of code block
@@ -757,32 +758,32 @@ class AsciidocStructureParser:
                             parent_section=current_section_path,
                         )
                         elements.append(element)
-                        current_block_element = element
+                        open_blocks.append(element)
                     pending_code_language = None
                 elif in_code_block:
                     # End of code block
                     in_code_block = False
-                    if current_block_element is not None:
-                        current_block_element.source_location.end_line = line_num
-                        current_block_element = None
+                    if open_blocks:
+                        block = open_blocks.pop()
+                        block.source_location.end_line = line_num
                 elif in_plantuml_block:
                     # End of plantuml block
                     in_plantuml_block = False
-                    if current_block_element is not None:
-                        current_block_element.source_location.end_line = line_num
-                        current_block_element = None
+                    if open_blocks:
+                        block = open_blocks.pop()
+                        block.source_location.end_line = line_num
                 elif in_mermaid_block:
                     # End of mermaid block
                     in_mermaid_block = False
-                    if current_block_element is not None:
-                        current_block_element.source_location.end_line = line_num
-                        current_block_element = None
+                    if open_blocks:
+                        block = open_blocks.pop()
+                        block.source_location.end_line = line_num
                 elif in_ditaa_block:
                     # End of ditaa block
                     in_ditaa_block = False
-                    if current_block_element is not None:
-                        current_block_element.source_location.end_line = line_num
-                        current_block_element = None
+                    if open_blocks:
+                        block = open_blocks.pop()
+                        block.source_location.end_line = line_num
                 continue
 
             # Detect table delimiter |===
@@ -802,13 +803,13 @@ class AsciidocStructureParser:
                         parent_section=current_section_path,
                     )
                     elements.append(element)
-                    current_block_element = element
+                    open_blocks.append(element)
                 else:
                     # End of table
                     in_table = False
-                    if current_block_element is not None:
-                        current_block_element.source_location.end_line = line_num
-                        current_block_element = None
+                    if open_blocks:
+                        block = open_blocks.pop()
+                        block.source_location.end_line = line_num
                 continue
 
             # Detect image macro
@@ -919,21 +920,24 @@ class AsciidocStructureParser:
             if line_text.strip():
                 current_list_type = None
 
-        # Handle unclosed blocks - set end_line to last line of their source file
-        # This fixes Issue #146: unclosed code blocks should not have end_line: None
-        if current_block_element is not None:
-            source_file = current_block_element.source_location.file
+        # Handle ALL unclosed blocks - set end_line to last line of their source file
+        # Issue #146: unclosed code blocks should have proper end_line
+        # Issue #157: ALL unclosed blocks should be detected, not just the last one
+        for unclosed_block in open_blocks:
+            source_file = unclosed_block.source_location.file
             max_line = max(
                 line_num for _, file, line_num, _ in lines if file == source_file
             )
-            current_block_element.source_location.end_line = max_line
+            unclosed_block.source_location.end_line = max_line
 
             # Add warning for unclosed block (Issue #148)
-            block_type = current_block_element.type
-            block_line = current_block_element.source_location.line
+            block_type = unclosed_block.type
+            block_line = unclosed_block.source_location.line
             if block_type == "table":
                 warning_type = "unclosed_table"
-                warning_msg = f"Table starting at line {block_line} is not properly closed"
+                warning_msg = (
+                    f"Table starting at line {block_line} is not properly closed"
+                )
             else:
                 warning_type = "unclosed_block"
                 warning_msg = (

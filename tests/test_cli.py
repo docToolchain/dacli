@@ -417,6 +417,71 @@ print("hello")
         ]
         assert len(unclosed_issues) >= 1, f"Expected unclosed table warning, got: {all_issues}"
 
+    def test_validate_detects_multiple_unclosed_blocks(self, tmp_path):
+        """Validation should detect ALL unclosed blocks, not just the last one (Issue #157).
+
+        This tests the bug where only the last unclosed block was reported because
+        the parser used a single variable instead of a stack to track open blocks.
+        """
+        from dacli.cli import cli
+
+        # Create document with MULTIPLE unclosed blocks:
+        # 1. Unclosed code block
+        # 2. Unclosed table (after the code block)
+        doc_file = tmp_path / "multiple_broken.adoc"
+        doc_file.write_text("""= Test Document
+
+== Code Section
+
+[source,python]
+----
+def broken():
+    pass
+# Missing closing ----
+
+== Table Section
+
+|===
+| Header 1 | Header 2
+| Cell 1   | Cell 2
+# Missing closing |===
+
+== Normal Section
+
+This is normal content.
+""")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"]
+        )
+
+        assert result.exit_code in (0, 4)
+        data = json.loads(result.output)
+        all_issues = data.get("errors", []) + data.get("warnings", [])
+
+        # Find all unclosed block warnings
+        unclosed_issues = [
+            i for i in all_issues
+            if "unclosed" in i.get("type", "").lower()
+        ]
+
+        # BUG: Currently only 1 warning is generated (the table)
+        # FIX: Should detect BOTH unclosed blocks (code + table)
+        assert len(unclosed_issues) >= 2, (
+            f"Expected at least 2 unclosed block warnings (code + table), "
+            f"but got {len(unclosed_issues)}: {unclosed_issues}"
+        )
+
+        # Verify we have both types
+        warning_types = [i.get("type", "") for i in unclosed_issues]
+        assert "unclosed_block" in warning_types, (
+            f"Expected 'unclosed_block' warning for code block, got: {warning_types}"
+        )
+        assert "unclosed_table" in warning_types, (
+            f"Expected 'unclosed_table' warning for table, got: {warning_types}"
+        )
+
     def test_validate_valid_document_no_warnings(self, tmp_path):
         """Valid documents should not have unclosed block warnings."""
         from dacli.cli import cli
