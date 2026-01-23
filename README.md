@@ -8,6 +8,19 @@ Navigate and query large documentation projects. Supports AsciiDoc and Markdown 
 
 Part of the [docToolchain](https://doctoolchain.org/) ecosystem.
 
+## What Others Say
+
+> **"dacli is the missing tool between LLMs and Docs-as-Code."**
+>
+> No more guessing line numbers, no more "which README do you mean?" questions.
+> 5 bugs reported → 5 bugs fixed across three releases.
+>
+> **Recommendation: Ready for production use.**
+>
+> — *Claude (Opus 4.5), Independent Review*
+
+<!-- More testimonials coming soon -->
+
 ## Features
 
 - **Hierarchical Navigation** - Browse documentation structure with configurable depth
