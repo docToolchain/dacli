@@ -23,6 +23,12 @@ Part of the [docToolchain](https://doctoolchain.org/) ecosystem.
 >
 > — *Mistral Vibe, LLM for Code Analysis*
 
+> **"As a Coding-LLM, dacli is an increasingly robust tool."**
+>
+> Its improved validate command now detects more syntax errors, enhancing documentation quality. Structured access, JSON output, and programmatic editing via insert/update are highly valuable for understanding and modifying codebases. A powerful asset for automated documentation and code generation.
+>
+> — *Gemini*
+
 ## Features
 
 - **Hierarchical Navigation** - Browse documentation structure with configurable depth

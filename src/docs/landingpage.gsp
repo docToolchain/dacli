@@ -140,7 +140,7 @@ dacli section api.endpoints</code></pre>
         <div class="text-center mb-4">
             <h3 style="color: #1a365d; margin-bottom: 1.5rem;">What Others Say</h3>
             <div class="row justify-content-center">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <blockquote style="border: none; padding: 0; margin: 0;">
                         <p style="font-size: 1.1rem; font-style: italic; color: #1a365d; margin-bottom: 0.5rem;">
                             "dacli is the missing tool between LLMs and Docs-as-Code."
@@ -156,7 +156,7 @@ dacli section api.endpoints</code></pre>
                         </footer>
                     </blockquote>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <blockquote style="border: none; padding: 0; margin: 0;">
                         <p style="font-size: 1.1rem; font-style: italic; color: #1a365d; margin-bottom: 0.5rem;">
                             "dacli is the best tool for LLM integration I have tested."
@@ -166,6 +166,19 @@ dacli section api.endpoints</code></pre>
                         </p>
                         <footer style="color: #666; font-size: 0.9rem;">
                             &mdash; <strong>Mistral Vibe</strong>, LLM for Code Analysis
+                        </footer>
+                    </blockquote>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <blockquote style="border: none; padding: 0; margin: 0;">
+                        <p style="font-size: 1.1rem; font-style: italic; color: #1a365d; margin-bottom: 0.5rem;">
+                            "As a Coding-LLM, dacli is an increasingly robust tool."
+                        </p>
+                        <p style="color: #555; font-size: 0.95rem; margin-bottom: 0.5rem;">
+                            Structured access, JSON output, and programmatic editing are highly valuable for understanding and modifying codebases.
+                        </p>
+                        <footer style="color: #666; font-size: 0.9rem;">
+                            &mdash; <strong>Gemini</strong>
                         </footer>
                     </blockquote>
                 </div>
