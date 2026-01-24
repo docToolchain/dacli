@@ -1,7 +1,5 @@
 """Tests for parser utility functions."""
 
-import pytest
-
 from dacli.models import Section, SourceLocation
 from dacli.parser_utils import collect_all_sections, find_section_by_path, slugify
 
