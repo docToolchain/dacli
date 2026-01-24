@@ -9,8 +9,8 @@ from pathlib import Path as FilePath
 
 from fastapi import APIRouter, HTTPException, Path
 
+from dacli.api.dependencies import get_index
 from dacli.api.models import (
-    ErrorDetail,
     ErrorResponse,
     InsertContentRequest,
     InsertContentResponse,
@@ -20,36 +20,11 @@ from dacli.api.models import (
 )
 from dacli.file_handler import FileReadError, FileSystemHandler, FileWriteError
 from dacli.models import Section
-from dacli.structure_index import StructureIndex
 
 router = APIRouter(prefix="/api/v1", tags=["Manipulation"])
 
-# Global index reference - will be set by create_app
-_index: StructureIndex | None = None
-
 # File handler for atomic operations
 _file_handler: FileSystemHandler = FileSystemHandler()
-
-
-def set_index(index: StructureIndex) -> None:
-    """Set the global structure index."""
-    global _index
-    _index = index
-
-
-def get_index() -> StructureIndex:
-    """Get the global structure index."""
-    if _index is None:
-        raise HTTPException(
-            status_code=503,
-            detail=ErrorResponse(
-                error=ErrorDetail(
-                    code="INDEX_NOT_READY",
-                    message="Server index is not initialized",
-                )
-            ).model_dump(),
-        )
-    return _index
 
 
 def _get_section_end_line(section: Section, file_path: FilePath) -> int:

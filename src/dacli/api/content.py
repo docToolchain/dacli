@@ -9,6 +9,7 @@ import time
 
 from fastapi import APIRouter, HTTPException, Query
 
+from dacli.api.dependencies import get_index
 from dacli.api.models import (
     VALID_ELEMENT_TYPES,
     ElementItem,
@@ -20,12 +21,8 @@ from dacli.api.models import (
     SearchResponse,
     SearchResultItem,
 )
-from dacli.structure_index import StructureIndex
 
 router = APIRouter(prefix="/api/v1", tags=["Content Access"])
-
-# Global index reference - will be set by create_app
-_index: StructureIndex | None = None
 
 # Mapping from internal element types to API types
 ELEMENT_TYPE_TO_API = {
@@ -42,27 +39,6 @@ API_TYPE_TO_ELEMENT = {
     "table": ["table"],
     "image": ["image"],
 }
-
-
-def set_index(index: StructureIndex) -> None:
-    """Set the global structure index."""
-    global _index
-    _index = index
-
-
-def get_index() -> StructureIndex:
-    """Get the global structure index."""
-    if _index is None:
-        raise HTTPException(
-            status_code=503,
-            detail=ErrorResponse(
-                error=ErrorDetail(
-                    code="INDEX_NOT_READY",
-                    message="Server index is not initialized",
-                )
-            ).model_dump(),
-        )
-    return _index
 
 
 @router.post(

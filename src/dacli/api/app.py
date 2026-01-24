@@ -6,7 +6,7 @@ Creates and configures the FastAPI application with all routers.
 from fastapi import FastAPI
 
 from dacli import __version__
-from dacli.api import content, manipulation, navigation
+from dacli.api import content, dependencies, manipulation, navigation
 from dacli.structure_index import StructureIndex
 
 
@@ -28,11 +28,9 @@ def create_app(index: StructureIndex | None = None) -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # Set the index for routers
+    # Set the index for all routers (shared via dependencies module)
     if index is not None:
-        navigation.set_index(index)
-        content.set_index(index)
-        manipulation.set_index(index)
+        dependencies.set_index(index)
 
     # Include routers
     app.include_router(navigation.router)
