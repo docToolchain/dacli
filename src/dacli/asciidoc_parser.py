@@ -589,6 +589,94 @@ class AsciidocStructureParser:
             result.append(section)
             self._collect_all_sections(section.children, result)
 
+    def _create_diagram_element(
+        self,
+        diagram_type: str,
+        name: str | None,
+        fmt: str | None,
+        source_file: Path,
+        line_num: int,
+        resolved_from: SourceLocation | None,
+        current_section_path: str,
+    ) -> Element:
+        """Create a diagram element (plantuml, mermaid, ditaa).
+
+        Args:
+            diagram_type: Type of diagram ("plantuml", "mermaid", "ditaa")
+            name: Optional diagram name
+            fmt: Optional output format
+            source_file: Source file path
+            line_num: Line number in source file
+            resolved_from: Optional resolved_from location
+            current_section_path: Path of containing section
+
+        Returns:
+            Created Element
+        """
+        source_location = SourceLocation(
+            file=source_file,
+            line=line_num,
+            resolved_from=resolved_from,
+        )
+        attrs: dict[str, str] = {}
+        if name is not None:
+            attrs["name"] = name
+        if fmt is not None:
+            attrs["format"] = fmt
+        return Element(
+            type=diagram_type,
+            source_location=source_location,
+            attributes=attrs,
+            parent_section=current_section_path,
+        )
+
+    def _close_open_block(
+        self,
+        open_blocks: list[Element],
+        line_num: int,
+    ) -> None:
+        """Close the most recently opened block by setting its end_line.
+
+        Args:
+            open_blocks: Stack of open blocks (modified in place)
+            line_num: Line number where block ends
+        """
+        if open_blocks:
+            block = open_blocks.pop()
+            block.source_location.end_line = line_num
+
+    def _create_list_element(
+        self,
+        list_type: str,
+        source_file: Path,
+        line_num: int,
+        resolved_from: SourceLocation | None,
+        current_section_path: str,
+    ) -> Element:
+        """Create a list element.
+
+        Args:
+            list_type: Type of list ("unordered", "ordered", "description")
+            source_file: Source file path
+            line_num: Line number in source file
+            resolved_from: Optional resolved_from location
+            current_section_path: Path of containing section
+
+        Returns:
+            Created Element
+        """
+        source_location = SourceLocation(
+            file=source_file,
+            line=line_num,
+            resolved_from=resolved_from,
+        )
+        return Element(
+            type="list",
+            source_location=source_location,
+            attributes={"list_type": list_type},
+            parent_section=current_section_path,
+        )
+
     def _parse_elements(
         self,
         lines: list[tuple[str, Path, int, SourceLocation | None]],
@@ -677,22 +765,9 @@ class AsciidocStructureParser:
                         # Start of plantuml block
                         in_plantuml_block = True
                         name, fmt = pending_plantuml_info
-                        source_location = SourceLocation(
-                            file=source_file,
-                            line=line_num,
-                            resolved_from=resolved_from,
-                        )
-                        # Only add attributes if they are not None
-                        attrs: dict[str, str] = {}
-                        if name is not None:
-                            attrs["name"] = name
-                        if fmt is not None:
-                            attrs["format"] = fmt
-                        element = Element(
-                            type="plantuml",
-                            source_location=source_location,
-                            attributes=attrs,
-                            parent_section=current_section_path,
+                        element = self._create_diagram_element(
+                            "plantuml", name, fmt, source_file, line_num,
+                            resolved_from, current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -701,21 +776,9 @@ class AsciidocStructureParser:
                         # Start of mermaid block
                         in_mermaid_block = True
                         name, fmt = pending_mermaid_info
-                        source_location = SourceLocation(
-                            file=source_file,
-                            line=line_num,
-                            resolved_from=resolved_from,
-                        )
-                        attrs = {}
-                        if name is not None:
-                            attrs["name"] = name
-                        if fmt is not None:
-                            attrs["format"] = fmt
-                        element = Element(
-                            type="mermaid",
-                            source_location=source_location,
-                            attributes=attrs,
-                            parent_section=current_section_path,
+                        element = self._create_diagram_element(
+                            "mermaid", name, fmt, source_file, line_num,
+                            resolved_from, current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -724,21 +787,9 @@ class AsciidocStructureParser:
                         # Start of ditaa block
                         in_ditaa_block = True
                         name, fmt = pending_ditaa_info
-                        source_location = SourceLocation(
-                            file=source_file,
-                            line=line_num,
-                            resolved_from=resolved_from,
-                        )
-                        attrs = {}
-                        if name is not None:
-                            attrs["name"] = name
-                        if fmt is not None:
-                            attrs["format"] = fmt
-                        element = Element(
-                            type="ditaa",
-                            source_location=source_location,
-                            attributes=attrs,
-                            parent_section=current_section_path,
+                        element = self._create_diagram_element(
+                            "ditaa", name, fmt, source_file, line_num,
+                            resolved_from, current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -763,27 +814,19 @@ class AsciidocStructureParser:
                 elif in_code_block:
                     # End of code block
                     in_code_block = False
-                    if open_blocks:
-                        block = open_blocks.pop()
-                        block.source_location.end_line = line_num
+                    self._close_open_block(open_blocks, line_num)
                 elif in_plantuml_block:
                     # End of plantuml block
                     in_plantuml_block = False
-                    if open_blocks:
-                        block = open_blocks.pop()
-                        block.source_location.end_line = line_num
+                    self._close_open_block(open_blocks, line_num)
                 elif in_mermaid_block:
                     # End of mermaid block
                     in_mermaid_block = False
-                    if open_blocks:
-                        block = open_blocks.pop()
-                        block.source_location.end_line = line_num
+                    self._close_open_block(open_blocks, line_num)
                 elif in_ditaa_block:
                     # End of ditaa block
                     in_ditaa_block = False
-                    if open_blocks:
-                        block = open_blocks.pop()
-                        block.source_location.end_line = line_num
+                    self._close_open_block(open_blocks, line_num)
                 continue
 
             # Detect table delimiter |===
@@ -807,9 +850,7 @@ class AsciidocStructureParser:
                 else:
                     # End of table
                     in_table = False
-                    if open_blocks:
-                        block = open_blocks.pop()
-                        block.source_location.end_line = line_num
+                    self._close_open_block(open_blocks, line_num)
                 continue
 
             # Detect image macro
@@ -861,19 +902,10 @@ class AsciidocStructureParser:
                 if current_list_type != "unordered":
                     # Start of a new unordered list
                     current_list_type = "unordered"
-                    source_location = SourceLocation(
-                        file=source_file,
-                        line=line_num,
-                        resolved_from=resolved_from,
-                    )
-                    elements.append(
-                        Element(
-                            type="list",
-                            source_location=source_location,
-                            attributes={"list_type": "unordered"},
-                            parent_section=current_section_path,
-                        )
-                    )
+                    elements.append(self._create_list_element(
+                        "unordered", source_file, line_num,
+                        resolved_from, current_section_path,
+                    ))
                 continue
 
             # Check for ordered list (. item)
@@ -881,19 +913,10 @@ class AsciidocStructureParser:
                 if current_list_type != "ordered":
                     # Start of a new ordered list
                     current_list_type = "ordered"
-                    source_location = SourceLocation(
-                        file=source_file,
-                        line=line_num,
-                        resolved_from=resolved_from,
-                    )
-                    elements.append(
-                        Element(
-                            type="list",
-                            source_location=source_location,
-                            attributes={"list_type": "ordered"},
-                            parent_section=current_section_path,
-                        )
-                    )
+                    elements.append(self._create_list_element(
+                        "ordered", source_file, line_num,
+                        resolved_from, current_section_path,
+                    ))
                 continue
 
             # Check for description list (term:: definition)
@@ -901,19 +924,10 @@ class AsciidocStructureParser:
                 if current_list_type != "description":
                     # Start of a new description list
                     current_list_type = "description"
-                    source_location = SourceLocation(
-                        file=source_file,
-                        line=line_num,
-                        resolved_from=resolved_from,
-                    )
-                    elements.append(
-                        Element(
-                            type="list",
-                            source_location=source_location,
-                            attributes={"list_type": "description"},
-                            parent_section=current_section_path,
-                        )
-                    )
+                    elements.append(self._create_list_element(
+                        "description", source_file, line_num,
+                        resolved_from, current_section_path,
+                    ))
                 continue
 
             # If line is not a list item, reset list tracking
