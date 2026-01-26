@@ -12,15 +12,11 @@ on:
 
 jobs:
   claude-review:
-    # Skip for PRs from forks (no access to secrets)
-    if: github.event.pull_request.head.repo.full_name == github.repository
-
-    # Optional: Additional filter by PR author
+    # Optional: Filter by PR author
     # if: |
-    #   github.event.pull_request.head.repo.full_name == github.repository &&
-    #   (github.event.pull_request.user.login == 'external-contributor' ||
-    #    github.event.pull_request.user.login == 'new-developer' ||
-    #    github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR')
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
     permissions:
