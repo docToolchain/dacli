@@ -33,10 +33,15 @@ Development happens on a fork to keep `upstream/main` stable for `uv tool instal
 1. Sync fork: `git fetch upstream`
 2. Create feature branch: `git checkout -b feature/xyz upstream/main`
 3. Implement changes with tests
-4. **Bump version in `pyproject.toml`** (semantic versioning):
+4. **Bump version** (semantic versioning - **IMPORTANT: Update all 3 locations!**):
    - MAJOR: Breaking changes (e.g., 1.0.0 → 2.0.0)
    - MINOR: New features, backwards-compatible (e.g., 0.4.0 → 0.5.0)
    - PATCH: Bug fixes only (e.g., 0.4.0 → 0.4.1)
+
+   **Update these files:**
+   1. `pyproject.toml` - line 3: `version = "X.Y.Z"`
+   2. `src/dacli/__init__.py` - line 7: `__version__ = "X.Y.Z"`
+   3. `uv.lock` - run `uv sync` to auto-update
 5. Push to fork: `git push origin feature/xyz`
 6. Create PR from fork to `upstream/main` (use `Fixes #123` in PR body)
 7. CI runs on PR, review, then merge
@@ -50,7 +55,9 @@ Development happens on a fork to keep `upstream/main` stable for `uv tool instal
 
 **IMPORTANT:**
 - Always create feature branches from `upstream/main`, never from fork `main`. This ensures clean, linear history and avoids duplicate commits.
-- Always bump the version number in `pyproject.toml` for every PR (even small bug fixes get a PATCH bump).
+- Always bump the version number for every PR (even small bug fixes get a PATCH bump):
+  - Update **all 3 files**: `pyproject.toml`, `src/dacli/__init__.py`, and `uv.lock` (via `uv sync`)
+  - Missing any file causes `--version` to show incorrect version
 
 ## Conventions
 
