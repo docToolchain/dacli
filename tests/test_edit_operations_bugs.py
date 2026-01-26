@@ -6,8 +6,6 @@ Tests fix for:
 - #197: insert with --position append inserts at beginning
 """
 
-from pathlib import Path
-
 import pytest
 
 from dacli.cli import _process_escape_sequences
@@ -108,7 +106,6 @@ More content
 
         # There should be at least one blank line between sections
         between_sections = lines[section1_idx + 1:section2_idx]
-        non_empty_lines = [line for line in between_sections if line.strip()]
 
         # Should have content + blank line
         assert any(line.strip() == "" for line in between_sections), \
