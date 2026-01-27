@@ -43,6 +43,9 @@ DITAA_BLOCK_START_PATTERN = re.compile(
     r"^\[ditaa(?:,\s*([a-zA-Z0-9_-]+))?(?:,\s*([a-zA-Z0-9_]+))?\]$"
 )
 LISTING_DELIMITER_PATTERN = re.compile(r"^-{4,}$")
+# Generic block delimiter pattern (Issue #207: covers all AsciiDoc block types)
+# Matches: ---- (listing/source), .... (literal), **** (sidebar), ==== (example), ____ (quote)
+BLOCK_DELIMITER_PATTERN = re.compile(r"^(-{4,}|\.{4,}|\*{4,}|={4,}|_{4,})$")
 TABLE_DELIMITER_PATTERN = re.compile(r"^\|===$")
 IMAGE_PATTERN = re.compile(r"^image::(.+?)\[(.*)?\]$")
 ADMONITION_PATTERN = re.compile(r"^(NOTE|TIP|IMPORTANT|WARNING|CAUTION):\s*(.*)$")
@@ -468,7 +471,25 @@ class AsciidocStructureParser:
             used_paths[new_path] = 1
             return new_path
 
+        # Issue #207: Track block state to avoid parsing sections inside code/literal blocks
+        in_delimited_block = False
+        in_table = False
+
         for line_text, source_file, line_num, resolved_from in lines:
+            # Issue #207: Track delimited blocks (----, ...., ****, ====, ____)
+            if BLOCK_DELIMITER_PATTERN.match(line_text):
+                in_delimited_block = not in_delimited_block
+                continue
+
+            # Issue #207: Track table blocks (|===)
+            if TABLE_DELIMITER_PATTERN.match(line_text):
+                in_table = not in_table
+                continue
+
+            # Issue #207: Skip section detection inside blocks
+            if in_delimited_block or in_table:
+                continue
+
             match = SECTION_PATTERN.match(line_text)
             if match:
                 equals = match.group(1)
@@ -720,20 +741,28 @@ class AsciidocStructureParser:
         list_content: list[str] = []
 
         for line_text, source_file, line_num, resolved_from in lines:
-            # Track current section for parent_section
-            section_match = SECTION_PATTERN.match(line_text)
-            if section_match:
-                title = section_match.group(2).strip()
-                # Apply attribute substitution to section titles so they match
-                # the substituted titles stored in `sections`.
-                if attributes:
-                    def _sub_attr(match: re.Match) -> str:
-                        name = match.group(1)
-                        return attributes.get(name, match.group(0))
+            # Issue #207: Track current section for parent_section (but skip if inside blocks)
+            in_any_block = (
+                in_code_block
+                or in_plantuml_block
+                or in_mermaid_block
+                or in_ditaa_block
+                or in_table
+            )
+            if not in_any_block:
+                section_match = SECTION_PATTERN.match(line_text)
+                if section_match:
+                    title = section_match.group(2).strip()
+                    # Apply attribute substitution to section titles so they match
+                    # the substituted titles stored in `sections`.
+                    if attributes:
+                        def _sub_attr(match: re.Match) -> str:
+                            name = match.group(1)
+                            return attributes.get(name, match.group(0))
 
-                    title = re.sub(r"\{([^}]+)\}", _sub_attr, title)
-                current_section_path = self._find_section_path(sections, title)
-                continue
+                        title = re.sub(r"\{([^}]+)\}", _sub_attr, title)
+                    current_section_path = self._find_section_path(sections, title)
+                    continue
 
             # Detect code block attribute [source,language]
             code_attr_match = CODE_BLOCK_START_PATTERN.match(line_text)

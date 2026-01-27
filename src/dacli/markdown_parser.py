@@ -325,8 +325,24 @@ class MarkdownStructureParser:
         # Track previous lines for Setext detection
         prev_line = ""
         prev_prev_line = ""
+        # Issue #207: Track code fence state to avoid parsing headings inside code blocks
+        in_code_block = False
 
         for line_num, line in enumerate(lines, start=1 + line_offset):
+            # Issue #207: Track code fences (```)
+            fence_match = CODE_FENCE_PATTERN.match(line)
+            if fence_match:
+                in_code_block = not in_code_block
+                prev_prev_line = prev_line
+                prev_line = line
+                continue
+
+            # Issue #207: Skip heading detection inside code blocks
+            if in_code_block:
+                prev_prev_line = prev_line
+                prev_line = line
+                continue
+
             # Detect Setext headings and warn (not supported per spec)
             self._warn_setext_heading(
                 line, prev_line, prev_prev_line, line_num, file_path
