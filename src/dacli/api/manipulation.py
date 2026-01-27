@@ -51,6 +51,29 @@ def _get_section_end_line(section: Section, file_path: FilePath) -> int:
         return section.source_location.line + 10  # Last resort fallback
 
 
+def _get_section_end_with_children(section: Section, file_path: FilePath) -> int:
+    """Get the end line of a section including ALL child sections recursively.
+
+    Issue #208: When inserting "after" a section, we need to insert after all
+    descendants, not just after the direct content of the section.
+
+    Args:
+        section: The section to get end line for (including children)
+        file_path: Path to the file containing the section
+
+    Returns:
+        The end line number (1-based) of the last descendant, or the section
+        itself if it has no children
+    """
+    if not section.children:
+        # No children, use direct end_line
+        return _get_section_end_line(section, file_path)
+
+    # Find the last child recursively
+    last_child = section.children[-1]
+    return _get_section_end_with_children(last_child, file_path)
+
+
 @router.put(
     "/section/{path:path}",
     response_model=UpdateSectionResponse,
@@ -190,12 +213,14 @@ def insert_content(
                 + lines[start_line - 1 :]
             )
         elif request.position == "after":
-            # Insert after the section ends
-            insert_line = end_line + 1
+            # Issue #208: Insert after the section AND all its children
+            # Use _get_section_end_with_children to include all descendants
+            end_with_children = _get_section_end_with_children(section, file_path)
+            insert_line = end_with_children + 1
             new_lines = (
-                lines[:end_line]
+                lines[:end_with_children]
                 + [content]
-                + lines[end_line:]
+                + lines[end_with_children:]
             )
         else:  # append
             # Append content at end of section (before the last line/children)
