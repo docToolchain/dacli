@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing badge updates
     steps:
       - uses: actions/checkout@v4
 
