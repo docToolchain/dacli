@@ -729,9 +729,9 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
 
         if position == "before":
             insert_line = start_line
-            # Check if the line we're inserting before is a heading
+            # Issue #216: Always add blank line before a heading
             next_line_idx = start_line - 1  # 0-based index
-            if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+            if next_line_is_heading(lines, next_line_idx):
                 insert_content = ensure_trailing_blank_line(insert_content)
             new_lines = lines[: start_line - 1] + [insert_content] + lines[start_line - 1 :]
         elif position == "after":
