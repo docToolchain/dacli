@@ -693,7 +693,7 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
 
     file_path = section_obj.source_location.file
     start_line = section_obj.source_location.line
-    end_line = _get_section_end_line(section_obj, file_path, ctx.file_handler)
+    # Note: end_line is computed dynamically by _get_section_append_line for 'after'/'append'
 
     # Process content: read from stdin if "-", otherwise process escape sequences
     if content == "-":
@@ -735,18 +735,21 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
                 insert_content = ensure_trailing_blank_line(insert_content)
             new_lines = lines[: start_line - 1] + [insert_content] + lines[start_line - 1 :]
         elif position == "after":
-            insert_line = end_line + 1
+            # Issue #223: Insert after the section AND all its children
+            # Use _get_section_append_line to find the end of all descendants
+            after_line = _get_section_append_line(section_obj, ctx.index, ctx.file_handler)
+            insert_line = after_line + 1
             # Add blank line before headings if previous line is not blank
-            if starts_with_heading and end_line > 0:
-                prev_line = lines[end_line - 1] if end_line <= len(lines) else ""
+            if starts_with_heading and after_line > 0:
+                prev_line = lines[after_line - 1] if after_line <= len(lines) else ""
                 if prev_line.strip():
                     insert_content = "\n" + insert_content
             # Add blank line after content if next line is a heading
-            # 0-based index (end_line is 1-based, so lines[end_line] is the next line)
-            next_line_idx = end_line
+            # 0-based index (after_line is 1-based, so lines[after_line] is the next line)
+            next_line_idx = after_line
             if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
                 insert_content = ensure_trailing_blank_line(insert_content)
-            new_lines = lines[:end_line] + [insert_content] + lines[end_line:]
+            new_lines = lines[:after_line] + [insert_content] + lines[after_line:]
         else:  # append - insert after all descendants
             append_line = _get_section_append_line(section_obj, ctx.index, ctx.file_handler)
             insert_line = append_line + 1
