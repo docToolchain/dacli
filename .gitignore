@@ -34,9 +34,8 @@ settings.json
 # Build output
 build/
 
-# Serena/Vibe working directories
+# Serena working directory
 .serena/
-.vibe/
 
 # Playwright MCP screenshots
 .playwright-mcp/
