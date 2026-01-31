@@ -1319,6 +1319,80 @@ Final thoughts.
                 assert i > 0, "New section should not be first line"
 
 
+class TestCliInsertAfterWithChildren:
+    """Test issue #223: insert --position after should insert AFTER all children."""
+
+    def test_insert_after_preserves_children_hierarchy(self, tmp_path):
+        """Issue #223: insert --position after should not steal children.
+
+        When inserting after a section with children, the new content should
+        appear AFTER all child sections, not between the parent and its children.
+        """
+        from dacli.cli import cli
+
+        # Create doc with nested structure (parent with children)
+        doc_file = tmp_path / "test.adoc"
+        doc_file.write_text("""= Document
+
+== Introduction
+
+Introduction content.
+
+=== Overview
+
+Overview content.
+
+=== Goals
+
+Goals content.
+
+== Architecture
+
+Architecture content.
+""")
+
+        runner = CliRunner()
+
+        # Insert after Introduction (which has Overview and Goals as children)
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root", str(tmp_path),
+                "--format", "json",
+                "insert", "test:introduction",
+                "--position", "after",
+                "--content", "== New Section\\n\\nNew content.\\n",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        # Read the file and verify structure
+        content = doc_file.read_text()
+
+        # Get positions of all sections
+        intro_pos = content.find("== Introduction")
+        overview_pos = content.find("=== Overview")
+        goals_pos = content.find("=== Goals")
+        new_section_pos = content.find("== New Section")
+        architecture_pos = content.find("== Architecture")
+
+        # The new section should be:
+        # - AFTER Introduction (obviously)
+        # - AFTER Overview (child of Introduction)
+        # - AFTER Goals (child of Introduction)
+        # - BEFORE Architecture (next sibling)
+        assert new_section_pos > intro_pos, "New section should be after Introduction"
+        assert new_section_pos > overview_pos, "New section should be after Overview (Issue #223)"
+        assert new_section_pos > goals_pos, "New section should be after Goals (Issue #223)"
+        assert new_section_pos < architecture_pos, "New section should be before Architecture"
+
+        # Verify that Overview and Goals are still children of Introduction
+        # by checking they come BEFORE the new section
+        assert overview_pos < new_section_pos, "Overview should remain before new section"
+        assert goals_pos < new_section_pos, "Goals should remain before new section"
+
+
 class TestCliUpdateCommand:
     """Test the 'update' command."""
 
