@@ -125,7 +125,13 @@ def create_mcp_server(
         Returns:
             Document structure with 'sections' (hierarchical tree) and
             'total_sections' count.
+
+        Raises:
+            ValueError: If max_depth is negative.
         """
+        # Issue #220: Validate max_depth
+        if max_depth is not None and max_depth < 0:
+            raise ValueError("max_depth must be non-negative")
         return index.get_structure(max_depth)
 
     @mcp.tool()
@@ -205,7 +211,13 @@ def create_mcp_server(
         Returns:
             Dictionary with 'level', 'sections' (list with path and title),
             and 'count'.
+
+        Raises:
+            ValueError: If level is not positive (levels are 1-based).
         """
+        # Issue #220: Validate level (must be >= 1, levels are 1-based)
+        if level < 1:
+            raise ValueError("level must be positive (1 = chapters, 2 = sections, etc.)")
         sections = index.get_sections_at_level(level)
 
         return {
@@ -247,6 +259,10 @@ def create_mcp_server(
         # Validate query is not empty
         if not query or not query.strip():
             raise ValueError("Search query cannot be empty")
+
+        # Issue #220: Validate max_results
+        if max_results < 0:
+            raise ValueError("max_results must be non-negative")
 
         results = index.search(
             query=query,
@@ -295,7 +311,14 @@ def create_mcp_server(
         Returns:
             Dictionary with 'elements' (list of elements with type, location, and
             optionally attributes/content) and 'count'.
+
+        Raises:
+            ValueError: If content_limit is negative.
         """
+        # Issue #220: Validate content_limit
+        if content_limit is not None and content_limit < 0:
+            raise ValueError("content_limit must be non-negative")
+
         elements = index.get_elements(
             element_type=element_type,
             section_path=section_path,
