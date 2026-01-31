@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)(?:\s+#+)?$")
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---\s*(?:\n|$)", re.DOTALL)
 CODE_FENCE_PATTERN = re.compile(r"^(`{3,}|~{3,})([a-zA-Z0-9_+-]*)?\s*$")
+# Issue #214: HTML comment patterns
+HTML_COMMENT_START = "<!--"
+HTML_COMMENT_END = "-->"
 TABLE_ROW_PATTERN = re.compile(r"^\|(.+)\|$")
 TABLE_SEPARATOR_PATTERN = re.compile(r"^\|[\s:|-]+\|$")
 IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
@@ -327,6 +330,8 @@ class MarkdownStructureParser:
         prev_prev_line = ""
         # Issue #207: Track code fence state to avoid parsing headings inside code blocks
         in_code_block = False
+        # Issue #214: Track HTML comment state to avoid parsing headings inside comments
+        in_html_comment = False
 
         for line_num, line in enumerate(lines, start=1 + line_offset):
             # Issue #207: Track code fences (```)
@@ -339,6 +344,26 @@ class MarkdownStructureParser:
 
             # Issue #207: Skip heading detection inside code blocks
             if in_code_block:
+                prev_prev_line = prev_line
+                prev_line = line
+                continue
+
+            # Issue #214: Track HTML comments (<!-- -->)
+            # Handle comment start/end on same or different lines
+            if in_html_comment:
+                if HTML_COMMENT_END in line:
+                    in_html_comment = False
+                prev_prev_line = prev_line
+                prev_line = line
+                continue
+            elif HTML_COMMENT_START in line:
+                # Check if comment closes on same line
+                start_idx = line.find(HTML_COMMENT_START)
+                end_idx = line.find(HTML_COMMENT_END, start_idx + len(HTML_COMMENT_START))
+                if end_idx == -1:
+                    # Multi-line comment starts
+                    in_html_comment = True
+                # Either way, skip this line for heading detection
                 prev_prev_line = prev_line
                 prev_line = line
                 continue
