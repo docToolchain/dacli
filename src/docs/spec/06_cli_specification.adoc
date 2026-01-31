@@ -214,7 +214,7 @@ dacli search <QUERY> [--scope PATH] [--max-results N] [--limit N]
 **Options:**
 
 * `--max-results N`, `--limit N`: Maximum results to return (default: 20, aliases)
-* `--scope PATH`: Restrict search to path prefix
+* `--scope PATH`: Restrict search to path prefix. Warns if scope path doesn't exist in the documentation structure.
 
 **Example:**
 [source,bash]
@@ -244,7 +244,7 @@ dacli elements [SECTION_PATH] [--type TYPE] [--recursive] [--include-content] [-
 
 **Options:**
 
-* `--type TYPE`: Element type filter - `code`, `table`, `image`, `diagram`, `list`, `admonition`
+* `--type TYPE`: Element type filter - `code`, `table`, `image`, `plantuml`, `list`, `admonition`. Warns if type is invalid but still returns empty result.
 * `--recursive`: Include elements from child sections (default: exact match only)
 * `--include-content`: Include element content and attributes (Issue #159)
 * `--content-limit N`: Limit content to first N lines (requires `--include-content`)
@@ -390,9 +390,9 @@ dacli insert <PATH> --position before|after|append --content "..."
 
 **Position Options:**
 
-* `before` - Insert before the section heading
-* `after` - Insert after the section content (before next sibling)
-* `append` - Insert at end of section, after all subsections
+* `before` - Insert before the section heading. Adds blank line after content if next line is a heading.
+* `after` - Insert after the section end, *including all child sections* (before next sibling at same or higher level)
+* `append` - Insert at end of section's own content (before any child sections)
 
 **Content Input:**
 

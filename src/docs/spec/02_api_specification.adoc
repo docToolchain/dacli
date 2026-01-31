@@ -238,8 +238,8 @@ Retrieves the hierarchical document structure.
 |===
 | Parameter | Description
 
-| `max_depth` (int, optional)
-| Maximum depth of returned structure. Default: unlimited.
+| `max_depth` (int >= 0, optional)
+| Maximum depth of returned structure. Default: unlimited. Must be non-negative.
 |===
 
 **Response 200:**
@@ -329,8 +329,8 @@ Retrieves all sections at a specific level.
 |===
 | Parameter | Description
 
-| `level` (int, required)
-| Desired nesting depth (1 = chapter)
+| `level` (int >= 1, required)
+| Desired nesting depth. Must be positive (1 = chapter, 2 = section, etc.)
 |===
 
 **Response 200:**
@@ -365,7 +365,7 @@ Retrieves elements of a specific type.
 | Parameter | Description
 
 | `element_type` (string, optional)
-| Element type: `code`, `table`, `image`, `diagram`, `list`, `admonition`, `plantuml`. None returns all elements.
+| Element type: `code`, `table`, `image`, `plantuml`, `list`, `admonition`. None returns all elements. Invalid types return a warning (CLI) or error (MCP).
 
 | `section_path` (string, optional)
 | Restriction to specific section
@@ -437,8 +437,8 @@ Searches documentation content.
 | `scope` (string, optional)
 | Restriction to path prefix (e.g., "/architecture")
 
-| `max_results` (int, optional)
-| Maximum results to return (default: 20)
+| `max_results` (int >= 0, optional)
+| Maximum results to return (default: 20). Must be non-negative.
 |===
 
 **Response 200:**
@@ -548,7 +548,7 @@ Inserts content relative to a section.
 | Hierarchical path to reference section
 
 | `position` (string, required)
-| Where to insert: "before", "after", or "append"
+| Where to insert: "before" (adds blank line after content if next line is heading), "after" (inserts after section end *including all child sections*), or "append" (inserts at end of section's own content, before children)
 
 | `content` (string, required)
 | Content to insert

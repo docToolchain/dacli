@@ -17,7 +17,7 @@ Get the hierarchical document structure.
 |===
 | Parameter | Type | Default | Description
 
-| `max_depth` | int \| null | null | Maximum depth to return. Use 1 for top-level only.
+| `max_depth` | int \| null | null | Maximum depth to return (must be >= 0). Use 1 for top-level only.
 |===
 
 .Returns
@@ -57,7 +57,7 @@ Get all sections at a specific nesting level.
 |===
 | Parameter | Type | Description
 
-| `level` | int | Nesting level (1 = chapters, 2 = sections, etc.)
+| `level` | int | Nesting level (must be >= 1). 1 = chapters, 2 = sections, etc.
 |===
 
 .Returns
@@ -171,7 +171,7 @@ Full-text search across documentation.
 
 | `query` | string | - | Search query (case-insensitive)
 | `scope` | string \| null | null | Path prefix to limit search scope
-| `max_results` | int | 50 | Maximum results to return
+| `max_results` | int | 50 | Maximum results to return (must be >= 0)
 |===
 
 .Returns
@@ -249,9 +249,9 @@ Insert content relative to a section.
 |===
 
 .Position Options
-- `before` - Insert before section start
-- `after` - Insert after section end
-- `append` - Append at end of section (before children)
+- `before` - Insert before section heading (adds blank line after content if needed)
+- `after` - Insert after section end, *including all child sections*
+- `append` - Append at end of section's own content (before children)
 
 .Returns
 [source,json]

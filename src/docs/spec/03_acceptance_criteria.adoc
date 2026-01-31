@@ -48,6 +48,11 @@ Feature: Get document structure
     And "introduction" has no children
     And "constraints" has no children
 
+  Scenario: Reject negative max_depth (Issue #220)
+    When I call GET /structure?max_depth=-1
+    Then I receive HTTP Status 400
+    And the error message contains "must be non-negative"
+
   Scenario: Structure for empty project
     Given the project contains no documents
     When I call GET /structure
@@ -269,6 +274,11 @@ Feature: Search content
       }
       """
     Then the result list contains at most 5 matches
+
+  Scenario: CLI warns for non-existent scope (Issue #226)
+    When I call dacli search "query" --scope nonexistent.path
+    Then the CLI displays a warning about the scope not found
+    And the search continues (may return empty results)
 ----
 
 == Feature: Filter Elements by Type (UC-05)
@@ -316,6 +326,12 @@ Feature: Filter elements by type
     Then I receive HTTP Status 200
     And "count" is 0
     And "elements" is an empty array
+
+  Scenario: CLI warns for invalid element type (Issue #225)
+    When I call dacli elements --type charts
+    Then the CLI displays a warning about invalid type
+    And valid types are listed in the warning
+    And the result is empty (not an error)
 ----
 
 == Feature: Get Metadata (UC-06)
@@ -464,6 +480,19 @@ Feature: Insert content
       """
     Then I receive HTTP Status 200
     And the new content is after the section "introduction"
+
+  Scenario: Insert after includes all child sections (Issue #229)
+    Given the section "parent" has child sections "parent.child1" and "parent.child2"
+    When I call POST /section/parent/insert with:
+      """
+      {
+        "position": "after",
+        "content": "== New Section\n\nContent."
+      }
+      """
+    Then I receive HTTP Status 200
+    And the new content is after "parent.child2"
+    And the new content is before the next sibling of "parent"
 
   Scenario: Append content to section
     When I call POST /section/introduction/insert with:
