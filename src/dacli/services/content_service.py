@@ -154,6 +154,29 @@ def update_section(
                 ),
             }
 
+        # Issue #217: Reject level change if section has children
+        # Extract heading level from new content
+        first_line = stripped_content.split("\n", 1)[0]
+        if stripped_content.startswith("="):
+            # AsciiDoc: count leading "=" characters, level = count - 1
+            new_level = len(first_line) - len(first_line.lstrip("="))
+            new_level = new_level - 1  # AsciiDoc: "=" = level 0, "==" = level 1
+        else:
+            # Markdown: count leading "#" characters
+            new_level = len(first_line) - len(first_line.lstrip("#"))
+
+        # Check if section has children and level would change
+        if section.children and new_level != section.level:
+            return {
+                "success": False,
+                "error": (
+                    f"Cannot change heading level from {section.level} to {new_level} "
+                    f"because section '{normalized_path}' has {len(section.children)} "
+                    "child section(s). This would break the document hierarchy. "
+                    "Remove or relocate child sections first."
+                ),
+            }
+
     # Ensure content ends with blank line (two newlines) to separate from next section
     # Issue #194: Preserve blank lines between sections
     if not new_content.endswith("\n\n"):
