@@ -37,7 +37,7 @@ from dacli.services import (
     validate_structure as service_validate_structure,
 )
 from dacli.services.content_service import _get_section_end_line
-from dacli.structure_index import StructureIndex
+from dacli.structure_index import Section, StructureIndex
 
 # Configure logging to stderr (stdout is reserved for MCP protocol)
 logging.basicConfig(
@@ -46,6 +46,58 @@ logging.basicConfig(
     stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
+
+
+def _get_section_append_line(
+    section: Section,
+    index: StructureIndex,
+    file_handler,
+) -> int:
+    """Get the line number where content should be appended (after all descendants).
+
+    Issue #229: For 'after' position, we need to find the end of the last descendant
+    section, not just the end of the section's own content.
+
+    Args:
+        section: The parent section to append to
+        index: Structure index for finding related sections
+        file_handler: File handler for reading files
+
+    Returns:
+        The line number where content should be inserted (1-based)
+    """
+    file_path = section.source_location.file
+    all_sections = index.get_sections_by_file(file_path)
+
+    # Find all descendants (sections whose path starts with parent path)
+    parent_path = section.path
+    descendants = []
+    for s in all_sections:
+        # Skip the parent itself
+        if s.path == parent_path:
+            continue
+        # Check if this is a descendant
+        # Level 1 children use ":" separator (e.g., "doc:child")
+        # Nested children use "." separator (e.g., "doc:child.grandchild")
+        if parent_path == "":
+            # Root document - all sections are descendants
+            if s.path != "":
+                descendants.append(s)
+        elif s.path.startswith(parent_path + ":") or s.path.startswith(parent_path + "."):
+            descendants.append(s)
+
+    if not descendants:
+        # No children, use section's own end line
+        return _get_section_end_line(section, file_path, file_handler)
+
+    # Find the descendant with the highest end line
+    max_end_line = _get_section_end_line(section, file_path, file_handler)
+    for desc in descendants:
+        desc_end = _get_section_end_line(desc, file_path, file_handler)
+        if desc_end > max_end_line:
+            max_end_line = desc_end
+
+    return max_end_line
 
 
 def create_mcp_server(
@@ -437,7 +489,6 @@ def create_mcp_server(
 
         file_path = section.source_location.file
         start_line = section.source_location.line
-        end_line = _get_section_end_line(section, file_path, file_handler)
 
         # Prepare content
         insert_content = content
@@ -451,15 +502,61 @@ def create_mcp_server(
 
             lines = file_content.splitlines(keepends=True)
 
+            # Issue #232: Helper functions for blank line handling
+            def next_line_is_heading(lines_list: list, next_idx: int) -> bool:
+                """Check if the next line is a heading."""
+                if 0 <= next_idx < len(lines_list):
+                    next_line = lines_list[next_idx].lstrip()
+                    return next_line.startswith("#") or next_line.startswith("=")
+                return False
+
+            def ensure_trailing_blank_line(text: str) -> str:
+                """Ensure content ends with a blank line (two newlines)."""
+                if not text.endswith("\n\n"):
+                    if text.endswith("\n"):
+                        return text + "\n"
+                    return text + "\n\n"
+                return text
+
+            # Check if content starts with a heading
+            stripped = insert_content.lstrip()
+            starts_with_heading = stripped.startswith("#") or stripped.startswith("=")
+
             if position == "before":
                 insert_line = start_line
+                # Issue #232: Add blank line before heading if needed
+                next_line_idx = start_line - 1  # 0-based index
+                if next_line_is_heading(lines, next_line_idx):
+                    insert_content = ensure_trailing_blank_line(insert_content)
                 new_lines = lines[: start_line - 1] + [insert_content] + lines[start_line - 1 :]
             elif position == "after":
-                insert_line = end_line + 1
-                new_lines = lines[:end_line] + [insert_content] + lines[end_line:]
+                # Issue #229: Insert after the section AND all its children
+                after_line = _get_section_append_line(section, index, file_handler)
+                insert_line = after_line + 1
+                # Issue #232: Add blank line before heading if previous line not blank
+                if starts_with_heading and after_line > 0:
+                    prev_line = lines[after_line - 1] if after_line <= len(lines) else ""
+                    if prev_line.strip():
+                        insert_content = "\n" + insert_content
+                # Add blank line after content if next line is a heading
+                next_line_idx = after_line
+                if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+                    insert_content = ensure_trailing_blank_line(insert_content)
+                new_lines = lines[:after_line] + [insert_content] + lines[after_line:]
             else:  # append
-                insert_line = end_line
-                new_lines = lines[: end_line - 1] + [insert_content] + lines[end_line - 1 :]
+                # Issue #229: Append after all descendants
+                append_line = _get_section_append_line(section, index, file_handler)
+                insert_line = append_line
+                # Issue #232: Add blank line before heading if previous line not blank
+                if starts_with_heading and append_line > 0:
+                    prev_line = lines[append_line - 1] if append_line <= len(lines) else ""
+                    if prev_line.strip():
+                        insert_content = "\n" + insert_content
+                # Add blank line after content if next line is a heading
+                next_line_idx = append_line
+                if next_line_is_heading(lines, next_line_idx) and not starts_with_heading:
+                    insert_content = ensure_trailing_blank_line(insert_content)
+                new_lines = lines[: append_line - 1] + [insert_content] + lines[append_line - 1 :]
 
             new_file_content = "".join(new_lines)
             # Compute hash of file after modification
