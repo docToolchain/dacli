@@ -639,7 +639,8 @@ class StructureIndex:
         }
 
         # Include children based on max_depth
-        if max_depth is None or current_depth < max_depth:
+        # Issue #218: Changed < to <= so max_depth=N shows depths 0..N
+        if max_depth is None or current_depth <= max_depth:
             result["children"] = [
                 self._section_to_dict(child, max_depth, current_depth + 1)
                 for child in section.children
