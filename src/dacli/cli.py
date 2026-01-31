@@ -521,6 +521,17 @@ def search(ctx: CliContext, query: str, scope: str | None, max_results: int):
         click.echo("Error: Search query cannot be empty", err=True)
         sys.exit(EXIT_INVALID_ARGS)
 
+    # Issue #226: Warn if scope doesn't exist
+    if scope is not None:
+        # Check if scope exists as a section or document prefix
+        section = ctx.index.get_section(scope)
+        if section is None:
+            # Also check if it's a valid prefix for any section
+            all_sections = ctx.index.get_sections_at_level(0)  # Get all root sections
+            scope_exists = any(s.path.startswith(scope) for s in all_sections)
+            if not scope_exists:
+                click.echo(f"Warning: Scope '{scope}' not found in documentation structure.")
+
     results = ctx.index.search(
         query=query,
         scope=scope,
