@@ -565,6 +565,12 @@ Examples:
 def elements(ctx: CliContext, section_path: str | None, element_type: str | None,
              recursive: bool, include_content: bool, content_limit: int | None):
     """Get elements (code blocks, tables, images) from documentation."""
+    # Issue #225: Validate element type and warn if invalid
+    valid_types = {"code", "table", "image", "plantuml", "admonition", "list"}
+    if element_type is not None and element_type not in valid_types:
+        valid_list = ", ".join(sorted(valid_types))
+        click.echo(f"Warning: Unknown element type '{element_type}'. Valid types are: {valid_list}")
+
     elems = ctx.index.get_elements(
         element_type=element_type,
         section_path=section_path,
