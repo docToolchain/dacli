@@ -221,15 +221,21 @@ class TestGetStructure:
         )
         index.build_from_documents([doc])
 
-        # max_depth=1 should only return level 1 sections
-        structure = index.get_structure(max_depth=1)
+        # Issue #218: max_depth=0 returns only top-level (no children)
+        structure = index.get_structure(max_depth=0)
         assert len(structure["sections"]) == 1
         assert structure["sections"][0]["children"] == []
 
-        # max_depth=2 should return level 1 and 2
-        structure = index.get_structure(max_depth=2)
+        # max_depth=1 returns level 1 sections WITH their children (level 2)
+        structure = index.get_structure(max_depth=1)
+        assert len(structure["sections"]) == 1
         assert len(structure["sections"][0]["children"]) == 1
         assert structure["sections"][0]["children"][0]["children"] == []
+
+        # max_depth=2 returns levels 1, 2, and 3
+        structure = index.get_structure(max_depth=2)
+        assert len(structure["sections"][0]["children"]) == 1
+        assert len(structure["sections"][0]["children"][0]["children"]) == 1
 
 
 class TestGetSection:

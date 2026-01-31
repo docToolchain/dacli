@@ -119,29 +119,18 @@ class TestGetStructure:
         assert intro["children"][0]["path"] == "/introduction/goals"
 
     def test_get_structure_with_max_depth_1(self, client: TestClient):
-        """AC-NAV-02: max_depth=1 returns only level 1 sections."""
+        """Issue #218: max_depth=1 returns level 1 sections WITH their children."""
         response = client.get("/api/v1/structure?max_depth=1")
         data = response.json()
 
         assert response.status_code == 200
         assert len(data["sections"]) == 2
 
-        # Children should be empty due to max_depth
-        for section in data["sections"]:
-            assert section["children"] == []
-
-    def test_get_structure_with_max_depth_2(self, client: TestClient):
-        """max_depth=2 returns levels 1 and 2."""
-        response = client.get("/api/v1/structure?max_depth=2")
-        data = response.json()
-
-        assert response.status_code == 200
-
         # Level 1 sections should have children
         intro = data["sections"][0]
         assert len(intro["children"]) == 2
 
-        # Level 2 children should have empty children (no level 3)
+        # Level 2 children should have empty children (no level 3 at max_depth=1)
         for child in intro["children"]:
             assert child["children"] == []
 
