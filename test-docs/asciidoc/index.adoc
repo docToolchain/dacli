@@ -1,0 +1,86 @@
+= Test Documentation
+:toc:
+:sectnums:
+
+This is a test documentation project.
+
+== Introduction
+
+This section introduces the documentation.
+
+=== Overview
+
+A brief overview of the project.
+
+=== Goals
+
+The project goals are:
+
+* Goal 1
+* Goal 2
+* Goal 3
+
+== Architecture
+
+The architecture section.
+
+=== Components
+
+[source,python]
+----
+class Component:
+    def __init__(self, name):
+        self.name = name
+----
+
+=== Diagrams
+
+[plantuml]
+----
+@startuml
+A -> B: Request
+B -> A: Response
+@enduml
+----
+
+== API Reference
+
+The API documentation.
+
+=== Endpoints
+
+|===
+| Method | Path | Description
+| GET | /api/v1/users | Get all users
+| POST | /api/v1/users | Create user
+| DELETE | /api/v1/users/{id} | Delete user
+|===
+
+=== Authentication
+
+Authentication is required for all endpoints.
+
+==== API Keys
+
+Use API keys for server-to-server communication.
+
+==== OAuth 2.0
+
+Use OAuth 2.0 for user authentication.
+
+== Configuration
+
+Configuration options.
+
+[source,yaml]
+----
+server:
+  port: 8080
+  host: localhost
+database:
+  url: postgresql://localhost/db
+----
+
+== Conclusion
+
+This concludes the test documentation.

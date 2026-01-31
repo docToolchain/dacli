@@ -1,0 +1,102 @@
+= Advanced Topics
+:toc:
+
+== Edge Cases
+
+This section covers edge cases.
+
+=== Empty Section
+
+=== Section with Special Characters: äöü & <test>
+
+Content with special characters: äöü ß € @ # $ % ^ & * ( )
+
+=== Very Long Section Title That Goes On And On And On And On And On And On And On
+
+This section has a very long title.
+
+== Code Blocks
+
+=== Python Code
+
+[source,python]
+----
+def hello_world():
+    """A simple hello world function."""
+    print("Hello, World!")
+
+if __name__ == "__main__":
+    hello_world()
+----
+
+=== JavaScript Code
+
+[source,javascript]
+----
+function helloWorld() {
+    console.log("Hello, World!");
+}
+
+helloWorld();
+----
+
+=== Code Without Language
+
+----
+This is a code block without language specification.
+It should still be parsed correctly.
+----
+
+== Tables
+
+=== Simple Table
+
+|===
+| Column 1 | Column 2
+
+| Cell 1.1 | Cell 1.2
+| Cell 2.1 | Cell 2.2
+|===
+
+=== Complex Table
+
+[cols="1,2,3"]
+|===
+| Header 1 | Header 2 | Header 3
+
+| Row 1 Col 1
+| Row 1 Col 2
+| Row 1 Col 3
+
+| Row 2 Col 1
+| Row 2 Col 2 with more content
+| Row 2 Col 3
+|===
+
+== Admonitions
+
+NOTE: This is a note.
+
+TIP: This is a tip.
+
+WARNING: This is a warning.
+
+IMPORTANT: This is important.
+
+CAUTION: This is a caution.
+
+== Nested Sections Deep
+
+=== Level 3
+
+==== Level 4
+
+===== Level 5
+
+====== Level 6
+
+This is the deepest level.
+
+== Include Simulation
+
+This section simulates what would be included content.
