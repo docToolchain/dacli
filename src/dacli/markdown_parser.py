@@ -488,7 +488,9 @@ class MarkdownStructureParser:
                 section.source_location.end_line = next_start - 1
             else:
                 # Last section ends at file end
-                section.source_location.end_line = total_lines
+                # Issue #224: Ensure end_line is at least equal to start line
+                # (handles empty files where total_lines could be 0)
+                section.source_location.end_line = max(total_lines, section.source_location.line)
 
     def _parse_elements(
         self,

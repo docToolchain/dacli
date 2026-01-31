@@ -1830,8 +1830,9 @@ class TestEmptyMarkdownFileHandling:
         root = doc.sections[0]
         assert root.source_location.file == empty_file
         assert root.source_location.line == 1
-        # For empty files, end_line is 0 (no lines in file)
-        assert root.source_location.end_line == 0
+        # Issue #224: For empty files, end_line should be at least equal to line
+        # (valid line range where end_line >= line)
+        assert root.source_location.end_line == 1
 
     def test_whitespace_only_file_treated_as_empty(self, tmp_path):
         """File with only whitespace is treated as empty."""
