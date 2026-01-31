@@ -1,0 +1,11 @@
+= Document with Includes
+
+== Main Content
+
+This is the main document.
+
+include::included_part.adoc[]
+
+== After Include
+
+Content after the include.

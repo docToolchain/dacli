@@ -1,0 +1,27 @@
+= Duplicate Sections Test
+
+== Introduction
+
+First introduction.
+
+== Introduction
+
+Second section with same name.
+
+== Features
+
+=== Feature
+
+First feature.
+
+=== Feature
+
+Second feature with same name.
+
+=== Feature
+
+Third feature with same name.
+
+== Conclusion
+
+End.

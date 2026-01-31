@@ -1,0 +1,7 @@
+== Included Section
+
+This content is included from another file.
+
+=== Nested Included Content
+
+Some nested content in the included file.

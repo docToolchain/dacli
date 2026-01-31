@@ -1,0 +1,11 @@
+= Document with Broken Include
+
+== Valid Section
+
+Some content.
+
+include::nonexistent_file.adoc[]
+
+== After Broken Include
+
+More content.

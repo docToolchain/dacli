@@ -1,0 +1,38 @@
+= Basic Test Document
+
+== Introduction
+
+This is a basic introduction section.
+It has multiple lines of content.
+
+=== Goals
+
+These are the goals for testing.
+
+* Goal 1
+* Goal 2
+* Goal 3
+
+=== Non-Goals
+
+These are non-goals.
+
+== Architecture
+
+The architecture section.
+
+=== Components
+
+Component descriptions.
+
+==== Backend
+
+Backend components.
+
+==== Frontend
+
+Frontend components.
+
+== Conclusion
+
+Final conclusion.

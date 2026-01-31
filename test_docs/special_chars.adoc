@@ -1,0 +1,46 @@
+= Document with Special Characters
+
+== Umlauts and Accents
+
+This section contains umlauts: aou, ss
+And French accents: cafe, naive, resume
+
+=== Japanese Characters
+
+Some Japanese: XXX
+
+=== Emoji Test
+
+Emoji in content: Unicode test
+
+== Section with "Quotes" and 'Apostrophes'
+
+This section has quotes in the title.
+
+== Section with <Angle> Brackets
+
+HTML-like content: <div>content</div>
+
+== Section with & Ampersand
+
+Testing & special & characters.
+
+== Section-with-many-dashes
+
+Dashes in section name.
+
+=== Sub_Section_with_Underscores
+
+Testing underscores.
+
+== 123 Numbers at Start
+
+Numbers in section title.
+
+== ALLCAPS SECTION
+
+All caps section.
+
+== Path/With/Slashes
+
+Testing slashes in title.

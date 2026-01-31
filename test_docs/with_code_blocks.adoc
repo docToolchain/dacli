@@ -1,0 +1,57 @@
+= Document with Code Blocks
+
+== Python Examples
+
+Here is some Python code:
+
+[source,python]
+----
+def hello_world():
+    print("Hello, World!")
+
+def calculate(x, y):
+    return x + y
+----
+
+=== More Python
+
+Another code block:
+
+[source,python]
+----
+class MyClass:
+    def __init__(self):
+        self.value = 42
+----
+
+== JavaScript Examples
+
+[source,javascript]
+----
+function greet(name) {
+    console.log(`Hello, ${name}!`);
+}
+----
+
+== Unclosed Code Block Test
+
+This section has a code block.
+
+[source,bash]
+----
+echo "This is properly closed"
+----
+
+== Edge Case - Empty Code Block
+
+[source,text]
+----
+----
+
+== Special Characters in Code
+
+[source,python]
+----
+# Special chars: <>&"'`
+xml = "<root><item attr=\"value\">Content</item></root>"
+----

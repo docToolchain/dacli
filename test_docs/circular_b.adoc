@@ -1,0 +1,5 @@
+= Circular Include B
+
+== Section B
+
+include::circular_a.adoc[]

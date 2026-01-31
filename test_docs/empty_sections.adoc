@@ -1,0 +1,16 @@
+= Empty Sections Test
+
+== Empty Section
+
+== Another Empty Section
+
+== Section with Only Whitespace
+
+
+
+== Normal Section
+
+This section has content.
+
+== Empty Again
+

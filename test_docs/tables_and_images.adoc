@@ -1,0 +1,48 @@
+= Tables and Images
+
+== Table Examples
+
+=== Simple Table
+
+|===
+| Header 1 | Header 2 | Header 3
+
+| Cell 1.1 | Cell 1.2 | Cell 1.3
+| Cell 2.1 | Cell 2.2 | Cell 2.3
+|===
+
+=== Complex Table
+
+[cols="1,2,3",options="header"]
+|===
+| ID
+| Name
+| Description
+
+| 1
+| Alpha
+| First item in list
+
+| 2
+| Beta
+| Second item
+
+| 3
+| Gamma
+| Third item
+|===
+
+== Image References
+
+image::diagram.png[Architecture Diagram]
+
+image::screenshot.jpg[Screenshot,width=400]
+
+== Inline Images
+
+Text with inline image:image.png[] in the middle.
+
+== Empty Table
+
+|===
+|===
