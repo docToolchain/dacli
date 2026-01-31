@@ -71,6 +71,28 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                 "message": pw.message,
             })
 
+    # Issue #219: Check for unresolved includes
+    for doc in index._documents:
+        # Only AsciiDoc documents have includes (check for attribute)
+        if hasattr(doc, "includes"):
+            for include in doc.includes:
+                if not include.target_path.exists():
+                    source_loc = include.source_location
+                    try:
+                        rel_source = source_loc.file.relative_to(docs_root_resolved)
+                    except ValueError:
+                        rel_source = source_loc.file
+                    try:
+                        rel_target = include.target_path.relative_to(docs_root_resolved)
+                    except ValueError:
+                        rel_target = include.target_path
+                    errors.append({
+                        "type": "unresolved_include",
+                        "path": f"{rel_source}:{source_loc.line}",
+                        "include_path": str(rel_target),
+                        "message": f"Include file '{rel_target}' not found",
+                    })
+
     # Calculate validation time
     elapsed_ms = int((time.time() - start_time) * 1000)
 
