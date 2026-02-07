@@ -31,6 +31,7 @@ from dacli.file_handler import FileReadError, FileSystemHandler, FileWriteError
 from dacli.markdown_parser import MarkdownStructureParser
 from dacli.mcp_app import _build_index
 from dacli.services import (
+    ask_documentation,
     compute_hash,
     get_project_metadata,
     get_section_metadata,
@@ -133,6 +134,7 @@ EXIT_WRITE_ERROR = 5
 
 # Command aliases for shorter typing
 COMMAND_ALIASES = {
+    "a": "ask",
     "s": "search",
     "sec": "section",
     "str": "structure",
@@ -149,6 +151,7 @@ COMMAND_GROUPS = {
     "Read": ["section", "elements"],
     "Validate": ["validate"],
     "Edit": ["update", "insert"],
+    "Experimental": ["ask"],
 }
 
 # Reverse lookup: command -> alias
@@ -845,6 +848,46 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
         result = {"success": False, "error": f"Failed to insert: {e}"}
         click.echo(format_output(ctx, result))
         sys.exit(EXIT_WRITE_ERROR)
+
+
+@cli.command(epilog="""
+\b
+[experimental] This command uses an LLM to answer questions.
+Requires Claude Code CLI or ANTHROPIC_API_KEY.
+
+Examples:
+  dacli ask "What is this project about?"
+  dacli ask "How do I install?" --provider anthropic-api
+  dacli a "What commands are available?"     # Using alias
+""")
+@click.argument("question")
+@click.option(
+    "--provider",
+    default=None,
+    help="LLM provider: claude-code or anthropic-api (default: auto-detect)",
+)
+@click.option(
+    "--max-sections",
+    type=int,
+    default=5,
+    help="Max documentation sections for context (default: 5)",
+)
+@pass_context
+def ask(ctx: CliContext, question: str, provider: str | None, max_sections: int):
+    """[experimental] Ask a question about the documentation using an LLM."""
+    result = ask_documentation(
+        question=question,
+        index=ctx.index,
+        file_handler=ctx.file_handler,
+        provider_name=provider,
+        max_sections=max_sections,
+    )
+
+    if "error" in result:
+        click.echo(format_output(ctx, result))
+        sys.exit(EXIT_ERROR)
+
+    click.echo(format_output(ctx, result))
 
 
 if __name__ == "__main__":

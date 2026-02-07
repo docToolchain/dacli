@@ -26,6 +26,7 @@ from dacli.file_utils import find_doc_files
 from dacli.markdown_parser import MarkdownStructureParser
 from dacli.models import Document
 from dacli.services import (
+    ask_documentation,
     compute_hash,
     get_project_metadata,
     get_section_metadata,
@@ -617,6 +618,37 @@ def create_mcp_server(
             'validation_time_ms': Time taken for validation in milliseconds.
         """
         return service_validate_structure(index, docs_root)
+
+    @mcp.tool()
+    def ask_documentation_tool(
+        question: str,
+        provider: str | None = None,
+        max_sections: int = 5,
+    ) -> dict:
+        """[experimental] Ask a question about the documentation using an LLM.
+
+        Searches for relevant documentation sections, builds a context prompt,
+        and calls an LLM provider to generate an answer. Requires Claude Code CLI
+        or ANTHROPIC_API_KEY environment variable.
+
+        Args:
+            question: The question to ask about the documentation.
+            provider: LLM provider to use - 'claude-code' or 'anthropic-api'.
+                      If None, auto-detects (prefers Claude Code CLI).
+            max_sections: Maximum number of documentation sections to include
+                          as context for the LLM (default: 5).
+
+        Returns:
+            Dictionary with 'answer', 'provider', 'model', 'sections_used',
+            and 'experimental' flag. On error, returns dict with 'error' key.
+        """
+        return ask_documentation(
+            question=question,
+            index=index,
+            file_handler=file_handler,
+            provider_name=provider,
+            max_sections=max_sections,
+        )
 
     return mcp
 

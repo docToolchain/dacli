@@ -1,6 +1,6 @@
 [project]
 name = "dacli"
-version = "0.4.27"
+version = "0.4.28"
 description = "Documentation Access CLI - Navigate and query large documentation projects"
 readme = "README.md"
 license = { text = "MIT" }
@@ -33,6 +33,9 @@ Repository = "https://github.com/docToolchain/dacli"
 Issues = "https://github.com/docToolchain/dacli/issues"
 
 [project.optional-dependencies]
+llm = [
+    "anthropic>=0.40.0",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
