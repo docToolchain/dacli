@@ -1,9 +1,12 @@
-"""Tests for Issue #186: Iterative context building for `dacli ask`.
+"""Tests for Issue #186: Iterative file-based context building for `dacli ask`.
 
-The ask command iterates through ALL sections one by one, passing each
-section + question + previous findings to the LLM. The LLM decides
-relevance (no keyword search). A final consolidation step combines all
-findings into a coherent answer with source references.
+The ask command iterates through documentation FILE BY FILE (not section
+by section), passing each file's content + question + previous findings
+to the LLM. The LLM decides relevance. A final consolidation step combines
+all findings into a coherent answer with source references.
+
+File-based iteration is more efficient than section-based: a typical
+project has ~35 files vs ~460 sections, reducing LLM calls by ~13x.
 """
 
 from pathlib import Path
@@ -13,36 +16,48 @@ import pytest
 
 from dacli.services.llm_provider import LLMResponse
 
+
 # -- Fixtures --
 
 
 @pytest.fixture
-def docs_multi_section(tmp_path: Path) -> Path:
-    """Create documentation with multiple distinct sections."""
-    doc = tmp_path / "guide.adoc"
-    doc.write_text(
+def docs_multi_file(tmp_path: Path) -> Path:
+    """Create documentation with multiple files."""
+    (tmp_path / "security.adoc").write_text(
         """\
 = Security Guide
 
 == Authentication
 
 Authentication uses JWT tokens.
-Users authenticate via OAuth2 flow.
 
 == Authorization
 
-Authorization uses RBAC (Role-Based Access Control).
-Permissions are checked after authentication.
+Authorization uses RBAC.
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "deployment.adoc").write_text(
+        """\
+= Deployment Guide
 
-== API Endpoints
-
-The /api/login endpoint handles authentication.
-The /api/admin endpoint requires admin role.
-
-== Deployment
+== Docker
 
 Deploy using Docker containers.
-Use docker-compose for local development.
+
+== Kubernetes
+
+Use Kubernetes for orchestration.
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "api.adoc").write_text(
+        """\
+= API Reference
+
+== Endpoints
+
+The /api/login endpoint handles authentication.
 """,
         encoding="utf-8",
     )
@@ -50,8 +65,8 @@ Use docker-compose for local development.
 
 
 @pytest.fixture
-def index_and_handler(docs_multi_section: Path):
-    """Build index and file handler for multi-section docs."""
+def index_and_handler(docs_multi_file: Path):
+    """Build index and file handler for multi-file docs."""
     from dacli.asciidoc_parser import AsciidocStructureParser
     from dacli.file_handler import FileSystemHandler
     from dacli.markdown_parser import MarkdownStructureParser
@@ -60,53 +75,48 @@ def index_and_handler(docs_multi_section: Path):
 
     idx = StructureIndex()
     fh = FileSystemHandler()
-    parser = AsciidocStructureParser(base_path=docs_multi_section)
+    parser = AsciidocStructureParser(base_path=docs_multi_file)
     md_parser = MarkdownStructureParser()
-    _build_index(docs_multi_section, idx, parser, md_parser)
+    _build_index(docs_multi_file, idx, parser, md_parser)
     return idx, fh
 
 
-# -- Section Collection Tests --
+# -- File Collection Tests --
 
 
-class TestSectionCollection:
-    """Test that all sections are collected without keyword filtering."""
+class TestFileCollection:
+    """Test that documentation files are collected for iteration."""
 
-    def test_get_all_sections_returns_flat_list(self, index_and_handler):
-        """_get_all_sections returns all sections as a flat list."""
-        from dacli.services.ask_service import _get_all_sections
-
-        idx, _ = index_and_handler
-        sections = _get_all_sections(idx)
-
-        assert len(sections) >= 4  # Auth, Authz, API, Deployment
-        paths = [s["path"] for s in sections]
-        # All sections should be present
-        assert any("authentication" in p for p in paths)
-        assert any("authorization" in p for p in paths)
-        assert any("deployment" in p for p in paths)
-
-    def test_get_all_sections_includes_title_and_level(self, index_and_handler):
-        """Each section has path, title, and level."""
-        from dacli.services.ask_service import _get_all_sections
+    def test_get_all_files_returns_file_list(self, index_and_handler):
+        """_get_all_files returns all indexed documentation files."""
+        from dacli.services.ask_service import _get_all_files
 
         idx, _ = index_and_handler
-        sections = _get_all_sections(idx)
+        files = _get_all_files(idx)
 
-        for s in sections:
-            assert "path" in s
-            assert "title" in s
-            assert "level" in s
+        assert len(files) == 3  # security.adoc, deployment.adoc, api.adoc
+
+    def test_files_fewer_than_sections(self, index_and_handler):
+        """Number of files should be less than number of sections."""
+        from dacli.services.ask_service import _get_all_files
+
+        idx, _ = index_and_handler
+        files = _get_all_files(idx)
+
+        structure = idx.get_structure()
+        total_sections = structure["total_sections"]
+
+        assert len(files) < total_sections
 
 
-# -- Iterative Context Building Tests --
+# -- File-Based Iterative Tests --
 
 
-class TestIterativeAsk:
-    """Test the iterative section-by-section LLM approach."""
+class TestFileBasedAsk:
+    """Test the file-by-file LLM iteration approach."""
 
-    def test_calls_llm_per_section_then_consolidates(self, index_and_handler):
-        """LLM is called once per section + once for consolidation."""
+    def test_calls_llm_per_file_then_consolidates(self, index_and_handler):
+        """LLM is called once per file + once for consolidation."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -120,20 +130,15 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation(
-                "How does authentication work?",
-                idx, fh, max_sections=3,
-            )
+            ask_documentation("How does auth work?", idx, fh)
 
-        # At least 2 calls: 1+ sections + 1 consolidation
-        assert mock_provider.ask.call_count >= 2, (
-            "Expected at least 2 LLM calls (1 section + consolidation)"
-        )
+        # 3 files + 1 consolidation = 4 calls
+        assert mock_provider.ask.call_count == 4
 
-    def test_iterates_all_sections_not_just_keyword_matches(
+    def test_iterates_all_files_regardless_of_question(
         self, index_and_handler
     ):
-        """Sections are iterated regardless of keyword match."""
+        """All files are checked even if question has no keyword match."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -152,18 +157,15 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            # Question with no keyword match in docs
             ask_documentation(
-                "Wo finde ich den Schraubenzieher?",
-                idx, fh, max_sections=5,
+                "Wo finde ich den Schraubenzieher?", idx, fh,
             )
 
-        # Should still iterate through sections (LLM decides relevance)
-        # At least 2 calls: section iterations + consolidation
-        assert len(call_prompts) >= 2
+        # 3 files + 1 consolidation = 4 calls
+        assert len(call_prompts) == 4
 
-    def test_accumulates_findings_across_iterations(self, index_and_handler):
-        """Each iteration includes findings from previous iterations."""
+    def test_file_content_passed_to_llm(self, index_and_handler):
+        """Each LLM call receives the full file content."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -172,7 +174,7 @@ class TestIterativeAsk:
         def capture_ask(system_prompt, user_message):
             call_prompts.append(user_message)
             return LLMResponse(
-                text="KEY_POINTS: Found something relevant",
+                text="KEY_POINTS: found\nMISSING: nothing",
                 provider="test", model=None,
             )
 
@@ -182,14 +184,43 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation("auth", idx, fh, max_sections=3)
+            ask_documentation("authentication", idx, fh)
 
-        # Second section call should contain findings from first
+        # Iteration prompts (not consolidation) should contain file content
+        iteration_prompts = call_prompts[:-1]
+        all_content = " ".join(iteration_prompts)
+        assert "JWT tokens" in all_content
+        assert "Docker" in all_content
+        assert "/api/login" in all_content
+
+    def test_accumulates_findings_across_files(self, index_and_handler):
+        """Each file iteration includes findings from previous files."""
+        from dacli.services.ask_service import ask_documentation
+
+        idx, fh = index_and_handler
+        call_prompts = []
+
+        def capture_ask(system_prompt, user_message):
+            call_prompts.append(user_message)
+            return LLMResponse(
+                text="KEY_POINTS: Found important info",
+                provider="test", model=None,
+            )
+
+        with patch("dacli.services.ask_service.get_provider") as mock_get:
+            mock_provider = MagicMock()
+            mock_provider.ask.side_effect = capture_ask
+            mock_provider.name = "test"
+            mock_get.return_value = mock_provider
+
+            ask_documentation("auth", idx, fh)
+
+        # Second file call should contain findings from first
         if len(call_prompts) >= 2:
-            assert "Found something" in call_prompts[1]
+            assert "Found important info" in call_prompts[1]
 
-    def test_returns_sources_with_paths(self, index_and_handler):
-        """Result includes source references with section paths."""
+    def test_returns_sources_with_file_paths(self, index_and_handler):
+        """Result includes source references with file paths."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -202,13 +233,31 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            result = ask_documentation("auth", idx, fh, max_sections=3)
+            result = ask_documentation("auth", idx, fh)
 
         assert "sources" in result
         assert isinstance(result["sources"], list)
-        assert len(result["sources"]) > 0
-        assert "path" in result["sources"][0]
-        assert "title" in result["sources"][0]
+        assert len(result["sources"]) == 3
+        assert "file" in result["sources"][0]
+
+    def test_result_includes_iterations_count(self, index_and_handler):
+        """Result reports how many files were iterated."""
+        from dacli.services.ask_service import ask_documentation
+
+        idx, fh = index_and_handler
+
+        with patch("dacli.services.ask_service.get_provider") as mock_get:
+            mock_provider = MagicMock()
+            mock_provider.ask.return_value = LLMResponse(
+                text="Answer", provider="test", model=None,
+            )
+            mock_provider.name = "test"
+            mock_get.return_value = mock_provider
+
+            result = ask_documentation("auth", idx, fh)
+
+        assert "iterations" in result
+        assert result["iterations"] == 3
 
     def test_consolidation_is_last_call(self, index_and_handler):
         """The final LLM call is the consolidation prompt."""
@@ -230,54 +279,13 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation("auth", idx, fh, max_sections=2)
+            ask_documentation("auth", idx, fh)
 
-        # Last call should be consolidation — contains "All findings"
         last_prompt = call_prompts[-1]
         assert "All findings" in last_prompt
 
-    def test_max_sections_limits_iterations(self, index_and_handler):
-        """max_sections limits how many sections are evaluated."""
-        from dacli.services.ask_service import ask_documentation
-
-        idx, fh = index_and_handler
-
-        with patch("dacli.services.ask_service.get_provider") as mock_get:
-            mock_provider = MagicMock()
-            mock_provider.ask.return_value = LLMResponse(
-                text="KEY_POINTS: info\nMISSING: nothing",
-                provider="test", model=None,
-            )
-            mock_provider.name = "test"
-            mock_get.return_value = mock_provider
-
-            ask_documentation("auth", idx, fh, max_sections=1)
-
-        # 1 section + 1 consolidation = 2 calls max
-        assert mock_provider.ask.call_count <= 2
-
-    def test_result_includes_iterations_count(self, index_and_handler):
-        """Result reports how many iterations were performed."""
-        from dacli.services.ask_service import ask_documentation
-
-        idx, fh = index_and_handler
-
-        with patch("dacli.services.ask_service.get_provider") as mock_get:
-            mock_provider = MagicMock()
-            mock_provider.ask.return_value = LLMResponse(
-                text="Answer", provider="test", model=None,
-            )
-            mock_provider.name = "test"
-            mock_get.return_value = mock_provider
-
-            result = ask_documentation("auth", idx, fh, max_sections=3)
-
-        assert "iterations" in result
-        assert isinstance(result["iterations"], int)
-        assert result["iterations"] >= 1
-
     def test_handles_empty_docs_gracefully(self, tmp_path: Path):
-        """When no sections exist, still returns a meaningful response."""
+        """When no files exist, still returns a meaningful response."""
         from dacli.asciidoc_parser import AsciidocStructureParser
         from dacli.file_handler import FileSystemHandler
         from dacli.markdown_parser import MarkdownStructureParser
@@ -285,7 +293,6 @@ class TestIterativeAsk:
         from dacli.services.ask_service import ask_documentation
         from dacli.structure_index import StructureIndex
 
-        # Empty docs directory
         (tmp_path / "empty.md").write_text("", encoding="utf-8")
         idx = StructureIndex()
         fh = FileSystemHandler()

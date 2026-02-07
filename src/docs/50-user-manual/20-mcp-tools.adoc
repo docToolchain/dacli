@@ -407,7 +407,7 @@ get_metadata(path="architecture")
 
 [experimental] Ask a question about the documentation using an LLM.
 
-Iterates through all documentation sections, passing each one together with the question and previous findings to the LLM. The LLM decides relevance — no keyword matching is used. More accurate than RAG (synonyms and natural language work correctly) but takes a few seconds since each section requires a separate LLM call.
+Iterates through all documentation files, passing each file's content together with the question and previous findings to the LLM. The LLM decides relevance — no keyword matching is used. More accurate than RAG (synonyms and natural language work correctly) but takes a few seconds since each file requires a separate LLM call. File-based iteration is efficient (~35 files vs ~460 sections in a typical project).
 
 .Parameters
 [cols="2,1,1,4"]
@@ -416,7 +416,7 @@ Iterates through all documentation sections, passing each one together with the 
 
 | `question` | string | - | The question to ask about the documentation
 | `provider` | string \| null | null | LLM provider: `claude-code` or `anthropic-api`. Auto-detects if null.
-| `max_sections` | int \| null | null | Limit sections to check (default: all)
+| `max_sections` | int \| null | null | Limit files to check (default: all)
 |===
 
 .Returns

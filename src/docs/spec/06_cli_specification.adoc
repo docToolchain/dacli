@@ -427,9 +427,9 @@ $ dacli insert components --position append --content "=== New Component\n\nDeta
 
 [experimental] Ask a question about the documentation using an LLM.
 
-Iterates through all documentation sections one by one, passing each section together with the question and previous findings to the LLM. The LLM decides which sections are relevant — no keyword matching is used. A final consolidation step combines all findings into a coherent answer with source references.
+Iterates through all documentation files one by one, passing each file's content together with the question and previous findings to the LLM. The LLM decides relevance — no keyword matching is used. A final consolidation step combines all findings into a coherent answer with source references.
 
-This approach is more accurate than traditional RAG (Retrieval-Augmented Generation) because the LLM evaluates every section semantically. Synonyms and natural language questions work correctly (e.g., asking about "Schraubenzieher" will find content about "Schraubendreher"). The trade-off is that it takes a few seconds longer since each section requires a separate LLM call.
+This approach is more accurate than traditional RAG (Retrieval-Augmented Generation) because the LLM evaluates every file semantically. Synonyms and natural language questions work correctly (e.g., asking about "Schraubenzieher" will find content about "Schraubendreher"). The trade-off is that it takes a few seconds since each file requires a separate LLM call. File-based iteration is efficient: a typical project has ~35 files vs ~460 sections, keeping the number of LLM calls manageable.
 
 [source,bash]
 ----
@@ -443,7 +443,7 @@ dacli ask <QUESTION> [--provider PROVIDER] [--max-sections N]
 **Options:**
 
 * `--provider PROVIDER`: LLM provider to use - `claude-code` (Claude Code CLI) or `anthropic-api` (Anthropic SDK). Default: auto-detect (prefers Claude Code CLI)
-* `--max-sections N`: Limit the number of sections to check (default: all sections)
+* `--max-sections N`: Limit the number of files to check (default: all files)
 
 **Prerequisites:**
 
@@ -465,7 +465,7 @@ $ dacli ask "What is this project about?"
 # Use a specific provider
 $ dacli ask "How do I install?" --provider anthropic-api
 
-# Limit context sections
+# Limit number of files to check
 $ dacli ask "What commands are available?" --max-sections 3
 
 # Using the alias
