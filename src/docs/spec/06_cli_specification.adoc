@@ -427,7 +427,9 @@ $ dacli insert components --position append --content "=== New Component\n\nDeta
 
 [experimental] Ask a question about the documentation using an LLM.
 
-Searches for relevant documentation sections, builds a context prompt, and calls an LLM provider to generate an answer.
+Iterates through all documentation sections one by one, passing each section together with the question and previous findings to the LLM. The LLM decides which sections are relevant — no keyword matching is used. A final consolidation step combines all findings into a coherent answer with source references.
+
+This approach is more accurate than traditional RAG (Retrieval-Augmented Generation) because the LLM evaluates every section semantically. Synonyms and natural language questions work correctly (e.g., asking about "Schraubenzieher" will find content about "Schraubendreher"). The trade-off is that it takes a few seconds longer since each section requires a separate LLM call.
 
 [source,bash]
 ----
@@ -441,7 +443,7 @@ dacli ask <QUESTION> [--provider PROVIDER] [--max-sections N]
 **Options:**
 
 * `--provider PROVIDER`: LLM provider to use - `claude-code` (Claude Code CLI) or `anthropic-api` (Anthropic SDK). Default: auto-detect (prefers Claude Code CLI)
-* `--max-sections N`: Maximum number of documentation sections to include as context (default: 5)
+* `--max-sections N`: Limit the number of sections to check (default: all sections)
 
 **Prerequisites:**
 
