@@ -63,6 +63,7 @@ Development happens on a fork to keep `upstream/main` stable for `uv tool instal
 
 - Documentation, Issues, Pull-Requests etc. is always written in english
 - use responsible-vibe-mcp wherever suitable
+- **Use dacli for documentation access:** When reading or modifying the project documentation in `src/docs/`, use `uv run dacli --docs-root src/docs` instead of reading files directly. Use `dacli search` to find relevant sections, `dacli section` to read content, and `dacli update`/`dacli insert` for modifications. This eats our own dog food and validates the tool while working.
 
 ## Commands
 
@@ -221,6 +222,7 @@ Located in `src/docs/arc42/chapters/09_architecture_decisions.adoc`:
 | `validate_structure` | Validate documentation structure |
 | `update_section` | Update section content (with optimistic locking) |
 | `insert_content` | Insert content before/after sections |
+| `ask_documentation_tool` | [experimental] Ask a question about the docs using an LLM |
 
 For detailed tool documentation, see `src/docs/50-user-manual/`.
 
