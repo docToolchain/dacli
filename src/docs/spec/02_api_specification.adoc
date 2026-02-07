@@ -639,16 +639,27 @@ Retrieves metadata about the project or a specific section.
 
 '''
 
-==== get_dependencies (planned)
+==== get_dependencies
 
-[NOTE]
-====
-This tool is planned but not yet implemented.
-====
-
-Retrieves include dependencies and cross-references.
+Retrieves include dependencies between documentation files.
 
 **Use Case:** UC-06 (Extension)
+
+**Response 200:**
+[source,json]
+----
+{
+  "include_tree": {
+    "arc42.adoc": [
+      "chapters/01_introduction.adoc",
+      "chapters/02_constraints.adoc"
+    ]
+  },
+  "cross_references": []
+}
+----
+
+NOTE: `cross_references` is reserved for future use and currently returns an empty list.
 
 '''
 
@@ -749,6 +760,7 @@ Error responses are returned as dictionaries with an `error` key:
 | `validate_structure` | Validate document structure
 | `update_section` | Update section content
 | `insert_content` | Insert content before/after sections
+| `get_dependencies` | Get include dependencies
 |===
 
 .Planned Tools
@@ -757,7 +769,6 @@ Error responses are returned as dictionaries with an `error` key:
 | Tool | Description
 
 | `update_element` | Replace a specific element (code, table)
-| `get_dependencies` | Get include dependencies
 | `get_health` | Server health status
 | `reindex` | Trigger manual reindexing
 |===
