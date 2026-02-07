@@ -1,8 +1,9 @@
 """Tests for Issue #186: Iterative context building for `dacli ask`.
 
-The ask command should iterate through sections one by one, passing each
-section + question + previous findings to the LLM. A final consolidation
-step combines all findings into a coherent answer with source references.
+The ask command iterates through ALL sections one by one, passing each
+section + question + previous findings to the LLM. The LLM decides
+relevance (no keyword search). A final consolidation step combines all
+findings into a coherent answer with source references.
 """
 
 from pathlib import Path
@@ -65,46 +66,37 @@ def index_and_handler(docs_multi_section: Path):
     return idx, fh
 
 
-# -- Keyword Extraction Tests --
+# -- Section Collection Tests --
 
 
-class TestKeywordExtraction:
-    """Test extracting search keywords from natural language questions."""
+class TestSectionCollection:
+    """Test that all sections are collected without keyword filtering."""
 
-    def test_extracts_keywords_from_question(self):
-        """Should extract meaningful words, removing stop words."""
-        from dacli.services.ask_service import _extract_keywords
+    def test_get_all_sections_returns_flat_list(self, index_and_handler):
+        """_get_all_sections returns all sections as a flat list."""
+        from dacli.services.ask_service import _get_all_sections
 
-        keywords = _extract_keywords("Welche Sicherheitshinweise gibt es?")
-        assert "sicherheitshinweise" in keywords
-        # Stop words like "welche", "gibt", "es" should be removed
-        assert "welche" not in keywords
-        assert "es" not in keywords
+        idx, _ = index_and_handler
+        sections = _get_all_sections(idx)
 
-    def test_extracts_english_keywords(self):
-        """Should handle English questions too."""
-        from dacli.services.ask_service import _extract_keywords
+        assert len(sections) >= 4  # Auth, Authz, API, Deployment
+        paths = [s["path"] for s in sections]
+        # All sections should be present
+        assert any("authentication" in p for p in paths)
+        assert any("authorization" in p for p in paths)
+        assert any("deployment" in p for p in paths)
 
-        keywords = _extract_keywords("How does authentication work?")
-        assert "authentication" in keywords
-        # Stop words removed
-        assert "how" not in keywords
-        assert "does" not in keywords
+    def test_get_all_sections_includes_title_and_level(self, index_and_handler):
+        """Each section has path, title, and level."""
+        from dacli.services.ask_service import _get_all_sections
 
-    def test_single_keyword_passthrough(self):
-        """Single words should pass through unchanged."""
-        from dacli.services.ask_service import _extract_keywords
+        idx, _ = index_and_handler
+        sections = _get_all_sections(idx)
 
-        keywords = _extract_keywords("Sicherheit")
-        assert "sicherheit" in keywords
-
-    def test_returns_nonempty_for_all_stopwords(self):
-        """If all words are stop words, return original words as fallback."""
-        from dacli.services.ask_service import _extract_keywords
-
-        keywords = _extract_keywords("what is the")
-        # Should return something, not empty
-        assert len(keywords) > 0
+        for s in sections:
+            assert "path" in s
+            assert "title" in s
+            assert "level" in s
 
 
 # -- Iterative Context Building Tests --
@@ -114,62 +106,44 @@ class TestIterativeAsk:
     """Test the iterative section-by-section LLM approach."""
 
     def test_calls_llm_per_section_then_consolidates(self, index_and_handler):
-        """LLM should be called once per relevant section + once for consolidation."""
+        """LLM is called once per section + once for consolidation."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
 
-        # Track all LLM calls
-        responses = [
-            # Iteration responses (one per section)
-            LLMResponse(
-                text="KEY_POINTS: Uses JWT tokens\nMISSING: authorization details",
-                provider="test", model=None,
-            ),
-            LLMResponse(
-                text="KEY_POINTS: RBAC used\nMISSING: nothing",
-                provider="test", model=None,
-            ),
-            LLMResponse(
-                text="KEY_POINTS: login endpoint\nMISSING: nothing",
-                provider="test", model=None,
-            ),
-            # Consolidation response
-            LLMResponse(
-                text="Authentication uses JWT with RBAC authorization.",
-                provider="test", model=None,
-            ),
-        ]
-
         with patch("dacli.services.ask_service.get_provider") as mock_get:
             mock_provider = MagicMock()
-            mock_provider.ask.side_effect = responses
+            mock_provider.ask.return_value = LLMResponse(
+                text="KEY_POINTS: info\nMISSING: nothing",
+                provider="test", model=None,
+            )
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
             ask_documentation(
-                "How does authentication work?", idx, fh, max_sections=3
+                "How does authentication work?",
+                idx, fh, max_sections=3,
             )
 
-        # Should have multiple LLM calls (sections + consolidation)
+        # At least 2 calls: 1+ sections + 1 consolidation
         assert mock_provider.ask.call_count >= 2, (
             "Expected at least 2 LLM calls (1 section + consolidation)"
         )
 
-    def test_accumulates_findings_across_iterations(self, index_and_handler):
-        """Each iteration should include findings from previous iterations."""
+    def test_iterates_all_sections_not_just_keyword_matches(
+        self, index_and_handler
+    ):
+        """Sections are iterated regardless of keyword match."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
-
         call_prompts = []
 
         def capture_ask(system_prompt, user_message):
             call_prompts.append(user_message)
             return LLMResponse(
-                text="KEY_POINTS: Found something\nMISSING: nothing",
-                provider="test",
-                model=None,
+                text="KEY_POINTS: none\nMISSING: nothing",
+                provider="test", model=None,
             )
 
         with patch("dacli.services.ask_service.get_provider") as mock_get:
@@ -178,15 +152,44 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation("authentication", idx, fh, max_sections=3)
+            # Question with no keyword match in docs
+            ask_documentation(
+                "Wo finde ich den Schraubenzieher?",
+                idx, fh, max_sections=5,
+            )
 
-        # Second iteration prompt should contain findings from first
-        if len(call_prompts) >= 3:
-            # The second section call should reference previous findings
-            assert "Found something" in call_prompts[1] or "findings" in call_prompts[1].lower()
+        # Should still iterate through sections (LLM decides relevance)
+        # At least 2 calls: section iterations + consolidation
+        assert len(call_prompts) >= 2
+
+    def test_accumulates_findings_across_iterations(self, index_and_handler):
+        """Each iteration includes findings from previous iterations."""
+        from dacli.services.ask_service import ask_documentation
+
+        idx, fh = index_and_handler
+        call_prompts = []
+
+        def capture_ask(system_prompt, user_message):
+            call_prompts.append(user_message)
+            return LLMResponse(
+                text="KEY_POINTS: Found something relevant",
+                provider="test", model=None,
+            )
+
+        with patch("dacli.services.ask_service.get_provider") as mock_get:
+            mock_provider = MagicMock()
+            mock_provider.ask.side_effect = capture_ask
+            mock_provider.name = "test"
+            mock_get.return_value = mock_provider
+
+            ask_documentation("auth", idx, fh, max_sections=3)
+
+        # Second section call should contain findings from first
+        if len(call_prompts) >= 2:
+            assert "Found something" in call_prompts[1]
 
     def test_returns_sources_with_paths(self, index_and_handler):
-        """Result should include source references with section paths."""
+        """Result includes source references with section paths."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -194,33 +197,31 @@ class TestIterativeAsk:
         with patch("dacli.services.ask_service.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.ask.return_value = LLMResponse(
-                text="Answer with sources", provider="test", model=None
+                text="Answer", provider="test", model=None,
             )
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            result = ask_documentation("authentication", idx, fh, max_sections=3)
+            result = ask_documentation("auth", idx, fh, max_sections=3)
 
         assert "sources" in result
         assert isinstance(result["sources"], list)
-        # Should have at least one source
-        if result["sources"]:
-            assert "path" in result["sources"][0]
+        assert len(result["sources"]) > 0
+        assert "path" in result["sources"][0]
+        assert "title" in result["sources"][0]
 
-    def test_consolidation_prompt_includes_all_findings(self, index_and_handler):
-        """The final consolidation call should include all accumulated findings."""
+    def test_consolidation_is_last_call(self, index_and_handler):
+        """The final LLM call is the consolidation prompt."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
-
         call_prompts = []
 
         def capture_ask(system_prompt, user_message):
             call_prompts.append(user_message)
             return LLMResponse(
-                text="KEY_POINTS: found info\nMISSING: nothing",
-                provider="test",
-                model=None,
+                text="KEY_POINTS: info\nMISSING: nothing",
+                provider="test", model=None,
             )
 
         with patch("dacli.services.ask_service.get_provider") as mock_get:
@@ -229,36 +230,14 @@ class TestIterativeAsk:
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation("authentication", idx, fh, max_sections=2)
+            ask_documentation("auth", idx, fh, max_sections=2)
 
-        # Last call should be consolidation - contains the question
+        # Last call should be consolidation — contains "All findings"
         last_prompt = call_prompts[-1]
-        assert "authentication" in last_prompt.lower() or "question" in last_prompt.lower()
-
-    def test_natural_language_question_finds_sections(self, index_and_handler):
-        """Natural language questions should find relevant sections via keyword extraction."""
-        from dacli.services.ask_service import ask_documentation
-
-        idx, fh = index_and_handler
-
-        with patch("dacli.services.ask_service.get_provider") as mock_get:
-            mock_provider = MagicMock()
-            mock_provider.ask.return_value = LLMResponse(
-                text="Answer about security", provider="test", model=None
-            )
-            mock_provider.name = "test"
-            mock_get.return_value = mock_provider
-
-            ask_documentation(
-                "Welche Sicherheitshinweise gibt es?", idx, fh, max_sections=5
-            )
-
-        # Should have found sections and called LLM at least once
-        # (even for German question, keyword extraction should find something)
-        assert mock_provider.ask.call_count >= 1
+        assert "All findings" in last_prompt
 
     def test_max_sections_limits_iterations(self, index_and_handler):
-        """max_sections should limit how many sections are evaluated."""
+        """max_sections limits how many sections are evaluated."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -266,18 +245,19 @@ class TestIterativeAsk:
         with patch("dacli.services.ask_service.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.ask.return_value = LLMResponse(
-                text="KEY_POINTS: info\nMISSING: nothing", provider="test", model=None
+                text="KEY_POINTS: info\nMISSING: nothing",
+                provider="test", model=None,
             )
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            ask_documentation("authentication", idx, fh, max_sections=1)
+            ask_documentation("auth", idx, fh, max_sections=1)
 
         # 1 section + 1 consolidation = 2 calls max
         assert mock_provider.ask.call_count <= 2
 
     def test_result_includes_iterations_count(self, index_and_handler):
-        """Result should report how many iterations were performed."""
+        """Result reports how many iterations were performed."""
         from dacli.services.ask_service import ask_documentation
 
         idx, fh = index_and_handler
@@ -285,34 +265,43 @@ class TestIterativeAsk:
         with patch("dacli.services.ask_service.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.ask.return_value = LLMResponse(
-                text="Answer", provider="test", model=None
+                text="Answer", provider="test", model=None,
             )
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            result = ask_documentation("authentication", idx, fh, max_sections=3)
+            result = ask_documentation("auth", idx, fh, max_sections=3)
 
         assert "iterations" in result
         assert isinstance(result["iterations"], int)
         assert result["iterations"] >= 1
 
-    def test_handles_no_search_results_gracefully(self, index_and_handler):
-        """When search finds nothing, should still return a meaningful response."""
+    def test_handles_empty_docs_gracefully(self, tmp_path: Path):
+        """When no sections exist, still returns a meaningful response."""
+        from dacli.asciidoc_parser import AsciidocStructureParser
+        from dacli.file_handler import FileSystemHandler
+        from dacli.markdown_parser import MarkdownStructureParser
+        from dacli.mcp_app import _build_index
         from dacli.services.ask_service import ask_documentation
+        from dacli.structure_index import StructureIndex
 
-        idx, fh = index_and_handler
+        # Empty docs directory
+        (tmp_path / "empty.md").write_text("", encoding="utf-8")
+        idx = StructureIndex()
+        fh = FileSystemHandler()
+        parser = AsciidocStructureParser(base_path=tmp_path)
+        md_parser = MarkdownStructureParser()
+        _build_index(tmp_path, idx, parser, md_parser)
 
         with patch("dacli.services.ask_service.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.ask.return_value = LLMResponse(
-                text="No information found.", provider="test", model=None
+                text="No info found.", provider="test", model=None,
             )
             mock_provider.name = "test"
             mock_get.return_value = mock_provider
 
-            result = ask_documentation(
-                "xyznonexistenttopic123", idx, fh, max_sections=5
-            )
+            result = ask_documentation("question", idx, fh)
 
         assert "answer" in result
         assert "error" not in result
