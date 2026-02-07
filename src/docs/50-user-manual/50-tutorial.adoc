@@ -474,6 +474,9 @@ dacli --docs-root /project/docs update deployment.database \
 
 # 5. Verify the structure is still valid
 dacli --docs-root /project/docs validate
+
+# 6. (Experimental) Ask a question about the docs
+dacli --docs-root /project/docs ask "How is the database configured?"
 ----
 
 == Command Reference
@@ -491,4 +494,5 @@ dacli --docs-root /project/docs validate
 | `validate` | Validate documentation structure
 | `update PATH` | Update section content
 | `insert PATH` | Insert content before/after a section
+| `ask QUESTION` | [experimental] Ask a question about the documentation using an LLM
 |===

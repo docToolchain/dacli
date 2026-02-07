@@ -563,6 +563,49 @@ Feature: Replace element
     And the error code is "PATH_NOT_FOUND"
 ----
 
+== Feature: Ask Documentation (UC-11) [experimental]
+
+[source,gherkin]
+----
+Feature: Ask documentation
+  As an LLM Client
+  I want to ask questions about the documentation
+  To get answers based on the documentation content
+
+  Background:
+    Given the server is started
+    And the project "test-docs" is indexed
+
+  Scenario: Successfully ask a question with Claude Code CLI
+    Given the Claude Code CLI binary is available
+    When I call ask_documentation_tool with question "What is this project about?"
+    Then I receive a response with "answer" containing text
+    And "provider" is "claude-code"
+    And "experimental" is true
+
+  Scenario: Successfully ask a question with Anthropic API
+    Given the ANTHROPIC_API_KEY environment variable is set
+    When I call ask_documentation_tool with question "What is this project about?" and provider "anthropic-api"
+    Then I receive a response with "answer" containing text
+    And "provider" is "anthropic-api"
+    And "experimental" is true
+
+  Scenario: No LLM provider available
+    Given no LLM provider is configured
+    When I call ask_documentation_tool with question "What is this?"
+    Then I receive a response with "error" containing "No LLM provider available"
+
+  Scenario: Auto-detection prefers Claude Code CLI
+    Given both Claude Code CLI and Anthropic API are available
+    When I call ask_documentation_tool with question "What is this?"
+    Then "provider" is "claude-code"
+
+  Scenario: Context includes relevant sections
+    When I call ask_documentation_tool with question "authentication"
+    Then the LLM receives context containing sections matching "authentication"
+    And "sections_used" is greater than 0
+----
+
 == Feature: Non-Functional Requirements
 
 [source,gherkin]
@@ -624,6 +667,7 @@ Feature: Reliability requirements
 | UC-08 | (System Startup) | 4 scenarios
 | UC-09 | POST /section/{path}/insert | 4 scenarios
 | UC-10 | PUT /element/{path}/{index} | 3 scenarios
+| UC-11 | ask_documentation_tool (MCP) / dacli ask (CLI) | 5 scenarios
 |===
 
 == Appendix: Test Data Specification

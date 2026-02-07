@@ -758,6 +758,7 @@ stop
 | UC-08 | Initialize server | Must-Have | System
 | UC-09 | Insert content | Must-Have | Manipulation
 | UC-10 | Replace element | Should-Have | Manipulation
+| UC-11 | Ask documentation | Could-Have | Experimental
 |===
 
 == Appendix: Glossary

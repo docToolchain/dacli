@@ -84,7 +84,7 @@ The following table maps components to the MCP tools:
 
 | **MCP Tools**
 | Exposes all functionality via MCP protocol
-| get_structure, get_section, get_sections_at_level, search, get_elements, get_metadata, validate_structure, update_section, insert_content
+| get_structure, get_section, get_sections_at_level, search, get_elements, get_metadata, validate_structure, update_section, insert_content, ask_documentation_tool [experimental]
 
 | **Document Parsers**
 | Parse AsciiDoc/Markdown, resolve includes, track line numbers

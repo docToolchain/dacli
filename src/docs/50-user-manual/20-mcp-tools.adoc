@@ -4,7 +4,7 @@
 
 == Overview
 
-dacli provides 9 MCP tools for interacting with documentation projects via the Model Context Protocol. These tools enable LLMs to navigate, read, search, and modify documentation.
+dacli provides 10 MCP tools for interacting with documentation projects via the Model Context Protocol. These tools enable LLMs to navigate, read, search, modify documentation, and ask questions using an LLM.
 
 == Navigation Tools
 
@@ -399,6 +399,46 @@ validate_structure()
 # Get word counts for sections
 get_metadata(path="introduction")
 get_metadata(path="architecture")
+----
+
+== Experimental
+
+=== ask_documentation_tool
+
+[experimental] Ask a question about the documentation using an LLM.
+
+Searches for relevant sections, builds a context prompt, and calls an LLM provider to generate an answer.
+
+.Parameters
+[cols="2,1,1,4"]
+|===
+| Parameter | Type | Default | Description
+
+| `question` | string | - | The question to ask about the documentation
+| `provider` | string \| null | null | LLM provider: `claude-code` or `anthropic-api`. Auto-detects if null.
+| `max_sections` | int | 5 | Maximum documentation sections to include as context
+|===
+
+.Returns
+[source,json]
+----
+{
+  "answer": "Based on the documentation, dacli is...",
+  "provider": "claude-code",
+  "model": null,
+  "sections_used": 3,
+  "experimental": true
+}
+----
+
+.Prerequisites
+- **Claude Code CLI**: The `claude` binary must be installed and in `$PATH`
+- **Anthropic API**: Set `ANTHROPIC_API_KEY` environment variable and install `dacli[llm]`
+
+.Example
+----
+ask_documentation_tool(question="What is this project about?")
+ask_documentation_tool(question="How do I install?", provider="anthropic-api")
 ----
 
 == Path Format
