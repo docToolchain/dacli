@@ -5,8 +5,33 @@ and Markdown parsers, following the DRY principle.
 """
 
 import re
+from pathlib import Path
 
 from dacli.models import Section
+
+# Known document extensions to strip from file paths (Issue #266)
+KNOWN_DOC_EXTENSIONS = {".md", ".adoc", ".asciidoc"}
+
+
+def strip_doc_extension(file_path: Path) -> str:
+    """Remove only known document extensions from a file path.
+
+    Unlike Path.with_suffix(""), this only removes known extensions (.md, .adoc,
+    .asciidoc) and preserves dots that are part of the filename (e.g. version
+    numbers like "report_v1.2.3.md" → "report_v1.2.3").
+
+    Args:
+        file_path: Path to strip extension from
+
+    Returns:
+        String path with known extension removed, using forward slashes.
+    """
+    path_str = str(file_path).replace("\\", "/")
+    suffix = file_path.suffix.lower()
+    if suffix in KNOWN_DOC_EXTENSIONS:
+        # Remove only the last suffix if it's a known doc extension
+        return path_str[: -len(file_path.suffix)]
+    return path_str
 
 
 def slugify(text: str) -> str:

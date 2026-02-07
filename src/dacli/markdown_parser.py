@@ -23,6 +23,7 @@ from dacli.parser_utils import (
     collect_all_sections,
     find_section_by_path,
     slugify,
+    strip_doc_extension,
 )
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,9 @@ class MarkdownStructureParser:
         The file prefix is the relative path from base_path to file_path,
         without the file extension. This ensures unique paths across documents.
 
+        Issue #266: Only strips known extensions (.md, .adoc) to preserve dots
+        in filenames (e.g. version numbers like "report_v1.2.3.md").
+
         Args:
             file_path: Path to the document being parsed
 
@@ -128,13 +132,10 @@ class MarkdownStructureParser:
             try:
                 relative = file_path.relative_to(self.base_path)
             except ValueError:
-                # file_path is not relative to base_path, use just the stem
-                relative = Path(file_path.stem)
+                relative = Path(file_path.name)
         else:
-            # No base_path provided, use just the stem
-            relative = Path(file_path.stem)
-        # Remove extension and convert to forward slashes
-        return str(relative.with_suffix("")).replace("\\", "/")
+            relative = Path(file_path.name)
+        return strip_doc_extension(relative)
 
     def parse_file(self, file_path: Path) -> MarkdownDocument:
         """Parse a single Markdown file.
