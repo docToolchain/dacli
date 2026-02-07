@@ -869,11 +869,11 @@ Examples:
 @click.option(
     "--max-sections",
     type=int,
-    default=5,
-    help="Max documentation sections for context (default: 5)",
+    default=None,
+    help="Limit number of sections to check (default: all)",
 )
 @pass_context
-def ask(ctx: CliContext, question: str, provider: str | None, max_sections: int):
+def ask(ctx: CliContext, question: str, provider: str | None, max_sections: int | None):
     """[experimental] Ask a question about the documentation using an LLM."""
     result = ask_documentation(
         question=question,

@@ -12,7 +12,6 @@ from dacli.services.llm_provider import get_provider
 from dacli.structure_index import StructureIndex
 
 MAX_SECTION_CHARS = 4000
-DEFAULT_MAX_SECTIONS = 5
 
 ITERATION_PROMPT = """\
 Question: {question}
@@ -110,7 +109,7 @@ def ask_documentation(
     index: StructureIndex,
     file_handler: FileSystemHandler,
     provider_name: str | None = None,
-    max_sections: int = DEFAULT_MAX_SECTIONS,
+    max_sections: int | None = None,
 ) -> dict:
     """Answer a question about the documentation using iterative LLM reasoning.
 
@@ -128,7 +127,7 @@ def ask_documentation(
         index: Structure index for searching.
         file_handler: File handler for reading content.
         provider_name: LLM provider name (None for auto-detect).
-        max_sections: Maximum sections to iterate through.
+        max_sections: Limit sections to iterate (None = all sections).
 
     Returns:
         Dict with 'answer', 'provider', 'sources', 'iterations',
@@ -143,8 +142,11 @@ def ask_documentation(
     # Step 1: Get all sections from the documentation
     all_sections = _get_all_sections(index)
 
-    # Limit to max_sections
-    sections_to_check = all_sections[:max_sections]
+    # Optionally limit sections (None = all)
+    if max_sections is not None:
+        sections_to_check = all_sections[:max_sections]
+    else:
+        sections_to_check = all_sections
 
     # Step 2: Iterate through sections, accumulating findings
     accumulated_findings = ""

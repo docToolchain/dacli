@@ -623,7 +623,7 @@ def create_mcp_server(
     def ask_documentation_tool(
         question: str,
         provider: str | None = None,
-        max_sections: int = 5,
+        max_sections: int | None = None,
     ) -> dict:
         """[experimental] Ask a question about the documentation using an LLM.
 
@@ -635,8 +635,7 @@ def create_mcp_server(
             question: The question to ask about the documentation.
             provider: LLM provider to use - 'claude-code' or 'anthropic-api'.
                       If None, auto-detects (prefers Claude Code CLI).
-            max_sections: Maximum number of documentation sections to include
-                          as context for the LLM (default: 5).
+            max_sections: Limit sections to check (default: all sections).
 
         Returns:
             Dictionary with 'answer', 'provider', 'model', 'sections_used',
