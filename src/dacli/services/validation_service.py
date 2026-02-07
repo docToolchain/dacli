@@ -90,6 +90,20 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                 "message": pw.message,
             })
 
+    # Issue #268: Include duplicate-path warnings from index build
+    for build_warning in index._build_warnings:
+        if "Duplicate section path" in build_warning:
+            # Parse the warning string to extract the path
+            # Format: "Duplicate section path: 'path' (first at file:line, duplicate at file:line)"
+            import re
+            match = re.search(r"Duplicate section path: '([^']+)'", build_warning)
+            dup_path = match.group(1) if match else "unknown"
+            warnings.append({
+                "type": "duplicate_path",
+                "path": dup_path,
+                "message": build_warning,
+            })
+
     # Issue #219: Check for unresolved includes
     for doc in index._documents:
         # Only AsciiDoc documents have includes (check for attribute)

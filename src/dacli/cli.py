@@ -284,7 +284,7 @@ class CliContext:
         self.index = StructureIndex()
         self.file_handler = FileSystemHandler()
         self.asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
-        self.markdown_parser = MarkdownStructureParser()
+        self.markdown_parser = MarkdownStructureParser(base_path=docs_root)
 
         # Build index
         _build_index(

@@ -134,7 +134,7 @@ def create_mcp_server(
     index = StructureIndex()
     file_handler = FileSystemHandler()
     asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
-    markdown_parser = MarkdownStructureParser()
+    markdown_parser = MarkdownStructureParser(base_path=docs_root)
 
     # Build initial index
     _build_index(

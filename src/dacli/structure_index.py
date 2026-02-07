@@ -69,6 +69,7 @@ class StructureIndex:
         self._documents: list[Document] = []
         self._top_level_sections: list[Section] = []
         self._circular_include_errors: list[dict] = []
+        self._build_warnings: list[str] = []  # Issue #268: Store duplicate path warnings
         self._index_ready: bool = False
 
     def build_from_documents(self, documents: list[Document]) -> list[str]:
@@ -99,6 +100,7 @@ class StructureIndex:
             for element in doc.elements:
                 self._index_element(element)
 
+        self._build_warnings = warnings  # Issue #268: Store for validation
         self._index_ready = True
         logger.info(
             f"Index built: {len(self._path_to_section)} sections, "
@@ -494,6 +496,7 @@ class StructureIndex:
         self._documents.clear()
         self._top_level_sections.clear()
         self._circular_include_errors.clear()
+        self._build_warnings.clear()
         self._index_ready = False
 
     def stats(self) -> dict:

@@ -23,6 +23,7 @@ from dacli.parser_utils import (
     collect_all_sections,
     find_section_by_path,
     slugify,
+    strip_doc_extension,
 )
 
 # Regex patterns from specification
@@ -189,6 +190,9 @@ class AsciidocStructureParser:
         The file prefix is the relative path from base_path to file_path,
         without the file extension. This ensures unique paths across documents.
 
+        Issue #266: Only strips known extensions (.md, .adoc) to preserve dots
+        in filenames (e.g. version numbers like "report_v1.2.3.adoc").
+
         Args:
             file_path: Path to the document being parsed
 
@@ -198,10 +202,8 @@ class AsciidocStructureParser:
         try:
             relative = file_path.relative_to(self.base_path)
         except ValueError:
-            # file_path is not relative to base_path, use just the stem
-            relative = Path(file_path.stem)
-        # Remove extension and convert to forward slashes
-        return str(relative.with_suffix("")).replace("\\", "/")
+            relative = Path(file_path.name)
+        return strip_doc_extension(relative)
 
     def get_section(
         self, doc: AsciidocDocument, path: str
