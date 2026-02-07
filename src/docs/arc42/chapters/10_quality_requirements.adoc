@@ -49,8 +49,9 @@ The system must be easy to use for its target audience of developers and archite
 | ID | Quality Goal | Scenario | Measurement
 | USAB-1 | MCP Compliance | A developer uses a standard MCP client to connect to the server and request the document structure. | The server responds with a valid structure as defined in the MCP specification, without requiring any custom client-side logic.
 | USAB-2 | Intuitiveness | A developer can successfully perform the top 5 use cases (e.g., get section, update section, search) by only reading the API documentation. | 90% success rate in user testing with the target audience.
-| USAB-3 | Feedback | When a section is modified via the web UI, the changes are immediately visible. | The UI displays a red/green diff of the changes within 1 second of the modification API call completing.
 |===
+
+NOTE: USAB-3 (Web UI diff display) was removed per ADR-010 — dacli has no Web UI.
 
 === Scalability
 

@@ -1,0 +1,33 @@
+=== ADR-010: No Web UI — dacli is CLI and MCP Only
+
+*Status:* Accepted (2026-02-07)
+
+*Context:*
+The original architecture documents (Quality Requirements, Concepts) assumed a Web UI component for dacli — specifically a document structure visualization (#12) and a real-time diff display (#13). Quality scenario USAB-3 described a "web UI" showing red/green diffs after modifications.
+
+However, dacli has evolved into a pure **CLI tool and MCP server** designed for LLM integration. The primary consumers are:
+
+* LLMs using dacli via MCP (Model Context Protocol)
+* LLMs using dacli via CLI/Bash tools
+* Developers using the CLI directly
+
+A Web UI would be a fundamentally different product — it requires frontend development (HTML/CSS/JS), serving static files, browser compatibility, and ongoing maintenance. This is outside dacli's core mission of providing structured, programmatic access to documentation.
+
+Tools like docToolchain already provide web-based documentation rendering. Adding a Web UI to dacli would duplicate that effort without clear benefit.
+
+*Decision:*
+dacli will **not include a Web UI**. The project scope is limited to CLI and MCP server interfaces. References to a Web UI in existing architecture documents will be removed.
+
+*Consequences:*
+
+_Positive:_
+
+* Clear, focused scope — CLI and MCP only
+* No frontend dependencies or maintenance burden
+* Simpler deployment (no static file serving, no browser compatibility)
+* Architecture documents accurately reflect the actual system
+
+_Negative:_
+
+* No visual diff display for documentation changes (LLMs and developers use the API/CLI output instead)
+* No interactive tree visualization (LLMs use `get_structure` programmatically)
