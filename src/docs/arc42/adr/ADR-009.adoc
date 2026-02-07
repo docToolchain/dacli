@@ -1,0 +1,70 @@
+=== ADR-009: No Built-In LLM-Based Ask Feature
+
+*Status:* Accepted (2026-02-07)
+
+*Context:*
+Issue #186 proposed adding an experimental `dacli ask "question"` command that uses an LLM to answer questions about the documentation. The idea was to iterate through all documentation files, pass each file's content together with the question and accumulated findings to an LLM, and consolidate the results into a final answer.
+
+Several approaches were evaluated during implementation:
+
+1. **Section-based iteration**: Iterate through all sections (~460 in a typical project), one LLM call per section. Result: ~460 LLM calls, far too slow.
+2. **File-based iteration**: Iterate through all files (~35-50), one LLM call per file. Result: ~50 LLM calls. With Claude Code CLI (~12s per call) this took ~10 minutes. With the Anthropic API (~4s per call) still ~3-4 minutes.
+3. **Two-call approach**: Send all section titles to the LLM to select relevant ones, then send only those sections for answering. Faster, but essentially replicates what the calling LLM already does.
+
+The fundamental insight: dacli is designed to be used by LLMs (both via MCP and CLI). The calling LLM can already:
+
+* Call `get_structure()` / `dacli structure` to see all section titles
+* Call `get_section()` / `dacli section <path>` to read relevant sections
+* Answer the question itself with full context
+
+The `ask` command is therefore redundant — it implements a slower, less capable version of what the calling LLM already does natively.
+
+*Decision:*
+We will **not implement** a built-in LLM-based ask feature. Instead, we rely on the calling LLM to use dacli's existing navigation and content access tools to answer questions.
+
+A future **RAG-based approach** (Retrieval-Augmented Generation) could be considered as a separate feature. RAG would use vector embeddings for fast similarity search and only require a single LLM call for the final answer. This would be significantly faster but would not cover the entire documentation (only the top-k matching chunks).
+
+*Consequences:*
+
+_Positive:_
+
+* No additional LLM dependency in dacli (no API keys, no subprocess calls)
+* No performance bottleneck from iterative LLM calls
+* Simpler codebase — fewer moving parts
+* The calling LLM has better context and can make more informed decisions about relevance
+
+_Negative:_
+
+* CLI users without LLM integration cannot ask natural language questions directly
+* No single-command convenience for documentation Q&A
+
+==== Pugh Matrix: Documentation Q&A Strategy
+
+[cols="4,1,1,1,1"]
+|===
+| Criterion | No Feature (Baseline) | A: Iterative LLM | B: Two-Call LLM | C: RAG
+
+| Response Time | 0 | -- | 0 | +
+| Answer Quality | 0 | 0 | 0 | -
+| Coverage (% of docs checked) | 0 | + | 0 | -
+| Implementation Complexity | 0 | -- | - | -
+| External Dependencies | 0 | -- | -- | -
+| Redundancy with Calling LLM | 0 | -- | - | 0
+| **Total** | **0** | **-7** | **-3** | **-2**
+|===
+
+_Legend: + better than baseline, 0 same, - worse, -- much worse_
+
+==== Option Details
+
+**No Feature (Selected)**
+Rely on the calling LLM to use existing dacli tools (`get_structure`, `get_section`, `search`) to answer questions. Zero additional complexity. Works today.
+
+**Option A: Iterative LLM (Rejected)**
+Pass every file/section to an LLM one by one. Complete coverage but prohibitively slow (3-10 minutes). Requires LLM provider configuration. Essentially duplicates the calling LLM's job.
+
+**Option B: Two-Call LLM (Rejected)**
+First call: LLM selects relevant sections from title list. Second call: LLM answers from selected content. Faster than A but still redundant with calling LLM behavior.
+
+**Option C: RAG (Future Consideration)**
+Build vector index of documentation chunks, retrieve top-k similar chunks for a question, answer in one LLM call. Fast (~2-3 seconds) but incomplete coverage. Could be a valuable future addition for human CLI users.
