@@ -33,25 +33,16 @@ The parser is **not** a complete Asciidoctor renderer. It:
 * Does not parse inline formatting (bold, italic, monospace)
 * Does not analyze table contents in detail
 * Does not process complex list structures
-* Does **not** support conditional blocks (`ifdef::`, `ifndef::`, `ifeval::`)
+* Does **not** support `ifeval::[]` conditional evaluation
 
 == Technical Debt
 
 [WARNING]
 ====
-**TD-ADOC-001: Conditional Blocks Not Supported**
+**TD-ADOC-001: ifeval Conditional Not Supported**
 
-The following AsciiDoc features are **not** supported in this version:
-
-* `ifdef::attr[]` / `endif::[]`
-* `ifndef::attr[]` / `endif::[]`
-* `ifeval::[]`
-
-These features are relevant for complex documentation projects with conditional output. A later implementation should:
-
-1. Evaluate attribute-based conditions
-2. Be able to show/hide conditional blocks
-3. Handle nested conditions
+The `ifeval::[]` directive is **not** supported in this version.
+`ifdef::attr[]` / `ifndef::attr[]` / `endif::[]` are fully supported (Issue #14).
 
 **Priority:** Low (not required for MVP)
 ====
@@ -134,7 +125,7 @@ These features are relevant for complex documentation projects with conditional 
 
 === Not Supported
 
-* Conditional blocks (`ifdef::`, `ifndef::`, `ifeval::`) - see Technical Debt
+* `ifeval::[]` conditional evaluation - see Technical Debt
 * Inline formatting (`*bold*`, `_italic_`, `+mono+`)
 * Footnotes
 * Bibliography

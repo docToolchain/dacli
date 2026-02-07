@@ -50,6 +50,14 @@ TABLE_DELIMITER_PATTERN = re.compile(r"^\|===$")
 IMAGE_PATTERN = re.compile(r"^image::(.+?)\[(.*)?\]$")
 ADMONITION_PATTERN = re.compile(r"^(NOTE|TIP|IMPORTANT|WARNING|CAUTION):\s*(.*)$")
 
+# Conditional block patterns (Issue #14)
+# ifdef::attr[] or ifdef::attr[inline content]
+IFDEF_PATTERN = re.compile(r"^ifdef::([a-zA-Z0-9_-]+)\[(.*)\]$")
+# ifndef::attr[] or ifndef::attr[inline content]
+IFNDEF_PATTERN = re.compile(r"^ifndef::([a-zA-Z0-9_-]+)\[(.*)\]$")
+# endif::[] or endif::attr[]
+ENDIF_PATTERN = re.compile(r"^endif::([a-zA-Z0-9_-]*)?\[\]$")
+
 # Cross-reference pattern: <<target>> or <<target,display text>>
 XREF_PATTERN = re.compile(r"<<([^,>]+)(?:,([^>]+))?>>", re.MULTILINE)
 
@@ -266,6 +274,10 @@ class AsciidocStructureParser:
         # Parse attributes first (they can be used in sections)
         attributes = self._parse_attributes(lines)
 
+        # Filter conditional blocks (ifdef/ifndef/endif) before include expansion
+        # so that ifdef can control whether includes are processed (Issue #14)
+        lines = self._filter_conditionals(lines, attributes)
+
         # Expand includes and collect include info
         expanded_lines, includes = self._expand_includes(
             lines, file_path, _depth, current_chain
@@ -400,6 +412,103 @@ class AsciidocStructureParser:
                     break
 
         return attributes
+
+    def _filter_conditionals(
+        self, lines: list[str], attributes: dict[str, str]
+    ) -> list[str]:
+        """Filter lines based on ifdef/ifndef/endif conditional blocks (Issue #14).
+
+        Processes conditional directives and returns only the lines that should
+        be included based on the current attribute definitions.
+
+        Supports:
+        - ifdef::attr[] / endif::[] - include when attribute is defined
+        - ifndef::attr[] / endif::[] - include when attribute is NOT defined
+        - Single-line form: ifdef::attr[content] / ifndef::attr[content]
+        - Nested conditions with proper depth tracking
+
+        Args:
+            lines: Raw document lines
+            attributes: Known document attributes
+
+        Returns:
+            Filtered list of lines with conditional directives removed
+        """
+        result: list[str] = []
+        # Stack of booleans: True = currently including content
+        # When empty, we're at top level (always including)
+        condition_stack: list[bool] = []
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Check for ifdef::attr[] or ifdef::attr[inline content]
+            ifdef_match = IFDEF_PATTERN.match(stripped)
+            if ifdef_match:
+                attr_name = ifdef_match.group(1)
+                inline_content = ifdef_match.group(2)
+                condition_met = attr_name in attributes
+
+                if inline_content:
+                    # Single-line form: ifdef::attr[content]
+                    if self._is_including(condition_stack) and condition_met:
+                        attr_match = ATTRIBUTE_PATTERN.match(inline_content)
+                        if attr_match:
+                            attributes[attr_match.group(1)] = attr_match.group(2).strip()
+                        result.append(inline_content)
+                else:
+                    # Block form: push condition onto stack
+                    currently_including = self._is_including(condition_stack)
+                    condition_stack.append(currently_including and condition_met)
+                continue
+
+            # Check for ifndef::attr[] or ifndef::attr[inline content]
+            ifndef_match = IFNDEF_PATTERN.match(stripped)
+            if ifndef_match:
+                attr_name = ifndef_match.group(1)
+                inline_content = ifndef_match.group(2)
+                condition_met = attr_name not in attributes
+
+                if inline_content:
+                    # Single-line form: ifndef::attr[content]
+                    if self._is_including(condition_stack) and condition_met:
+                        attr_match = ATTRIBUTE_PATTERN.match(inline_content)
+                        if attr_match:
+                            attributes[attr_match.group(1)] = attr_match.group(2).strip()
+                        result.append(inline_content)
+                else:
+                    # Block form: push condition onto stack
+                    currently_including = self._is_including(condition_stack)
+                    condition_stack.append(currently_including and condition_met)
+                continue
+
+            # Check for endif::[] or endif::attr[]
+            endif_match = ENDIF_PATTERN.match(stripped)
+            if endif_match:
+                if condition_stack:
+                    condition_stack.pop()
+                continue
+
+            # Track attribute definitions inside conditional blocks
+            if self._is_including(condition_stack):
+                attr_match = ATTRIBUTE_PATTERN.match(line)
+                if attr_match:
+                    attributes[attr_match.group(1)] = attr_match.group(2).strip()
+                result.append(line)
+
+        return result
+
+    @staticmethod
+    def _is_including(condition_stack: list[bool]) -> bool:
+        """Check if we're currently in an including state.
+
+        Args:
+            condition_stack: Stack of condition states
+
+        Returns:
+            True if all conditions in the stack are True (or stack is empty)
+        """
+        return not condition_stack or condition_stack[-1]
 
     def _substitute_attributes(self, text: str, attributes: dict[str, str]) -> str:
         """Substitute attribute references in text.
