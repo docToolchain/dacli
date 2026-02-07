@@ -878,6 +878,7 @@ def ask(ctx: CliContext, question: str, provider: str | None, max_sections: int 
 
     def _progress(current: int, total: int, filename: str):
         click.echo(f"  Checking file {current}/{total}: {filename}...", err=True)
+        sys.stderr.flush()
 
     result = ask_documentation(
         question=question,
