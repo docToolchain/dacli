@@ -41,8 +41,12 @@ TABLE_SEPARATOR_PATTERN = re.compile(r"^\|[\s:|-]+\|$")
 IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
 
 # List patterns
+TASK_LIST_PATTERN = re.compile(r"^[\s]*-\s+\[([ xX])\]\s+.+$")
 UNORDERED_LIST_PATTERN = re.compile(r"^[\s]*[-*+]\s+.+$")
 ORDERED_LIST_PATTERN = re.compile(r"^[\s]*\d+\.\s+.+$")
+
+# Blockquote pattern
+BLOCKQUOTE_PATTERN = re.compile(r"^>\s?(.*)$")
 
 # Setext heading patterns (for warning detection - not supported)
 # H1: line of text followed by line of ='s (at least 3)
@@ -535,6 +539,11 @@ class MarkdownStructureParser:
         current_list_type: str | None = None
         current_list_element: Element | None = None
 
+        # Track blockquote state
+        in_blockquote = False
+        blockquote_start_line = 0
+        blockquote_content: list[str] = []
+
         # Content tracking for Issue #159
         table_content: list[str] = []
         list_content: list[str] = []
@@ -681,8 +690,67 @@ class MarkdownStructureParser:
                 current_list_element = None
                 continue
 
-            # Handle lists (unordered and ordered)
+            # Handle blockquotes (Issue #28)
+            blockquote_match = BLOCKQUOTE_PATTERN.match(line)
+            if blockquote_match and not in_code_block and not in_table:
+                # Finalize any open list before starting blockquote
+                if current_list_element is not None and list_content:
+                    current_list_element.attributes["content"] = "\n".join(list_content)
+                current_list_type = None
+                current_list_element = None
+
+                if not in_blockquote:
+                    in_blockquote = True
+                    blockquote_start_line = line_num
+                    blockquote_content = []
+                blockquote_content.append(line)
+                continue
+
+            if in_blockquote:
+                # Non-blockquote line ends the blockquote
+                elements.append(
+                    Element(
+                        type="blockquote",
+                        source_location=SourceLocation(
+                            file=file_path,
+                            line=blockquote_start_line,
+                            end_line=blockquote_start_line + len(blockquote_content) - 1,
+                        ),
+                        attributes={
+                            "content": "\n".join(blockquote_content),
+                        },
+                        parent_section=current_section_path,
+                    )
+                )
+                in_blockquote = False
+                blockquote_content = []
+
+            # Handle lists (unordered, ordered, and task lists)
             if not in_code_block and not in_table:
+                # Check for task list (- [ ] or - [x]) before unordered list
+                # since task list items also match unordered list pattern
+                if TASK_LIST_PATTERN.match(line):
+                    if current_list_type != "task":
+                        # Save previous list content if any (Issue #159)
+                        if current_list_element is not None and list_content:
+                            current_list_element.attributes["content"] = "\n".join(list_content)
+                        current_list_type = "task"
+                        list_content = []
+                        element = Element(
+                            type="list",
+                            source_location=SourceLocation(
+                                file=file_path, line=line_num, end_line=line_num
+                            ),
+                            attributes={"list_type": "task"},
+                            parent_section=current_section_path,
+                        )
+                        elements.append(element)
+                        current_list_element = element
+                    list_content.append(line)
+                    if current_list_element is not None:
+                        current_list_element.source_location.end_line = line_num
+                    continue
+
                 # Check for unordered list (*, -, +)
                 if UNORDERED_LIST_PATTERN.match(line):
                     if current_list_type != "unordered":
@@ -740,6 +808,23 @@ class MarkdownStructureParser:
                         current_list_element.attributes["content"] = "\n".join(list_content)
                     current_list_type = None
                     current_list_element = None
+
+        # Handle blockquote at end of file (Issue #28)
+        if in_blockquote and blockquote_content:
+            elements.append(
+                Element(
+                    type="blockquote",
+                    source_location=SourceLocation(
+                        file=file_path,
+                        line=blockquote_start_line,
+                        end_line=blockquote_start_line + len(blockquote_content) - 1,
+                    ),
+                    attributes={
+                        "content": "\n".join(blockquote_content),
+                    },
+                    parent_section=current_section_path,
+                )
+            )
 
         # Handle unclosed code block at end of file
         if in_code_block:

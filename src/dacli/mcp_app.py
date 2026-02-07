@@ -351,7 +351,7 @@ def create_mcp_server(
         the documentation, such as code examples, tables, or diagrams.
 
         Args:
-            element_type: Filter by type - 'admonition', 'code', 'image',
+            element_type: Filter by type - 'admonition', 'blockquote', 'code', 'image',
                           'list', 'plantuml', 'table'. None returns all elements.
             section_path: Filter by section path (e.g., '/architecture').
             recursive: If True, include elements from child sections.

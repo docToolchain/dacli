@@ -9,7 +9,9 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 # Valid element types for GET /elements endpoint
-VALID_ELEMENT_TYPES = frozenset(["admonition", "code", "image", "list", "plantuml", "table"])
+VALID_ELEMENT_TYPES = frozenset(
+    ["admonition", "blockquote", "code", "image", "list", "plantuml", "table"]
+)
 
 
 class LocationResponse(BaseModel):

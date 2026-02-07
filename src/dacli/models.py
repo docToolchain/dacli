@@ -85,7 +85,7 @@ class Element:
         index: 0-based index within the parent section (set during indexing)
     """
 
-    type: Literal["code", "table", "image", "plantuml", "admonition", "list"]
+    type: Literal["code", "table", "image", "plantuml", "admonition", "list", "blockquote"]
     source_location: SourceLocation
     attributes: dict[str, Any]
     parent_section: str
