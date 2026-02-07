@@ -609,7 +609,7 @@ Examples:
 """)
 @click.argument("section_path", required=False, default=None)
 @click.option("--type", "element_type", default=None,
-              help="Element type: code, table, image, diagram, list")
+              help="Element type: admonition, code, image, list, plantuml, table")
 @click.option("--recursive", is_flag=True, default=False,
               help="Include elements from child sections")
 @click.option("--include-content", is_flag=True, default=False,

@@ -299,10 +299,10 @@ Feature: Filter elements by type
       | table   | 8     |
       | code    | 12    |
 
-  Scenario: Retrieve all diagrams
-    When I call GET /elements?type=diagram
+  Scenario: Retrieve all PlantUML diagrams
+    When I call GET /elements?type=plantuml
     Then I receive HTTP Status 200
-    And the field "type" is "diagram"
+    And the field "type" is "plantuml"
     And "count" is 5
     And each element has a "path"
     And each element has a "location"

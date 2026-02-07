@@ -293,14 +293,13 @@ class TestElementsEndpoint:
         assert data["type"] == "table"
         assert data["count"] == 2  # Two tables in fixture
 
-    def test_get_diagram_elements(self, client: TestClient):
-        """Get diagram elements (mapped from plantuml)."""
-        response = client.get("/api/v1/elements?type=diagram")
+    def test_get_plantuml_elements(self, client: TestClient):
+        """Get plantuml elements."""
+        response = client.get("/api/v1/elements?type=plantuml")
         data = response.json()
 
         assert response.status_code == 200
-        assert data["type"] == "diagram"
-        # plantuml type should map to diagram
+        assert data["type"] == "plantuml"
         assert data["count"] == 1
 
     def test_get_image_elements(self, client: TestClient):

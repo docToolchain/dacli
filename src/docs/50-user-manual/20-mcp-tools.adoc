@@ -127,7 +127,7 @@ Get code blocks, tables, images, and other elements.
 |===
 | Parameter | Type | Default | Description
 
-| `element_type` | string \| null | null | Filter by type: `code`, `table`, `image`, `diagram`, `list`
+| `element_type` | string \| null | null | Filter by type: `admonition`, `code`, `image`, `list`, `plantuml`, `table`
 | `section_path` | string \| null | null | Filter by section path
 |===
 

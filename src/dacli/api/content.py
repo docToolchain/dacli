@@ -26,18 +26,22 @@ router = APIRouter(prefix="/api/v1", tags=["Content Access"])
 
 # Mapping from internal element types to API types
 ELEMENT_TYPE_TO_API = {
-    "plantuml": "diagram",
+    "admonition": "admonition",
     "code": "code",
-    "table": "table",
     "image": "image",
+    "list": "list",
+    "plantuml": "plantuml",
+    "table": "table",
 }
 
 # Reverse mapping from API types to internal types
 API_TYPE_TO_ELEMENT = {
-    "diagram": ["plantuml"],  # plantuml maps to diagram
+    "admonition": ["admonition"],
     "code": ["code"],
-    "table": ["table"],
     "image": ["image"],
+    "list": ["list"],
+    "plantuml": ["plantuml"],
+    "table": ["table"],
 }
 
 
@@ -112,7 +116,7 @@ def search_content(request: SearchRequest) -> SearchResponse:
 )
 def get_elements(
     type: str = Query(
-        description="Element type: diagram, table, code, list, image"
+        description="Element type: admonition, code, image, list, plantuml, table"
     ),
     path: str | None = Query(
         default=None,

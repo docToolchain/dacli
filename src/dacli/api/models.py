@@ -9,7 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 # Valid element types for GET /elements endpoint
-VALID_ELEMENT_TYPES = frozenset(["diagram", "table", "code", "list", "image"])
+VALID_ELEMENT_TYPES = frozenset(["admonition", "code", "image", "list", "plantuml", "table"])
 
 
 class LocationResponse(BaseModel):
@@ -119,7 +119,7 @@ class ElementLocation(BaseModel):
 class ElementItem(BaseModel):
     """A single element in the response."""
 
-    type: str = Field(description="Element type (diagram, table, code, list, image)")
+    type: str = Field(description="Element type (admonition, code, image, list, plantuml, table)")
     path: str = Field(description="Section path containing this element")
     index: int = Field(description="Index of element within its section")
     location: ElementLocation

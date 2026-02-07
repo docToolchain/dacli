@@ -71,7 +71,7 @@ Represents a special element (table, code, diagram).
 [source,json]
 ----
 {
-  "type": "string",           // "table" | "code" | "diagram" | "list" | "image"
+  "type": "string",           // "admonition" | "code" | "image" | "list" | "plantuml" | "table"
   "path": "string",           // Path to containing section
   "index": "integer",         // Index within section
   "location": "SectionLocation"
@@ -413,7 +413,7 @@ For `admonition` elements, it includes `admonition_type` and `content`.
     "code": "INVALID_TYPE",
     "message": "Unknown element type 'charts'",
     "details": {
-      "valid_types": ["diagram", "table", "code", "list", "image"]
+      "valid_types": ["admonition", "code", "image", "list", "plantuml", "table"]
     }
   }
 }
