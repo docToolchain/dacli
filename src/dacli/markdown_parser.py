@@ -34,6 +34,8 @@ CODE_FENCE_PATTERN = re.compile(r"^(`{3,}|~{3,})([a-zA-Z0-9_+-]*)?\s*$")
 # Issue #214: HTML comment patterns
 HTML_COMMENT_START = "<!--"
 HTML_COMMENT_END = "-->"
+# Issue #246: Inline HTML comment pattern for stripping from headings
+INLINE_HTML_COMMENT = re.compile(r"<!--.*?-->")
 TABLE_ROW_PATTERN = re.compile(r"^\|(.+)\|$")
 TABLE_SEPARATOR_PATTERN = re.compile(r"^\|[\s:|-]+\|$")
 IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
@@ -361,12 +363,14 @@ class MarkdownStructureParser:
                 start_idx = line.find(HTML_COMMENT_START)
                 end_idx = line.find(HTML_COMMENT_END, start_idx + len(HTML_COMMENT_START))
                 if end_idx == -1:
-                    # Multi-line comment starts
+                    # Multi-line comment starts — skip entire line
                     in_html_comment = True
-                # Either way, skip this line for heading detection
-                prev_prev_line = prev_line
-                prev_line = line
-                continue
+                    prev_prev_line = prev_line
+                    prev_line = line
+                    continue
+                # Issue #246: Inline comment closes on same line.
+                # Strip comment(s) and continue to heading detection.
+                line = INLINE_HTML_COMMENT.sub("", line).strip()
 
             # Detect Setext headings and warn (not supported per spec)
             self._warn_setext_heading(
