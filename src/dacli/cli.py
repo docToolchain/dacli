@@ -389,6 +389,13 @@ Examples:
 @pass_context
 def structure(ctx: CliContext, max_depth: int | None):
     """Get the hierarchical document structure."""
+    # Validate max_depth is non-negative (Issue #248)
+    if max_depth is not None and max_depth < 0:
+        raise click.BadParameter(
+            f"max-depth must be non-negative, got {max_depth}. "
+            "Use 0 for root level only, or omit for full depth.",
+            param_hint="'--max-depth'",
+        )
     result = ctx.index.get_structure(max_depth)
     click.echo(format_output(ctx, result))
 
@@ -516,6 +523,13 @@ Examples:
 @pass_context
 def search(ctx: CliContext, query: str, scope: str | None, max_results: int):
     """Search for content in the documentation."""
+    # Validate max_results is non-negative (Issue #249)
+    if max_results < 0:
+        raise click.BadParameter(
+            f"limit must be non-negative, got {max_results}. "
+            "Use 0 for no results, or a positive number to limit results.",
+            param_hint="'--limit'",
+        )
     # Validate query is not empty
     if not query or not query.strip():
         click.echo("Error: Search query cannot be empty", err=True)
