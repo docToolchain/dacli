@@ -4,7 +4,7 @@
 
 == Overview
 
-dacli provides 9 MCP tools for interacting with documentation projects via the Model Context Protocol. These tools enable LLMs to navigate, read, search, and modify documentation.
+dacli provides 10 MCP tools for interacting with documentation projects via the Model Context Protocol. These tools enable LLMs to navigate, read, search, and modify documentation.
 
 == Navigation Tools
 
@@ -306,6 +306,29 @@ Get project or section metadata.
   "subsection_count": 5
 }
 ----
+
+=== get_dependencies
+
+Get include dependencies between documentation files.
+
+.Parameters
+None
+
+.Returns
+[source,json]
+----
+{
+  "include_tree": {
+    "arc42.adoc": [
+      "chapters/01_introduction.adoc",
+      "chapters/02_constraints.adoc"
+    ]
+  },
+  "cross_references": []
+}
+----
+
+NOTE: `cross_references` is reserved for future use and currently returns an empty list.
 
 === validate_structure
 

@@ -603,6 +603,19 @@ def create_mcp_server(
             return get_section_metadata(index, path)
 
     @mcp.tool()
+    def get_dependencies() -> dict:
+        """Get include dependencies between documentation files.
+
+        Use this tool to understand which files include other files.
+        Returns an include tree showing the relationships.
+
+        Returns:
+            'include_tree': Mapping of source file to list of included files.
+            'cross_references': Reserved for future use (currently empty).
+        """
+        return index.get_dependencies()
+
+    @mcp.tool()
     def validate_structure() -> dict:
         """Validate the document structure.
 

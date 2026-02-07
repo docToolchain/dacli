@@ -15,6 +15,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from dacli.asciidoc_parser import AsciidocDocument
 from dacli.models import Document, Element, Section
 
 logger = logging.getLogger(__name__)
@@ -516,6 +517,41 @@ class StructureIndex:
                 for etype, elements in self._type_to_elements.items()
             },
         }
+
+    def get_dependencies(self) -> dict:
+        """Get include dependencies across all documents.
+
+        Builds an include tree showing which files include which other files.
+        Only AsciiDoc documents contribute (Markdown has no includes).
+
+        Returns:
+            Dictionary with 'include_tree' (file → list of included files,
+            paths relative to docs root) and 'cross_references' (empty list,
+            reserved for future use).
+        """
+        include_tree: dict[str, list[str]] = {}
+
+        for doc in self._documents:
+            if not isinstance(doc, AsciidocDocument) or not doc.includes:
+                continue
+
+            # Use the document's parent directory as base for relative paths
+            docs_root = doc.file_path.parent
+            source_key = doc.file_path.name
+
+            targets = []
+            for inc in doc.includes:
+                try:
+                    rel_target = inc.target_path.relative_to(docs_root)
+                except ValueError:
+                    # Target outside docs_root — use filename only
+                    rel_target = inc.target_path.name
+                targets.append(str(rel_target))
+
+            if targets:
+                include_tree[source_key] = targets
+
+        return {"include_tree": include_tree, "cross_references": []}
 
     def _index_section(self, section: Section) -> list[str]:
         """Index a section and its children recursively.
