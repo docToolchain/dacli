@@ -84,7 +84,17 @@ class ClaudeCodeProvider(LLMProvider):
         prompt = f"{system_prompt}\n\n{user_message}"
         try:
             result = subprocess.run(
-                ["claude", "-p", prompt, "--output-format", "text"],
+                [
+                    "claude",
+                    "-p",
+                    prompt,
+                    "--output-format",
+                    "text",
+                    "--strict-mcp-config",
+                    "--mcp-config",
+                    "{}",
+                    "--disable-slash-commands",
+                ],
                 capture_output=True,
                 text=True,
                 timeout=120,
