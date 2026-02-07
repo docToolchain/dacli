@@ -11,6 +11,7 @@ has ~35 files vs ~460 sections, reducing LLM calls by ~13x while providing
 better context (full file content) per call.
 """
 
+from collections.abc import Callable
 from pathlib import Path
 
 from dacli.file_handler import FileSystemHandler
@@ -89,6 +90,7 @@ def ask_documentation(
     file_handler: FileSystemHandler,
     provider_name: str | None = None,
     max_sections: int | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
 ) -> dict:
     """Answer a question about the documentation using iterative LLM reasoning.
 
@@ -132,12 +134,17 @@ def ask_documentation(
     sources = []
     iterations = 0
 
+    total_files = len(files_to_check)
+
     for file_info in files_to_check:
         content = _read_file_content(file_info["file"], file_handler)
         if content is None or not content.strip():
             continue
 
         iterations += 1
+
+        if progress_callback:
+            progress_callback(iterations, total_files, file_info["name"])
 
         prompt = ITERATION_PROMPT.format(
             question=question,

@@ -875,12 +875,17 @@ Examples:
 @pass_context
 def ask(ctx: CliContext, question: str, provider: str | None, max_sections: int | None):
     """[experimental] Ask a question about the documentation using an LLM."""
+
+    def _progress(current: int, total: int, filename: str):
+        click.echo(f"  Checking file {current}/{total}: {filename}...", err=True)
+
     result = ask_documentation(
         question=question,
         index=ctx.index,
         file_handler=ctx.file_handler,
         provider_name=provider,
         max_sections=max_sections,
+        progress_callback=_progress,
     )
 
     if "error" in result:

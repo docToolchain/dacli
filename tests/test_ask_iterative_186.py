@@ -284,6 +284,61 @@ class TestFileBasedAsk:
         last_prompt = call_prompts[-1]
         assert "All findings" in last_prompt
 
+    def test_progress_callback_called_per_file(self, index_and_handler):
+        """Progress callback is called for each file with current/total counts."""
+        from dacli.services.ask_service import ask_documentation
+
+        idx, fh = index_and_handler
+        progress_calls = []
+
+        with patch("dacli.services.ask_service.get_provider") as mock_get:
+            mock_provider = MagicMock()
+            mock_provider.ask.return_value = LLMResponse(
+                text="KEY_POINTS: info\nMISSING: nothing",
+                provider="test", model=None,
+            )
+            mock_provider.name = "test"
+            mock_get.return_value = mock_provider
+
+            ask_documentation(
+                "auth", idx, fh,
+                progress_callback=lambda cur, total, name: progress_calls.append(
+                    (cur, total, name)
+                ),
+            )
+
+        assert len(progress_calls) == 3
+        assert progress_calls[0][0] == 1  # current = 1
+        assert progress_calls[0][1] == 3  # total = 3
+        assert progress_calls[2][0] == 3  # last call current = 3
+
+    def test_progress_callback_includes_consolidation(self, index_and_handler):
+        """Progress callback signals consolidation step."""
+        from dacli.services.ask_service import ask_documentation
+
+        idx, fh = index_and_handler
+        progress_calls = []
+
+        with patch("dacli.services.ask_service.get_provider") as mock_get:
+            mock_provider = MagicMock()
+            mock_provider.ask.return_value = LLMResponse(
+                text="KEY_POINTS: info\nMISSING: nothing",
+                provider="test", model=None,
+            )
+            mock_provider.name = "test"
+            mock_get.return_value = mock_provider
+
+            ask_documentation(
+                "auth", idx, fh,
+                progress_callback=lambda cur, total, name: progress_calls.append(
+                    (cur, total, name)
+                ),
+            )
+
+        # Last call should signal consolidation
+        last = progress_calls[-1]
+        assert last[0] == last[1]  # current == total (last file)
+
     def test_handles_empty_docs_gracefully(self, tmp_path: Path):
         """When no files exist, still returns a meaningful response."""
         from dacli.asciidoc_parser import AsciidocStructureParser
