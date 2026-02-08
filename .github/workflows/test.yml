@@ -35,7 +35,8 @@ jobs:
         if: success()
         run: |
           # Install coverage-badge for local badge generation
-          uv pip install coverage-badge
+          # Pin setuptools<82 because coverage-badge depends on pkg_resources
+          uv pip install "setuptools<82" coverage-badge
 
           # Generate coverage badge locally (no external API)
           uv run coverage-badge -o .github/coverage-badge.svg -f
