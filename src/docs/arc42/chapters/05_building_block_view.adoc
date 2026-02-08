@@ -71,7 +71,119 @@ Rel(fs_handler, file_system, "Interacts with")
 @enduml
 ----
 
-NOTE: The CLI tool (`dacli`) shares the same core components (parsers, index, file handler) but operates synchronously via the command line.
+=== Level 3: Components of the CLI
+
+The CLI tool (`dacli`) provides a command-line interface for all documentation operations. It shares the core components with the MCP Server but adds its own presentation layer.
+
+[plantuml, component-detail-cli, svg]
+----
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for CLI Tool
+
+Container_Boundary(cli_boundary, "CLI Tool") {
+    Component(click_cmds, "Click Commands", "Python, Click", "Command groups: Navigation, Search, Manipulation, Meta-Information.")
+    Component(cli_ctx, "CliContext", "Python", "Holds shared state: index, file handler, parsers, output format.")
+    Component(formatter, "Output Formatter", "Python", "Formats results as JSON, YAML, or human-readable text.")
+    Component(services, "Service Layer", "Python", "Shared business logic: content, validation, metadata services.")
+}
+
+Component(index, "Structure Index", "Python (In-Memory)", "Stores hierarchical structure for fast lookups.")
+Component(parser, "Document Parsers", "Python", "Parses AsciiDoc/Markdown files.")
+Component(fs_handler, "File System Handler", "Python", "Atomic read/write operations.")
+System_Ext(file_system, "File System")
+
+Rel(click_cmds, cli_ctx, "Receives context")
+Rel(click_cmds, services, "Delegates to")
+Rel(click_cmds, formatter, "Formats output via")
+Rel(services, index, "Queries")
+Rel(services, fs_handler, "Uses", "Read/Write content")
+Rel(cli_ctx, index, "Initializes")
+Rel(cli_ctx, parser, "Parses files with")
+Rel(parser, fs_handler, "Reads files via")
+Rel(fs_handler, file_system, "Interacts with")
+@enduml
+----
+
+.CLI Command Groups
+[cols="1,2"]
+|===
+| Group | Commands
+
+| **Navigation**
+| `structure`, `section`, `sections-at-level`
+
+| **Search & Elements**
+| `search`, `elements`
+
+| **Manipulation**
+| `update`, `insert`
+
+| **Meta-Information**
+| `metadata`, `validate`, `dependencies`
+|===
+
+=== Level 3: Document Parsers
+
+The "Document Parsers" component contains two independent parsers with distinct architectures. They share utility functions via `parser_utils`.
+
+[plantuml, component-detail-parsers, svg]
+----
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Document Parsers
+
+Container_Boundary(parsers, "Document Parsers") {
+    Component(adoc_parser, "AsciidocStructureParser", "Python", "Parses AsciiDoc files with include resolution, attribute substitution, and source mapping.")
+    Component(md_parser, "MarkdownStructureParser", "Python", "Parses Markdown files via folder hierarchy, frontmatter, and GFM elements.")
+    Component(parser_utils, "parser_utils", "Python", "Shared: slugify, strip_doc_extension, section search, path building.")
+    Component(include_resolver, "Include Resolver", "Python", "Resolves include:: directives recursively, detects circular includes.")
+    Component(attr_handler, "Attribute Handler", "Python", "Resolves document attributes (:attr:) in text and include paths.")
+    Component(element_extractor, "Element Extractors", "Python", "Extracts code blocks, tables, images, PlantUML, admonitions, blockquotes, lists.")
+}
+
+System_Ext(file_system, "File System")
+
+Rel(adoc_parser, include_resolver, "Delegates to")
+Rel(adoc_parser, attr_handler, "Uses")
+Rel(adoc_parser, element_extractor, "Extracts with")
+Rel(md_parser, element_extractor, "Extracts with")
+Rel(adoc_parser, parser_utils, "Uses")
+Rel(md_parser, parser_utils, "Uses")
+Rel(include_resolver, file_system, "Reads included files")
+Rel(md_parser, file_system, "Scans folder hierarchy")
+@enduml
+----
+
+.Parser Comparison
+[cols="1,2,2"]
+|===
+| Aspect | AsciiDoc Parser | Markdown Parser
+
+| **File Discovery**
+| Follows `include::[]` directives from root document
+| Scans folder hierarchy (`index.md` first, then alphabetic)
+
+| **Structure Source**
+| Heading levels (`=`, `==`, `===`, ...)
+| Heading levels (`#`, `##`, `###`, ...) plus folder nesting
+
+| **Include Support**
+| Full recursive resolution with cycle detection
+| None (folder hierarchy replaces includes)
+
+| **Metadata**
+| Document attributes (`:key: value`)
+| YAML frontmatter
+
+| **Unique Feature**
+| Attribute substitution in paths, source mapping across includes
+| Numeric prefix sorting (`10-intro.md` before `20-setup.md`)
+|===
 
 === Component Responsibilities
 
@@ -82,9 +194,13 @@ The following table maps components to the MCP tools:
 |===
 | Component | Responsibility | MCP Tools
 
-| **MCP Tools**
-| Exposes all functionality via MCP protocol
-| get_structure, get_section, get_sections_at_level, search, get_elements, get_metadata, validate_structure, update_section, insert_content
+| **MCP Tools / CLI Commands**
+| Expose all functionality via MCP protocol or command line
+| get_structure, get_section, get_sections_at_level, search, get_elements, get_metadata, validate_structure, update_section, insert_content, get_dependencies
+
+| **Service Layer**
+| Shared business logic for content manipulation, validation, metadata
+| (Internal - used by both CLI and MCP)
 
 | **Document Parsers**
 | Parse AsciiDoc/Markdown, resolve includes, track line numbers
