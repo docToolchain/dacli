@@ -1,6 +1,6 @@
 [project]
 name = "dacli"
-version = "0.4.32"
+version = "0.4.33"
 description = "Documentation Access CLI - Navigate and query large documentation projects"
 readme = "README.md"
 license = { text = "MIT" }
