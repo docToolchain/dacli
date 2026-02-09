@@ -15,30 +15,28 @@ This chapter describes the static decomposition of the system into its key build
 
 === Level 2: System Containers
 
-The dacli system provides two interfaces: a CLI tool for direct command-line usage and an MCP server for LLM integration. The file system acts as the system's database.
+The dacli system provides two interfaces: a CLI tool for direct command-line usage and an MCP server for LLM integration. The file system serves as the system's database (see ADR-001).
 
 [plantuml, container-overview, svg]
 ----
 @startuml
 !include <C4/C4_Container>
-LAYOUT_TOP_DOWN()
-SHOW_LEGEND()
+LAYOUT_WITH_LEGEND()
 
 title Container diagram for dacli
 
 Person(user, "Developer / Architect", "Uses the system via CLI or MCP client.")
 
-System_Boundary(mcp_system, "dacli") {
+System_Boundary(dacli_system, "dacli") {
     Container(cli, "CLI Tool", "Python, Click", "Provides command-line access to all documentation tools (dacli).")
     Container(mcp, "MCP Server", "Python, FastMCP", "Provides MCP-compliant tools for LLM integration (dacli-mcp).")
+    ContainerDb(file_system, "Documentation Files", "File System", "AsciiDoc and Markdown files. Single source of truth (ADR-001).")
 }
-
-System_Ext(file_system, "File System", "Stores the AsciiDoc and Markdown files.")
 
 Rel(user, cli, "Executes commands", "Shell")
 Rel(user, mcp, "Sends tool calls via MCP Client", "stdio")
-Rel(cli, file_system, "Reads/Writes", "File System API")
-Rel(mcp, file_system, "Reads/Writes", "File System API")
+Rel(cli, file_system, "Reads/Writes", "File I/O")
+Rel(mcp, file_system, "Reads/Writes", "File I/O")
 @enduml
 ----
 
@@ -54,26 +52,28 @@ LAYOUT_WITH_LEGEND()
 
 title Component diagram for MCP Server
 
-Container_Boundary(api, "MCP Server") {
+Container_Boundary(mcp_boundary, "MCP Server [Container: Python, FastMCP]") {
     Component(mcp_tools, "MCP Tools", "FastMCP", "Exposes tools for navigation, search, manipulation via MCP protocol.")
-    Component(parser, "Document Parsers", "Python", "Parses AsciiDoc/Markdown files, resolves includes, builds AST with line numbers.")
-    Component(index, "Structure Index", "Python (In-Memory)", "Stores hierarchical structure for fast lookups.")
-    Component(fs_handler, "File System Handler", "Python", "Performs atomic read/write operations on the file system.")
+    Component(services_mcp, "Service Layer", "Python", "Shared business logic: content, validation, metadata services.")
+    Component(parser_mcp, "Document Parsers", "Python", "Parses AsciiDoc/Markdown files, resolves includes, builds AST with line numbers.")
+    Component(index_mcp, "Structure Index", "Python", "In-memory hierarchical structure for fast lookups.")
+    Component(fs_handler_mcp, "File System Handler", "Python", "Performs atomic read/write operations with backup strategy (ADR-004).")
 }
 
-System_Ext(file_system, "File System")
+ContainerDb(file_system, "Documentation Files", "File System", "AsciiDoc and Markdown files.")
 
-Rel(mcp_tools, index, "Queries", "Structure & Search")
-Rel(mcp_tools, fs_handler, "Uses", "Read/Write content")
-Rel(parser, fs_handler, "Reads files via")
-Rel(index, parser, "Is built by")
-Rel(fs_handler, file_system, "Interacts with")
+Rel(mcp_tools, services_mcp, "Delegates to")
+Rel(mcp_tools, index_mcp, "Queries structure and elements")
+Rel(services_mcp, fs_handler_mcp, "Reads/Writes content via")
+Rel(index_mcp, parser_mcp, "Is built by during initialization")
+Rel(parser_mcp, fs_handler_mcp, "Reads files via")
+Rel(fs_handler_mcp, file_system, "Reads/Writes", "File I/O")
 @enduml
 ----
 
 === Level 3: Components of the CLI
 
-The CLI tool (`dacli`) provides a command-line interface for all documentation operations. It shares the core components with the MCP Server but adds its own presentation layer.
+The CLI tool (`dacli`) provides the same documentation operations as the MCP Server, accessible via command-line. It shares the core components (parsers, index, file handler) and adds a presentation layer for terminal output.
 
 [plantuml, component-detail-cli, svg]
 ----
@@ -83,27 +83,28 @@ LAYOUT_WITH_LEGEND()
 
 title Component diagram for CLI Tool
 
-Container_Boundary(cli_boundary, "CLI Tool") {
+Container_Boundary(cli_boundary, "CLI Tool [Container: Python, Click]") {
     Component(click_cmds, "Click Commands", "Python, Click", "Command groups: Navigation, Search, Manipulation, Meta-Information.")
     Component(cli_ctx, "CliContext", "Python", "Holds shared state: index, file handler, parsers, output format.")
     Component(formatter, "Output Formatter", "Python", "Formats results as JSON, YAML, or human-readable text.")
-    Component(services, "Service Layer", "Python", "Shared business logic: content, validation, metadata services.")
+    Component(services_cli, "Service Layer", "Python", "Shared business logic: content, validation, metadata services.")
+    Component(parser_cli, "Document Parsers", "Python", "Parses AsciiDoc/Markdown files, resolves includes, builds AST with line numbers.")
+    Component(index_cli, "Structure Index", "Python", "In-memory hierarchical structure for fast lookups.")
+    Component(fs_handler_cli, "File System Handler", "Python", "Performs atomic read/write operations with backup strategy (ADR-004).")
 }
 
-Component(index, "Structure Index", "Python (In-Memory)", "Stores hierarchical structure for fast lookups.")
-Component(parser, "Document Parsers", "Python", "Parses AsciiDoc/Markdown files.")
-Component(fs_handler, "File System Handler", "Python", "Atomic read/write operations.")
-System_Ext(file_system, "File System")
+ContainerDb(file_system, "Documentation Files", "File System", "AsciiDoc and Markdown files.")
 
-Rel(click_cmds, cli_ctx, "Receives context")
-Rel(click_cmds, services, "Delegates to")
+Rel(click_cmds, cli_ctx, "Receives shared state from")
+Rel(click_cmds, services_cli, "Delegates to")
 Rel(click_cmds, formatter, "Formats output via")
-Rel(services, index, "Queries")
-Rel(services, fs_handler, "Uses", "Read/Write content")
-Rel(cli_ctx, index, "Initializes")
-Rel(cli_ctx, parser, "Parses files with")
-Rel(parser, fs_handler, "Reads files via")
-Rel(fs_handler, file_system, "Interacts with")
+Rel(services_cli, index_cli, "Queries structure and elements")
+Rel(services_cli, fs_handler_cli, "Reads/Writes content via")
+Rel(cli_ctx, index_cli, "Initializes on startup")
+Rel(cli_ctx, parser_cli, "Parses files with")
+Rel(index_cli, parser_cli, "Is built by during initialization")
+Rel(parser_cli, fs_handler_cli, "Reads files via")
+Rel(fs_handler_cli, file_system, "Reads/Writes", "File I/O")
 @enduml
 ----
 
@@ -125,39 +126,9 @@ Rel(fs_handler, file_system, "Interacts with")
 | `metadata`, `validate`, `dependencies`
 |===
 
-=== Level 3: Document Parsers
+=== Document Parser Architecture
 
-The "Document Parsers" component contains two independent parsers with distinct architectures. They share utility functions via `parser_utils`.
-
-[plantuml, component-detail-parsers, svg]
-----
-@startuml
-!include <C4/C4_Component>
-LAYOUT_WITH_LEGEND()
-
-title Component diagram for Document Parsers
-
-Container_Boundary(parsers, "Document Parsers") {
-    Component(adoc_parser, "AsciidocStructureParser", "Python", "Parses AsciiDoc files with include resolution, attribute substitution, and source mapping.")
-    Component(md_parser, "MarkdownStructureParser", "Python", "Parses Markdown files via folder hierarchy, frontmatter, and GFM elements.")
-    Component(parser_utils, "parser_utils", "Python", "Shared: slugify, strip_doc_extension, section search, path building.")
-    Component(include_resolver, "Include Resolver", "Python", "Resolves include:: directives recursively, detects circular includes.")
-    Component(attr_handler, "Attribute Handler", "Python", "Resolves document attributes (:attr:) in text and include paths.")
-    Component(element_extractor, "Element Extractors", "Python", "Extracts code blocks, tables, images, PlantUML, admonitions, blockquotes, lists.")
-}
-
-System_Ext(file_system, "File System")
-
-Rel(adoc_parser, include_resolver, "Delegates to")
-Rel(adoc_parser, attr_handler, "Uses")
-Rel(adoc_parser, element_extractor, "Extracts with")
-Rel(md_parser, element_extractor, "Extracts with")
-Rel(adoc_parser, parser_utils, "Uses")
-Rel(md_parser, parser_utils, "Uses")
-Rel(include_resolver, file_system, "Reads included files")
-Rel(md_parser, file_system, "Scans folder hierarchy")
-@enduml
-----
+Both the MCP Server and CLI containers use the same "Document Parsers" component. Internally, it contains two independent parser implementations with distinct architectures, sharing utility functions via `parser_utils`.
 
 .Parser Comparison
 [cols="1,2,2"]
@@ -184,6 +155,12 @@ Rel(md_parser, file_system, "Scans folder hierarchy")
 | Attribute substitution in paths, source mapping across includes
 | Numeric prefix sorting (`10-intro.md` before `20-setup.md`)
 |===
+
+Key classes:
+
+* **AsciidocStructureParser** — Parses `.adoc` files. Delegates to an include resolver (recursive, with circular-include detection) and an attribute handler (`:attr:` substitution in text and include paths).
+* **MarkdownStructureParser** — Parses `.md` files by scanning folder hierarchies. Supports YAML frontmatter for metadata.
+* **parser_utils** — Shared functions: `slugify`, `strip_doc_extension`, `find_section_by_path`, `collect_all_sections`.
 
 === Component Responsibilities
 
