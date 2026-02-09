@@ -222,5 +222,17 @@ Located in `src/docs/arc42/chapters/09_architecture_decisions.adoc`:
 | `update_section` | Update section content (with optimistic locking) |
 | `insert_content` | Insert content before/after sections |
 
+| `get_dependencies` | Get include tree for AsciiDoc documents |
+
 For detailed tool documentation, see `src/docs/50-user-manual/`.
+
+## C4 Diagram Quality Rules
+
+When creating or modifying C4 diagrams in arc42 docs:
+- File systems, databases are `ContainerDb` inside system boundary, NOT `System_Ext`
+- Component diagrams show internals of ONE container — keep consistent across diagrams
+- You can NOT zoom into components, only into containers
+- Use `LAYOUT_WITH_LEGEND()` consistently on all diagrams
+- Write abstraction type in Container_Boundary labels (e.g. `"MCP Server [Container: Python, FastMCP]"`)
+- Review checklist: https://c4model.com/review
 
