@@ -453,6 +453,55 @@ The CLI uses standardized exit codes for error handling:
 | 5 | Write error
 |===
 
+== Piping & Scripting
+
+When using `dacli --format json` in shell pipelines, keep these tips in mind.
+
+=== Don't combine `uv sync` and `dacli` in one command
+
+Running `uv sync` before `dacli` in the same shell invocation can cause empty stdout:
+
+[source,bash]
+----
+# BROKEN - dacli may produce empty stdout after uv sync
+uv sync --all-extras && dacli --format json structure | python3 -c "..."
+
+# WORKS - run as separate commands
+uv sync --all-extras
+dacli --format json structure | python3 -c "..."
+----
+
+This is a `uv` issue: modifying the virtual environment can invalidate tool entrypoints within the same shell session.
+
+=== Don't redirect stderr into JSON pipes
+
+Using `2>&1` merges informational messages into the JSON stream, breaking parsers:
+
+[source,bash]
+----
+# BROKEN - stderr mixes into JSON
+dacli --format json structure 2>&1 | jq .
+
+# WORKS - leave stderr alone or discard it
+dacli --format json structure | jq .
+dacli --format json structure 2>/dev/null | jq .
+----
+
+=== Capture output to a variable
+
+The safest approach for scripting is to capture output into a variable first:
+
+[source,bash]
+----
+# Capture JSON, then process
+output=$(dacli --format json --docs-root ./docs structure)
+echo "$output" | jq '.sections | length'
+
+# Or use a temp file for large results
+dacli --format json --docs-root ./docs sections-at-level 2 > /tmp/sections.json
+python3 -c "import json; d=json.load(open('/tmp/sections.json')); print(d['count'])"
+----
+
 == LLM Integration Pattern
 
 A typical LLM workflow using dacli:
