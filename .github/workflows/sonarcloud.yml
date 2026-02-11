@@ -10,6 +10,8 @@ jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
+    # Only run on upstream repository, not on forks
+    if: github.repository == 'docToolchain/dacli'
     steps:
       - uses: actions/checkout@v4
         with:
