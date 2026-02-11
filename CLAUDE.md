@@ -268,10 +268,10 @@ _Updated by `/risk-mitigate` on 2026-02-11_
 | SAST | ✅ Eingerichtet | CodeQL security-extended (commit fead47e) |
 | AI Code Review | ✅ Vorhanden | `.github/workflows/claude-code-review.yml` |
 | Property-Based Tests | ✅ Eingerichtet | Hypothesis (`tests/test_property_based.py`, commit 87a965d) |
-| SonarQube Quality Gate | ❌ Ausstehend | Requires SonarCloud account (free for open source) |
+| SonarQube Quality Gate | ✅ Eingerichtet | SonarCloud (`.github/workflows/sonarcloud.yml`, commit fb4c8ad) |
 | Sampling Review (~20%) | ✅ Eingerichtet | `.github/PR_REVIEW_POLICY.md` (commit efb868f) |
 
-**Tier 1 completion: 4/4 (100%)** | **Tier 2 completion: 4/5 (80%)**
+**Tier 1 completion: 4/4 (100%)** | **Tier 2 completion: 5/5 (100%)** ✅
 
 **Security fixes applied**: cryptography>=46.0.5, pip 26.0.1 (commit 7766e90)
 
@@ -305,10 +305,10 @@ _Updated by `/risk-mitigate` on 2026-02-11_
 | SAST | ✅ Eingerichtet | CodeQL security-extended (commit fead47e) |
 | AI Code Review | ✅ Vorhanden | `.github/workflows/claude-code-review.yml` |
 | Property-Based Tests | ✅ Eingerichtet | Hypothesis (`tests/test_property_based.py`, commit 87a965d) |
-| SonarQube Quality Gate | ❌ Ausstehend | Requires SonarCloud account (free for open source) |
+| SonarQube Quality Gate | ✅ Eingerichtet | SonarCloud (`.github/workflows/sonarcloud.yml`, commit fb4c8ad) |
 | Sampling Review (~20%) | ✅ Eingerichtet | `.github/PR_REVIEW_POLICY.md` (commit efb868f) |
 
-**Tier 1 completion: 4/4 (100%)** | **Tier 2 completion: 4/5 (80%)**
+**Tier 1 completion: 4/4 (100%)** | **Tier 2 completion: 5/5 (100%)** ✅
 
 **Security fixes applied**: cryptography>=46.0.5, pip 26.0.1 (commit 7766e90)
 
