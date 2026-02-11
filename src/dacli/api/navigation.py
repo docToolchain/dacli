@@ -118,9 +118,7 @@ def get_sections(
 
     sections = index.get_sections_at_level(level)
 
-    section_summaries = [
-        SectionSummary(path=s.path, title=s.title) for s in sections
-    ]
+    section_summaries = [SectionSummary(path=s.path, title=s.title) for s in sections]
 
     return SectionsAtLevelResponse(
         level=level,

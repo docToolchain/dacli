@@ -41,9 +41,12 @@ class TestUpdateEmptyContentWarning:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_dir),
-                "update", "test:introduction",
-                "--content", "",
+                "--docs-root",
+                str(temp_doc_dir),
+                "update",
+                "test:introduction",
+                "--content",
+                "",
             ],
         )
 
@@ -55,9 +58,12 @@ class TestUpdateEmptyContentWarning:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_dir),
-                "update", "test:introduction",
-                "--content", "   \n  ",
+                "--docs-root",
+                str(temp_doc_dir),
+                "update",
+                "test:introduction",
+                "--content",
+                "   \n  ",
             ],
         )
 
@@ -69,9 +75,12 @@ class TestUpdateEmptyContentWarning:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_dir),
-                "update", "test:introduction",
-                "--content", "New content here",
+                "--docs-root",
+                str(temp_doc_dir),
+                "update",
+                "test:introduction",
+                "--content",
+                "New content here",
             ],
         )
 
@@ -83,9 +92,12 @@ class TestUpdateEmptyContentWarning:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_dir),
-                "update", "test:introduction",
-                "--content", "",
+                "--docs-root",
+                str(temp_doc_dir),
+                "update",
+                "test:introduction",
+                "--content",
+                "",
             ],
         )
 
@@ -139,9 +151,12 @@ class TestFormatPositionError:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_dir),
-                "section", "test:introduction",
-                "--format", "json",
+                "--docs-root",
+                str(temp_doc_dir),
+                "section",
+                "test:introduction",
+                "--format",
+                "json",
             ],
         )
 

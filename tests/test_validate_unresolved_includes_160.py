@@ -103,14 +103,10 @@ class TestMCPValidateUnresolvedIncludes:
         error_types = [e["type"] for e in result.data["errors"]]
         assert "unresolved_include" in error_types
 
-    async def test_broken_include_error_has_path_and_message(
-        self, mcp_broken: Client
-    ):
+    async def test_broken_include_error_has_path_and_message(self, mcp_broken: Client):
         """The error entry includes path (file:line) and a descriptive message."""
         result = await mcp_broken.call_tool("validate_structure", arguments={})
-        errors = [
-            e for e in result.data["errors"] if e["type"] == "unresolved_include"
-        ]
+        errors = [e for e in result.data["errors"] if e["type"] == "unresolved_include"]
         assert len(errors) == 1
         error = errors[0]
         # path should be file:line format
@@ -124,16 +120,10 @@ class TestMCPValidateUnresolvedIncludes:
         error_types = [e["type"] for e in result.data["errors"]]
         assert "unresolved_include" not in error_types
 
-    async def test_multiple_broken_includes_all_reported(
-        self, mcp_multiple_broken: Client
-    ):
+    async def test_multiple_broken_includes_all_reported(self, mcp_multiple_broken: Client):
         """Each broken include produces its own error entry."""
-        result = await mcp_multiple_broken.call_tool(
-            "validate_structure", arguments={}
-        )
-        errors = [
-            e for e in result.data["errors"] if e["type"] == "unresolved_include"
-        ]
+        result = await mcp_multiple_broken.call_tool("validate_structure", arguments={})
+        errors = [e for e in result.data["errors"] if e["type"] == "unresolved_include"]
         assert len(errors) == 2
         messages = [e["message"] for e in errors]
         assert any("missing_a.adoc" in m for m in messages)
@@ -146,16 +136,11 @@ class TestMCPValidateUnresolvedIncludes:
 class TestServiceValidateUnresolvedIncludes:
     """Service-level validate_structure detects unresolved includes (#160)."""
 
-    def test_service_broken_include_detected(
-        self, docs_with_broken_include: Path
-    ):
+    def test_service_broken_include_detected(self, docs_with_broken_include: Path):
         """validate_structure reports unresolved_include for missing file."""
         parser = AsciidocStructureParser(base_path=docs_with_broken_include)
         index = StructureIndex()
-        docs = [
-            parser.parse_file(f)
-            for f in docs_with_broken_include.glob("*.adoc")
-        ]
+        docs = [parser.parse_file(f) for f in docs_with_broken_include.glob("*.adoc")]
         index.build_from_documents(docs)
 
         result = validate_structure(index, docs_with_broken_include)
@@ -168,10 +153,7 @@ class TestServiceValidateUnresolvedIncludes:
         """validate_structure has no unresolved_include for existing file."""
         parser = AsciidocStructureParser(base_path=docs_with_valid_include)
         index = StructureIndex()
-        docs = [
-            parser.parse_file(f)
-            for f in docs_with_valid_include.glob("*.adoc")
-        ]
+        docs = [parser.parse_file(f) for f in docs_with_valid_include.glob("*.adoc")]
         index.build_from_documents(docs)
 
         result = validate_structure(index, docs_with_valid_include)

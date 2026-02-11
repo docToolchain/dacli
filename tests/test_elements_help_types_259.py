@@ -71,7 +71,5 @@ class TestElementsHelpTypes:
     def test_cli_warns_on_diagram_type(self, docs_dir: Path):
         """CLI should warn when 'diagram' is used as element type."""
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(docs_dir), "elements", "--type", "diagram"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(docs_dir), "elements", "--type", "diagram"])
         assert "Warning" in result.output

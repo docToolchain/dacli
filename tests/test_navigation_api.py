@@ -34,17 +34,13 @@ def sample_index() -> StructureIndex:
                         title="Goals",
                         level=2,
                         path="/introduction/goals",
-                        source_location=SourceLocation(
-                            file=Path("docs/intro.adoc"), line=10
-                        ),
+                        source_location=SourceLocation(file=Path("docs/intro.adoc"), line=10),
                     ),
                     Section(
                         title="Scope",
                         level=2,
                         path="/introduction/scope",
-                        source_location=SourceLocation(
-                            file=Path("docs/intro.adoc"), line=20
-                        ),
+                        source_location=SourceLocation(file=Path("docs/intro.adoc"), line=20),
                     ),
                 ],
             ),
@@ -58,9 +54,7 @@ def sample_index() -> StructureIndex:
                         title="Technical",
                         level=2,
                         path="/constraints/technical",
-                        source_location=SourceLocation(
-                            file=Path("docs/constraints.adoc"), line=15
-                        ),
+                        source_location=SourceLocation(file=Path("docs/constraints.adoc"), line=15),
                     ),
                 ],
             ),

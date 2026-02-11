@@ -197,11 +197,7 @@ class TestFindDocFiles:
 
         # Create .gitignore with various patterns
         (tmp_path / ".gitignore").write_text(
-            "# Comment\n"
-            "*.tmp\n"
-            "build/\n"
-            "!build/important.adoc\n"
-            "**/temp/\n"
+            "# Comment\n" "*.tmp\n" "build/\n" "!build/important.adoc\n" "**/temp/\n"
         )
 
         # Create files
@@ -228,12 +224,7 @@ class TestIntegration:
         from dacli.file_utils import find_doc_files
 
         # Create typical .gitignore
-        (tmp_path / ".gitignore").write_text(
-            "node_modules/\n"
-            ".git/\n"
-            "dist/\n"
-            "*.log\n"
-        )
+        (tmp_path / ".gitignore").write_text("node_modules/\n" ".git/\n" "dist/\n" "*.log\n")
 
         # Create project structure
         (tmp_path / "README.md").write_text("# Project")

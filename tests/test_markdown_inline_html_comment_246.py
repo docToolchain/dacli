@@ -84,9 +84,7 @@ More content.
 class TestInlineHtmlCommentHeadings:
     """Issue #246: Headings with inline HTML comments should be recognized."""
 
-    def test_heading_with_inline_comment_is_recognized(
-        self, temp_doc_inline_comment: Path
-    ):
+    def test_heading_with_inline_comment_is_recognized(self, temp_doc_inline_comment: Path):
         """A heading with an inline HTML comment should appear in structure."""
         parser = MarkdownStructureParser(base_path=temp_doc_inline_comment)
         index = StructureIndex()
@@ -109,14 +107,12 @@ class TestInlineHtmlCommentHeadings:
 
         collect_paths(structure["sections"])
 
-        assert "test:important" in paths, (
-            f"Heading with inline comment should be recognized. Paths: {paths}"
-        )
+        assert (
+            "test:important" in paths
+        ), f"Heading with inline comment should be recognized. Paths: {paths}"
         assert "test:normal-section" in paths
 
-    def test_inline_comment_stripped_from_title(
-        self, temp_doc_inline_comment: Path
-    ):
+    def test_inline_comment_stripped_from_title(self, temp_doc_inline_comment: Path):
         """The inline HTML comment should be stripped from the heading title."""
         parser = MarkdownStructureParser(base_path=temp_doc_inline_comment)
 
@@ -125,23 +121,15 @@ class TestInlineHtmlCommentHeadings:
 
         root = doc.sections[0]
         # Find the "Important" section
-        important_section = next(
-            (s for s in root.children if "Important" in s.title), None
-        )
-        assert important_section is not None, (
-            "Should find a section with 'Important' in title"
-        )
+        important_section = next((s for s in root.children if "Important" in s.title), None)
+        assert important_section is not None, "Should find a section with 'Important' in title"
         assert "<!--" not in important_section.title
         assert "-->" not in important_section.title
         assert important_section.title == "Important"
 
-    def test_multiple_inline_comments_all_recognized(
-        self, temp_doc_multiple_inline_comments: Path
-    ):
+    def test_multiple_inline_comments_all_recognized(self, temp_doc_multiple_inline_comments: Path):
         """Multiple headings with inline comments should all be recognized."""
-        parser = MarkdownStructureParser(
-            base_path=temp_doc_multiple_inline_comments
-        )
+        parser = MarkdownStructureParser(base_path=temp_doc_multiple_inline_comments)
         index = StructureIndex()
 
         documents = []
@@ -166,13 +154,9 @@ class TestInlineHtmlCommentHeadings:
         assert "test:installation" in paths
         assert "test:faq" in paths
 
-    def test_h1_with_inline_comment_title_cleaned(
-        self, temp_doc_multiple_inline_comments: Path
-    ):
+    def test_h1_with_inline_comment_title_cleaned(self, temp_doc_multiple_inline_comments: Path):
         """H1 document title should have inline comment stripped."""
-        parser = MarkdownStructureParser(
-            base_path=temp_doc_multiple_inline_comments
-        )
+        parser = MarkdownStructureParser(base_path=temp_doc_multiple_inline_comments)
 
         for doc_file in temp_doc_multiple_inline_comments.glob("*.md"):
             doc = parser.parse_file(doc_file)
@@ -180,9 +164,7 @@ class TestInlineHtmlCommentHeadings:
         assert doc.title == "Project"
         assert "<!--" not in doc.title
 
-    def test_mixed_inline_and_block_comments(
-        self, temp_doc_mixed_comments: Path
-    ):
+    def test_mixed_inline_and_block_comments(self, temp_doc_mixed_comments: Path):
         """Inline comments on headings + block comments should both work."""
         parser = MarkdownStructureParser(base_path=temp_doc_mixed_comments)
         index = StructureIndex()

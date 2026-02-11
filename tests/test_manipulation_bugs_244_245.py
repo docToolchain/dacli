@@ -102,9 +102,7 @@ class TestBug245HeadingLevelValidation:
 
         assert result["success"] is True
 
-    def test_different_level_without_children_rejected(
-        self, index_and_handler, adoc_doc_dir: Path
-    ):
+    def test_different_level_without_children_rejected(self, index_and_handler, adoc_doc_dir: Path):
         """Bug #245: preserve_title=False with different heading level should
         fail even when section has NO children."""
         index, file_handler = index_and_handler
@@ -128,9 +126,7 @@ class TestBug245HeadingLevelValidation:
         assert "== Section 1" in file_content
         assert "Content of section 1." in file_content
 
-    def test_deeper_level_without_children_rejected(
-        self, index_and_handler, adoc_doc_dir: Path
-    ):
+    def test_deeper_level_without_children_rejected(self, index_and_handler, adoc_doc_dir: Path):
         """Bug #245: Changing from level 1 to level 3 should fail."""
         index, file_handler = index_and_handler
 
@@ -146,9 +142,7 @@ class TestBug245HeadingLevelValidation:
         assert result["success"] is False
         assert "heading level" in result["error"].lower()
 
-    def test_shallower_level_without_children_rejected(
-        self, index_and_handler, adoc_doc_dir: Path
-    ):
+    def test_shallower_level_without_children_rejected(self, index_and_handler, adoc_doc_dir: Path):
         """Bug #245: Changing to a shallower level should also fail."""
         index, file_handler = index_and_handler
 
@@ -247,9 +241,7 @@ class TestBug244InsertAfterBlankLine:
                 return tool
         raise AssertionError("insert_content tool not found")
 
-    def test_insert_heading_after_section_blank_line_before_next(
-        self, md_for_insert: Path
-    ):
+    def test_insert_heading_after_section_blank_line_before_next(self, md_for_insert: Path):
         """Bug #244: When inserting heading content after a section, there should
         be a blank line before the next heading."""
         mcp = create_mcp_server(md_for_insert)
@@ -277,9 +269,7 @@ class TestBug244InsertAfterBlankLine:
             f"Full content:\n{content}"
         )
 
-    def test_insert_plain_text_after_section_blank_line_before_next(
-        self, md_for_insert: Path
-    ):
+    def test_insert_plain_text_after_section_blank_line_before_next(self, md_for_insert: Path):
         """Inserting plain text after a section should also have blank line
         before next heading."""
         mcp = create_mcp_server(md_for_insert)
@@ -307,9 +297,7 @@ class TestBug244InsertAfterBlankLine:
             f"Full content:\n{content}"
         )
 
-    def test_insert_heading_after_has_blank_line_separation(
-        self, md_for_insert: Path
-    ):
+    def test_insert_heading_after_has_blank_line_separation(self, md_for_insert: Path):
         """Inserted heading content should have blank line separation
         from next heading."""
         mcp = create_mcp_server(md_for_insert)
@@ -329,12 +317,8 @@ class TestBug244InsertAfterBlankLine:
         lines = content.split("\n")
 
         # Find all heading positions
-        sec2_idx = next(
-            i for i, line in enumerate(lines) if "## Section 2" in line
-        )
-        inserted_idx = next(
-            i for i, line in enumerate(lines) if "## Inserted Heading" in line
-        )
+        sec2_idx = next(i for i, line in enumerate(lines) if "## Section 2" in line)
+        inserted_idx = next(i for i, line in enumerate(lines) if "## Inserted Heading" in line)
 
         # Inserted heading should come before Section 2
         assert inserted_idx < sec2_idx

@@ -8,7 +8,7 @@ from pathlib import Path
 
 def generate_badge_svg(count, output_path):
     """Generate SVG badge with test count."""
-    svg_template = '''<svg xmlns="http://www.w3.org/2000/svg" width="88" height="20">
+    svg_template = """<svg xmlns="http://www.w3.org/2000/svg" width="88" height="20">
   <linearGradient id="b" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
     <stop offset="1" stop-opacity=".1"/>
@@ -27,7 +27,7 @@ def generate_badge_svg(count, output_path):
     <text x="64.5" y="15" fill="#010101" fill-opacity=".3">{count}</text>
     <text x="64.5" y="14">{count}</text>
   </g>
-</svg>'''
+</svg>"""
 
     svg_content = svg_template.format(count=count)
 

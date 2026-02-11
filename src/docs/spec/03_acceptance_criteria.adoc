@@ -76,7 +76,7 @@ Feature: Read section
     And the section "introduction.goals" exists with content:
       """
       == Goals
-      
+
       The main goals are:
       * Goal 1
       * Goal 2

@@ -66,9 +66,7 @@ More content.
 class TestValidateBrokenIncludes:
     """Test that validate_structure detects broken includes."""
 
-    def test_broken_include_reported_as_error(
-        self, temp_doc_with_broken_include: Path
-    ):
+    def test_broken_include_reported_as_error(self, temp_doc_with_broken_include: Path):
         """Issue #219: Broken includes should be reported as errors."""
         parser = AsciidocStructureParser(base_path=temp_doc_with_broken_include)
         index = StructureIndex()
@@ -85,20 +83,18 @@ class TestValidateBrokenIncludes:
         result = validate_structure(index, temp_doc_with_broken_include)
 
         # Should NOT be valid due to broken include
-        assert result["valid"] is False, (
-            f"Expected valid=False for broken include. Result: {result}"
-        )
+        assert (
+            result["valid"] is False
+        ), f"Expected valid=False for broken include. Result: {result}"
 
         # Should have an error about the unresolved include
         error_types = [e["type"] for e in result["errors"]]
-        assert "unresolved_include" in error_types, (
-            f"Expected 'unresolved_include' error. Errors: {result['errors']}"
-        )
+        assert (
+            "unresolved_include" in error_types
+        ), f"Expected 'unresolved_include' error. Errors: {result['errors']}"
 
         # Error should mention the missing file
-        unresolved_errors = [
-            e for e in result["errors"] if e["type"] == "unresolved_include"
-        ]
+        unresolved_errors = [e for e in result["errors"] if e["type"] == "unresolved_include"]
         assert len(unresolved_errors) == 1
         assert "nonexistent_file.adoc" in unresolved_errors[0]["message"]
 
@@ -127,9 +123,7 @@ class TestValidateBrokenIncludes:
 class TestCLIValidateBrokenIncludes:
     """Test CLI validate command with broken includes."""
 
-    def test_cli_validate_reports_broken_include(
-        self, temp_doc_with_broken_include: Path
-    ):
+    def test_cli_validate_reports_broken_include(self, temp_doc_with_broken_include: Path):
         """CLI validate should report broken includes."""
         runner = CliRunner()
         result = runner.invoke(

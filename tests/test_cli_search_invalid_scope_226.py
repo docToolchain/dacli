@@ -41,8 +41,12 @@ class TestSearchInvalidScope:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(temp_doc_with_sections),
-                "search", "test", "--scope", "nonexistent-section"
+                "--docs-root",
+                str(temp_doc_with_sections),
+                "search",
+                "test",
+                "--scope",
+                "nonexistent-section",
             ],
         )
 
@@ -56,10 +60,7 @@ class TestSearchInvalidScope:
         runner = CliRunner()
         result = runner.invoke(
             cli,
-            [
-                "--docs-root", str(temp_doc_with_sections),
-                "search", "test", "--scope", "test"
-            ],
+            ["--docs-root", str(temp_doc_with_sections), "search", "test", "--scope", "test"],
         )
 
         assert result.exit_code == 0

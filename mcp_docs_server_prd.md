@@ -1,8 +1,8 @@
 # Product Requirements Document: MCP Documentation Server
 
-**Version:** 1.0  
-**Date:** September 18, 2025  
-**Author:** Product Team  
+**Version:** 1.0
+**Date:** September 18, 2025
+**Author:** Product Team
 
 ## Executive Summary
 
@@ -58,7 +58,7 @@ Enable structured, efficient LLM interaction with large documentation projects t
 #### 2. Hierarchical Navigation API
 ```
 get_structure(max_depth: int) → Table of Contents
-get_section(path: "chapter.subchapter") → Content  
+get_section(path: "chapter.subchapter") → Content
 get_sections(level: int) → All sections at level
 ```
 

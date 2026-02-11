@@ -58,9 +58,7 @@ def index_and_handler(temp_doc_dir: Path):
 class TestPreserveTitleFalseValidation:
     """Test validation when preserve_title=False."""
 
-    def test_preserve_title_false_with_title_succeeds(
-        self, index_and_handler, temp_doc_dir: Path
-    ):
+    def test_preserve_title_false_with_title_succeeds(self, index_and_handler, temp_doc_dir: Path):
         """preserve_title=False WITH title in content should succeed."""
         index, file_handler = index_and_handler
 
@@ -82,9 +80,7 @@ class TestPreserveTitleFalseValidation:
         assert "New content with new title." in file_content
         assert "== Section 1" not in file_content  # Old title should be gone
 
-    def test_preserve_title_false_without_title_fails(
-        self, index_and_handler, temp_doc_dir: Path
-    ):
+    def test_preserve_title_false_without_title_fails(self, index_and_handler, temp_doc_dir: Path):
         """preserve_title=False WITHOUT title in content should fail (Issue #195)."""
         index, file_handler = index_and_handler
 
@@ -134,9 +130,7 @@ class TestPreserveTitleFalseValidation:
         assert result["success"] is False
         assert "heading level" in result["error"].lower()
 
-    def test_preserve_title_false_with_only_whitespace_fails(
-        self, index_and_handler
-    ):
+    def test_preserve_title_false_with_only_whitespace_fails(self, index_and_handler):
         """preserve_title=False with only whitespace should fail."""
         index, file_handler = index_and_handler
 

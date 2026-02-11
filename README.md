@@ -102,7 +102,7 @@ uv run dacli-mcp --docs-root /path/to/your/docs
 # Include gitignored files
 uv run dacli-mcp --docs-root /path/to/your/docs --no-gitignore
 
-# Include hidden directories  
+# Include hidden directories
 uv run dacli-mcp --docs-root /path/to/your/docs --include-hidden
 ```
 

@@ -54,9 +54,7 @@ def get_project_metadata(index: StructureIndex) -> dict:
         "total_sections": stats["total_sections"],
         "total_words": total_words,
         "last_modified": (
-            datetime.fromtimestamp(last_modified, tz=UTC).isoformat()
-            if last_modified
-            else None
+            datetime.fromtimestamp(last_modified, tz=UTC).isoformat() if last_modified else None
         ),
         "formats": sorted(formats),
     }

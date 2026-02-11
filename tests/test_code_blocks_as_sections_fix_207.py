@@ -45,10 +45,12 @@ Content here.
 
         # Should have 3 sections: document title + 2 real sections
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         assert len(all_sections) == 3
@@ -80,10 +82,12 @@ Not a real section
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -110,10 +114,12 @@ Not a real section
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -140,10 +146,12 @@ Not a real section
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -170,10 +178,12 @@ Not a real section
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -200,10 +210,12 @@ ____
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -231,10 +243,12 @@ ____
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -268,10 +282,12 @@ ____
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         # Should have 4 sections: document + 3 real sections
@@ -308,10 +324,12 @@ print("hello")
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -341,10 +359,12 @@ Content 2
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         # Should have all real sections
@@ -387,10 +407,12 @@ Content here.
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -422,10 +444,12 @@ Content here.
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -456,10 +480,12 @@ def hello():
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -486,10 +512,12 @@ def hello():
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -521,10 +549,12 @@ def hello():
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]
@@ -555,10 +585,12 @@ Content 2
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         # Should have all real sections
@@ -587,10 +619,12 @@ Content 2
         doc = parser.parse_file(test_file)
 
         all_sections = []
+
         def collect(sections):
             for s in sections:
                 all_sections.append(s)
                 collect(s.children)
+
         collect(doc.sections)
 
         section_titles = [s.title for s in all_sections]

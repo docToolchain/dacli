@@ -38,7 +38,7 @@ def hello():
         code_elem = doc.elements[0]
         assert code_elem.type == "code"
         assert "content" in code_elem.attributes
-        assert 'def hello():' in code_elem.attributes["content"]
+        assert "def hello():" in code_elem.attributes["content"]
         assert 'print("world")' in code_elem.attributes["content"]
 
     def test_table_captures_content(self):
@@ -139,7 +139,7 @@ def hello():
         code_elem = doc.elements[0]
         assert code_elem.type == "code"
         assert "content" in code_elem.attributes
-        assert 'def hello():' in code_elem.attributes["content"]
+        assert "def hello():" in code_elem.attributes["content"]
 
     def test_table_captures_content(self):
         """Markdown tables should capture content."""
@@ -217,10 +217,9 @@ echo "test"
 echo "test"
 ----
 """)
-        result = cli_runner.invoke([
-            "--docs-root", str(temp_docs_dir),
-            "elements", "--type", "code", "--include-content"
-        ])
+        result = cli_runner.invoke(
+            ["--docs-root", str(temp_docs_dir), "elements", "--type", "code", "--include-content"]
+        )
         assert result.exit_code == 0
         assert "attributes" in result.output
         assert "content" in result.output
@@ -241,10 +240,18 @@ line 4
 line 5
 ----
 """)
-        result = cli_runner.invoke([
-            "--docs-root", str(temp_docs_dir),
-            "elements", "--type", "code", "--include-content", "--content-limit", "2"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(temp_docs_dir),
+                "elements",
+                "--type",
+                "code",
+                "--include-content",
+                "--content-limit",
+                "2",
+            ]
+        )
         assert result.exit_code == 0
         assert "line 1" in result.output
         assert "line 2" in result.output

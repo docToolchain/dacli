@@ -118,15 +118,13 @@ class TestMarkdownHtmlComments:
         collect_paths(structure["sections"])
 
         # Should have 3 sections: document, section-1, section-2
-        assert "test:this-is-commented-out" not in paths, (
-            f"Commented heading should not appear. Paths: {paths}"
-        )
+        assert (
+            "test:this-is-commented-out" not in paths
+        ), f"Commented heading should not appear. Paths: {paths}"
         assert "test:section-1" in paths
         assert "test:section-2" in paths
 
-    def test_single_line_comment_ignored(
-        self, temp_doc_with_single_line_comment: Path
-    ):
+    def test_single_line_comment_ignored(self, temp_doc_with_single_line_comment: Path):
         """Single-line HTML comments should also be ignored."""
         parser = MarkdownStructureParser(base_path=temp_doc_with_single_line_comment)
         index = StructureIndex()
@@ -153,9 +151,7 @@ class TestMarkdownHtmlComments:
         assert "test:section-1" in paths
         assert "test:section-2" in paths
 
-    def test_multiple_comments_all_ignored(
-        self, temp_doc_with_multiple_comments: Path
-    ):
+    def test_multiple_comments_all_ignored(self, temp_doc_with_multiple_comments: Path):
         """Multiple HTML comments should all be ignored."""
         parser = MarkdownStructureParser(base_path=temp_doc_with_multiple_comments)
         index = StructureIndex()
@@ -179,9 +175,9 @@ class TestMarkdownHtmlComments:
         collect_paths(structure["sections"])
 
         # Should only have sections 1-4, no commented headings
-        assert len([p for p in paths if "commented" in p.lower()]) == 0, (
-            f"No commented headings should appear. Paths: {paths}"
-        )
+        assert (
+            len([p for p in paths if "commented" in p.lower()]) == 0
+        ), f"No commented headings should appear. Paths: {paths}"
         assert "test:section-1" in paths
         assert "test:section-2" in paths
         assert "test:section-3" in paths
@@ -191,9 +187,7 @@ class TestMarkdownHtmlComments:
 class TestCLIHtmlComments:
     """Test CLI with HTML comments."""
 
-    def test_cli_structure_ignores_html_comments(
-        self, temp_doc_with_html_comment: Path
-    ):
+    def test_cli_structure_ignores_html_comments(self, temp_doc_with_html_comment: Path):
         """CLI structure command should not show commented headings."""
         runner = CliRunner()
         result = runner.invoke(

@@ -69,11 +69,7 @@ Content B
 
         new_content = "\n== Section A.5\n\nInserted section\n"
 
-        new_lines = (
-            lines[:end_with_children]
-            + [new_content]
-            + lines[end_with_children:]
-        )
+        new_lines = lines[:end_with_children] + [new_content] + lines[end_with_children:]
 
         new_file_content = "".join(new_lines)
         _file_handler.write_file(test_file, new_file_content)
@@ -139,11 +135,7 @@ Very deep
         lines = content_lines.splitlines(keepends=True)
 
         new_content = "\n== Inserted Section\n\nNew content\n"
-        new_lines = (
-            lines[:end_with_children]
-            + [new_content]
-            + lines[end_with_children:]
-        )
+        new_lines = lines[:end_with_children] + [new_content] + lines[end_with_children:]
 
         _file_handler.write_file(test_file, "".join(new_lines))
 
@@ -207,11 +199,7 @@ Content 3
         lines = content_lines.splitlines(keepends=True)
 
         new_content = "\n== Inserted Section\n\nNew\n"
-        new_lines = (
-            lines[:end_with_children]
-            + [new_content]
-            + lines[end_with_children:]
-        )
+        new_lines = lines[:end_with_children] + [new_content] + lines[end_with_children:]
 
         _file_handler.write_file(test_file, "".join(new_lines))
 
@@ -266,11 +254,7 @@ Content B
         lines = content_lines.splitlines(keepends=True)
 
         new_content = "\n== Section A.5\n\nInserted\n"
-        new_lines = (
-            lines[:end_with_children]
-            + [new_content]
-            + lines[end_with_children:]
-        )
+        new_lines = lines[:end_with_children] + [new_content] + lines[end_with_children:]
 
         _file_handler.write_file(test_file, "".join(new_lines))
 
@@ -322,11 +306,7 @@ Child
         lines = content_lines.splitlines(keepends=True)
 
         new_content = "\n== Section Before A\n\nInserted before\n"
-        new_lines = (
-            lines[: start_line - 1]
-            + [new_content]
-            + lines[start_line - 1 :]
-        )
+        new_lines = lines[: start_line - 1] + [new_content] + lines[start_line - 1 :]
 
         _file_handler.write_file(test_file, "".join(new_lines))
 
@@ -377,11 +357,7 @@ Child
         lines = content_lines.splitlines(keepends=True)
 
         new_content = "\nAppended content\n"
-        new_lines = (
-            lines[: end_line - 1]
-            + [new_content]
-            + lines[end_line - 1 :]
-        )
+        new_lines = lines[: end_line - 1] + [new_content] + lines[end_line - 1 :]
 
         _file_handler.write_file(test_file, "".join(new_lines))
 

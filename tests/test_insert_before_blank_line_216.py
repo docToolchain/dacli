@@ -59,9 +59,9 @@ class TestInsertBeforeBlankLine:
         file_content = doc_file.read_text(encoding="utf-8")
 
         # There should be a blank line between "Content before B" and "== Section B"
-        assert "Content before B\n\n== Section B" in file_content, (
-            f"Missing blank line before Section B. Content:\n{file_content}"
-        )
+        assert (
+            "Content before B\n\n== Section B" in file_content
+        ), f"Missing blank line before Section B. Content:\n{file_content}"
 
     def test_insert_content_before_heading_adds_blank_line(self, temp_doc_dir: Path):
         """Insert plain content before a heading should add blank line."""
@@ -86,9 +86,9 @@ class TestInsertBeforeBlankLine:
         file_content = doc_file.read_text(encoding="utf-8")
 
         # There should be a blank line between the content and Section B
-        assert "Some plain content without heading\n\n== Section B" in file_content, (
-            f"Missing blank line before Section B. Content:\n{file_content}"
-        )
+        assert (
+            "Some plain content without heading\n\n== Section B" in file_content
+        ), f"Missing blank line before Section B. Content:\n{file_content}"
 
     def test_insert_before_preserves_existing_blank_lines(self, temp_doc_dir: Path):
         """Don't add extra blank lines if content already ends with them."""

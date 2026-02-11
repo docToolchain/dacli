@@ -181,10 +181,7 @@ class TestPositiveNumbersStillWork:
 
         assert result.exit_code == 0
         # Should return level 2 sections
-        assert (
-            "Level 2 Section A.1" in result.output
-            or "level-2-section-a-1" in result.output
-        )
+        assert "Level 2 Section A.1" in result.output or "level-2-section-a-1" in result.output
 
     def test_level_one_json_format(self, temp_doc_dir: Path):
         """Level 1 with JSON format should work."""

@@ -22,9 +22,7 @@ def compute_hash(content: str) -> str:
     return hashlib.md5(content.encode("utf-8")).hexdigest()[:8]
 
 
-def _get_section_end_line(
-    section, file_path: Path, file_handler: FileSystemHandler
-) -> int:
+def _get_section_end_line(section, file_path: Path, file_handler: FileSystemHandler) -> int:
     """Get the end line of a section.
 
     If the section has an end_line in source_location, use that.
@@ -106,8 +104,7 @@ def update_section(
         return {
             "success": False,
             "error": (
-                f"Hash conflict: expected '{expected_hash}', "
-                f"but current is '{previous_hash}'"
+                f"Hash conflict: expected '{expected_hash}', " f"but current is '{previous_hash}'"
             ),
             "current_hash": previous_hash,
         }
@@ -116,9 +113,7 @@ def update_section(
     new_content = content
     if preserve_title:
         stripped_content = new_content.lstrip()
-        has_explicit_title = (
-            stripped_content.startswith("=") or stripped_content.startswith("#")
-        )
+        has_explicit_title = stripped_content.startswith("=") or stripped_content.startswith("#")
 
         # If content has a heading, strip it (we always use the original title)
         if has_explicit_title:
@@ -142,9 +137,7 @@ def update_section(
         # Issue #195: When preserve_title is False, content must include a title
         # to maintain document structure
         stripped_content = new_content.lstrip()
-        has_title = (
-            stripped_content.startswith("=") or stripped_content.startswith("#")
-        )
+        has_title = stripped_content.startswith("=") or stripped_content.startswith("#")
         if not has_title:
             return {
                 "success": False,
@@ -180,8 +173,7 @@ def update_section(
             return {
                 "success": False,
                 "error": (
-                    f"Cannot change heading level from {section.level} "
-                    f"to {new_level} {reason}"
+                    f"Cannot change heading level from {section.level} " f"to {new_level} {reason}"
                 ),
             }
 

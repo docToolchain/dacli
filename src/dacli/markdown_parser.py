@@ -170,9 +170,7 @@ class MarkdownStructureParser:
         self._compute_end_lines(sections, file_path, total_lines)
 
         # Parse elements (code blocks, tables, images)
-        elements = self._parse_elements(
-            lines, file_path, sections, line_offset=frontmatter_lines
-        )
+        elements = self._parse_elements(lines, file_path, sections, line_offset=frontmatter_lines)
 
         # Title priority: frontmatter > first H1 > empty
         title = frontmatter.get("title", heading_title)
@@ -225,9 +223,7 @@ class MarkdownStructureParser:
             structure=[],  # Not yet implemented - see class docstring
         )
 
-    def get_section(
-        self, doc: MarkdownDocument, path: str
-    ) -> Section | None:
+    def get_section(self, doc: MarkdownDocument, path: str) -> Section | None:
         """Find a section by its hierarchical path.
 
         Args:
@@ -239,9 +235,7 @@ class MarkdownStructureParser:
         """
         return find_section_by_path(doc.sections, path)
 
-    def get_elements(
-        self, doc: MarkdownDocument, element_type: str | None = None
-    ) -> list[Element]:
+    def get_elements(self, doc: MarkdownDocument, element_type: str | None = None) -> list[Element]:
         """Get elements from document, optionally filtered by type.
 
         Args:
@@ -282,7 +276,7 @@ class MarkdownStructureParser:
             frontmatter = {}
 
         # Remove frontmatter from content
-        content_without_frontmatter = content[match.end():]
+        content_without_frontmatter = content[match.end() :]
         return frontmatter, content_without_frontmatter
 
     def _parse_sections(
@@ -378,9 +372,7 @@ class MarkdownStructureParser:
                 line = INLINE_HTML_COMMENT.sub("", line).strip()
 
             # Detect Setext headings and warn (not supported per spec)
-            self._warn_setext_heading(
-                line, prev_line, prev_prev_line, line_num, file_path
-            )
+            self._warn_setext_heading(line, prev_line, prev_prev_line, line_num, file_path)
             prev_prev_line = prev_line
             prev_line = line
             match = HEADING_PATTERN.match(line)

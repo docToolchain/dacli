@@ -55,7 +55,7 @@ class TestMcpInsertAfterWithChildren:
         result = insert_tool.fn(
             path="test:parent-section",
             position="after",
-            content="## Inserted Section\n\nInserted content.\n"
+            content="## Inserted Section\n\nInserted content.\n",
         )
 
         assert result.get("success") is True, f"Insert failed: {result.get('error')}"
@@ -89,7 +89,7 @@ class TestMcpInsertAfterWithChildren:
         result = insert_tool.fn(
             path="test:parent-section.child-section",
             position="after",
-            content="### Another Child\n\nNew content.\n"
+            content="### Another Child\n\nNew content.\n",
         )
 
         assert result.get("success") is True

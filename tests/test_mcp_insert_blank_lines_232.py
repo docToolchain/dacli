@@ -35,9 +35,7 @@ Content 2.
 class TestMcpInsertBlankLines:
     """Test that MCP insert_content handles blank lines correctly."""
 
-    def test_insert_before_adds_blank_line_after_content(
-        self, temp_doc_for_blank_lines: Path
-    ):
+    def test_insert_before_adds_blank_line_after_content(self, temp_doc_for_blank_lines: Path):
         """Issue #232: Insert before should add blank line when next is heading."""
         mcp = create_mcp_server(temp_doc_for_blank_lines)
 
@@ -49,9 +47,7 @@ class TestMcpInsertBlankLines:
 
         # Insert content before Section 2
         result = insert_tool.fn(
-            path="test:section-2",
-            position="before",
-            content="Some new paragraph.\n"
+            path="test:section-2", position="before", content="Some new paragraph.\n"
         )
 
         assert result.get("success") is True
@@ -69,13 +65,10 @@ class TestMcpInsertBlankLines:
 
         # Should have blank line between them
         assert sec2_idx > para_idx + 1, (
-            f"Should have blank line between content and Section 2.\n"
-            f"Content:\n{content}"
+            f"Should have blank line between content and Section 2.\n" f"Content:\n{content}"
         )
 
-    def test_insert_after_adds_blank_line_before_next_heading(
-        self, temp_doc_for_blank_lines: Path
-    ):
+    def test_insert_after_adds_blank_line_before_next_heading(self, temp_doc_for_blank_lines: Path):
         """Issue #232: Insert after should add blank line before next heading."""
         mcp = create_mcp_server(temp_doc_for_blank_lines)
 
@@ -87,9 +80,7 @@ class TestMcpInsertBlankLines:
 
         # Insert content after Section 1
         result = insert_tool.fn(
-            path="test:section-1",
-            position="after",
-            content="## New Section\n\nNew content.\n"
+            path="test:section-1", position="after", content="## New Section\n\nNew content.\n"
         )
 
         assert result.get("success") is True

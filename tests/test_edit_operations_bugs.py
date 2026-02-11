@@ -87,11 +87,9 @@ More content
 """)
 
         # Update Section 1
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "update", "test:section-1",
-            "--content", "New content"
-        ])
+        result = cli_runner.invoke(
+            ["--docs-root", str(tmp_path), "update", "test:section-1", "--content", "New content"]
+        )
 
         assert result.exit_code == 0
 
@@ -105,11 +103,12 @@ More content
         section2_idx = next(i for i, line in enumerate(lines) if "Section 2" in line)
 
         # There should be at least one blank line between sections
-        between_sections = lines[section1_idx + 1:section2_idx]
+        between_sections = lines[section1_idx + 1 : section2_idx]
 
         # Should have content + blank line
-        assert any(line.strip() == "" for line in between_sections), \
-            "No blank line found between sections"
+        assert any(
+            line.strip() == "" for line in between_sections
+        ), "No blank line found between sections"
 
     def test_insert_preserves_blank_lines(self, tmp_path, cli_runner):
         """Test that insert operation preserves blank lines."""
@@ -126,12 +125,18 @@ Content 2
 """)
 
         # Insert after Section 1
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "insert", "test:section-1",
-            "--position", "after",
-            "--content", "== New Section\\n\\nNew content"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(tmp_path),
+                "insert",
+                "test:section-1",
+                "--position",
+                "after",
+                "--content",
+                "== New Section\\n\\nNew content",
+            ]
+        )
 
         assert result.exit_code == 0
 
@@ -159,12 +164,18 @@ Content 2
 """)
 
         # Append to root document
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "insert", "test",
-            "--position", "append",
-            "--content", "== Appendix\\n\\nThis should be at the end"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(tmp_path),
+                "insert",
+                "test",
+                "--position",
+                "append",
+                "--content",
+                "== Appendix\\n\\nThis should be at the end",
+            ]
+        )
 
         assert result.exit_code == 0
 
@@ -177,8 +188,9 @@ Content 2
         appendix_idx = next((i for i, line in enumerate(lines) if "Appendix" in line), None)
 
         assert appendix_idx is not None, "Appendix not found in document"
-        assert appendix_idx > section2_idx, \
-            f"Appendix at line {appendix_idx} should be AFTER Section 2 at line {section2_idx}"
+        assert (
+            appendix_idx > section2_idx
+        ), f"Appendix at line {appendix_idx} should be AFTER Section 2 at line {section2_idx}"
 
     def test_append_to_section_with_children(self, tmp_path, cli_runner):
         """Test append to section that has child sections."""
@@ -203,12 +215,18 @@ Other content
 """)
 
         # Append to Parent Section (should go after all children)
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "insert", "test:parent-section",
-            "--position", "append",
-            "--content", "=== Child 3\\n\\nNew child at the end"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(tmp_path),
+                "insert",
+                "test:parent-section",
+                "--position",
+                "append",
+                "--content",
+                "=== Child 3\\n\\nNew child at the end",
+            ]
+        )
 
         assert result.exit_code == 0
 
@@ -221,8 +239,9 @@ Other content
         another_idx = next(i for i, line in enumerate(lines) if "Another Section" in line)
 
         assert child3_idx is not None, "Child 3 not found"
-        assert child2_idx < child3_idx < another_idx, \
-            "Child 3 should be after Child 2 but before Another Section"
+        assert (
+            child2_idx < child3_idx < another_idx
+        ), "Child 3 should be after Child 2 but before Another Section"
 
 
 class TestCombinedBugFixes:
@@ -243,11 +262,16 @@ Content
 """)
 
         # Update with umlauts
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "update", "test:einführung",
-            "--content", "Über uns: äöü ß"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(tmp_path),
+                "update",
+                "test:einführung",
+                "--content",
+                "Über uns: äöü ß",
+            ]
+        )
 
         assert result.exit_code == 0
 
@@ -261,7 +285,7 @@ Content
         intro_idx = next(i for i, line in enumerate(lines) if "Einführung" in line)
         kap2_idx = next(i for i, line in enumerate(lines) if "Kapitel 2" in line)
 
-        between = lines[intro_idx + 1:kap2_idx]
+        between = lines[intro_idx + 1 : kap2_idx]
         assert any(line.strip() == "" for line in between)
 
     def test_append_with_umlauts_at_correct_position(self, tmp_path, cli_runner):
@@ -275,12 +299,18 @@ Inhalt
 """)
 
         # Append with umlauts (path is based on filename, not title)
-        result = cli_runner.invoke([
-            "--docs-root", str(tmp_path),
-            "insert", "test",
-            "--position", "append",
-            "--content", "== Anhang\\n\\nÜber dieses Dokument: äöü"
-        ])
+        result = cli_runner.invoke(
+            [
+                "--docs-root",
+                str(tmp_path),
+                "insert",
+                "test",
+                "--position",
+                "append",
+                "--content",
+                "== Anhang\\n\\nÜber dieses Dokument: äöü",
+            ]
+        )
 
         assert result.exit_code == 0
 

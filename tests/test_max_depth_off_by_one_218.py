@@ -79,9 +79,7 @@ class TestMaxDepthBehavior:
         counts = count_sections_by_depth(structure)
         max_visible_depth = max(counts.keys()) if counts else -1
 
-        assert max_visible_depth == 0, (
-            f"max_depth=0 should show only depth 0. Counts: {counts}"
-        )
+        assert max_visible_depth == 0, f"max_depth=0 should show only depth 0. Counts: {counts}"
 
     def test_max_depth_1_shows_root_and_children(self, index: StructureIndex):
         """max_depth=1 should show root AND direct children (depth 0 and 1)."""
@@ -91,9 +89,7 @@ class TestMaxDepthBehavior:
         max_visible_depth = max(counts.keys()) if counts else -1
 
         # Issue #218: This was returning 0 instead of 1
-        assert max_visible_depth == 1, (
-            f"max_depth=1 should show depths 0 and 1. Counts: {counts}"
-        )
+        assert max_visible_depth == 1, f"max_depth=1 should show depths 0 and 1. Counts: {counts}"
         assert 1 in counts, f"Should have sections at depth 1. Counts: {counts}"
 
     def test_max_depth_2_shows_three_levels(self, index: StructureIndex):
@@ -104,9 +100,9 @@ class TestMaxDepthBehavior:
         max_visible_depth = max(counts.keys()) if counts else -1
 
         # Issue #218: This was returning 1 instead of 2
-        assert max_visible_depth == 2, (
-            f"max_depth=2 should show depths 0, 1, and 2. Counts: {counts}"
-        )
+        assert (
+            max_visible_depth == 2
+        ), f"max_depth=2 should show depths 0, 1, and 2. Counts: {counts}"
         assert 2 in counts, f"Should have sections at depth 2. Counts: {counts}"
 
     def test_max_depth_none_shows_all(self, index: StructureIndex):
@@ -117,6 +113,4 @@ class TestMaxDepthBehavior:
         max_visible_depth = max(counts.keys()) if counts else -1
 
         # Our test doc has 3 levels (0, 1, 2, 3 for doc + 3 section levels)
-        assert max_visible_depth >= 2, (
-            f"max_depth=None should show all levels. Counts: {counts}"
-        )
+        assert max_visible_depth >= 2, f"max_depth=None should show all levels. Counts: {counts}"

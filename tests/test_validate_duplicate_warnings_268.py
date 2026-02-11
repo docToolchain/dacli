@@ -43,9 +43,9 @@ class TestDuplicatePathWarningsInValidation:
 
         result = validate_structure(index, tmp_path)
         warning_types = [w["type"] for w in result["warnings"]]
-        assert "duplicate_path" in warning_types, (
-            f"duplicate_path not in warnings: {result['warnings']}"
-        )
+        assert (
+            "duplicate_path" in warning_types
+        ), f"duplicate_path not in warnings: {result['warnings']}"
 
     def test_duplicate_path_warning_includes_details(self, tmp_path):
         """Duplicate path warning includes path, files and line numbers."""

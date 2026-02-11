@@ -100,9 +100,7 @@ class TestIndexBuilding:
                             title="Section 1.1",
                             level=2,
                             path="chapter-1.section-1-1",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                         )
                     ],
                 )
@@ -162,9 +160,7 @@ class TestGetStructure:
                             title="Section 1.1",
                             level=2,
                             path="chapter-1.section-1-1",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                         )
                     ],
                 ),
@@ -201,17 +197,13 @@ class TestGetStructure:
                             title="Section 1.1",
                             level=2,
                             path="chapter-1.section-1-1",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                             children=[
                                 Section(
                                     title="Subsection 1.1.1",
                                     level=3,
                                     path="chapter-1.section-1-1/subsection-1-1-1",
-                                    source_location=SourceLocation(
-                                        file=Path("test.adoc"), line=15
-                                    ),
+                                    source_location=SourceLocation(file=Path("test.adoc"), line=15),
                                 )
                             ],
                         )
@@ -288,17 +280,13 @@ class TestGetSection:
                             title="Section",
                             level=2,
                             path="chapter.section",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                             children=[
                                 Section(
                                     title="Subsection",
                                     level=3,
                                     path="chapter.section/subsection",
-                                    source_location=SourceLocation(
-                                        file=Path("test.adoc"), line=20
-                                    ),
+                                    source_location=SourceLocation(file=Path("test.adoc"), line=20),
                                 )
                             ],
                         )
@@ -333,9 +321,7 @@ class TestGetSectionsAtLevel:
                             title="Section 1.1",
                             level=2,
                             path="chapter-1.section-1-1",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=5
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=5),
                         )
                     ],
                 ),
@@ -349,9 +335,7 @@ class TestGetSectionsAtLevel:
                             title="Section 2.1",
                             level=2,
                             path="chapter-2.section-2-1",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=25
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=25),
                         )
                     ],
                 ),
@@ -620,9 +604,7 @@ class TestSearch:
                             title="Python Section",
                             level=2,
                             path="chapter-1.python",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=5
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=5),
                         )
                     ],
                 ),
@@ -636,9 +618,7 @@ class TestSearch:
                             title="Python Advanced",
                             level=2,
                             path="chapter-2.python",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=25
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=25),
                         )
                     ],
                 ),
@@ -1027,17 +1007,13 @@ This section has different content about performance requirements.
                     title="Introduction",
                     level=1,
                     path="introduction",
-                    source_location=SourceLocation(
-                        file=test_file, line=3, end_line=7
-                    ),
+                    source_location=SourceLocation(file=test_file, line=3, end_line=7),
                 ),
                 Section(
                     title="Constraints",
                     level=1,
                     path="constraints",
-                    source_location=SourceLocation(
-                        file=test_file, line=9, end_line=11
-                    ),
+                    source_location=SourceLocation(file=test_file, line=9, end_line=11),
                 ),
             ],
         )
@@ -1072,9 +1048,7 @@ The system implements atomic writes using a backup-and-replace strategy.
                     title="Implementation",
                     level=1,
                     path="implementation",
-                    source_location=SourceLocation(
-                        file=test_file, line=3, end_line=5
-                    ),
+                    source_location=SourceLocation(file=test_file, line=3, end_line=5),
                 ),
             ],
         )
@@ -1107,9 +1081,7 @@ This contains Performance metrics and optimization details.
                     title="Section",
                     level=1,
                     path="section",
-                    source_location=SourceLocation(
-                        file=test_file, line=3, end_line=5
-                    ),
+                    source_location=SourceLocation(file=test_file, line=3, end_line=5),
                 ),
             ],
         )
@@ -1153,17 +1125,13 @@ The runtime also uses atomic operations.
                     title="Architecture",
                     level=1,
                     path="architecture",
-                    source_location=SourceLocation(
-                        file=test_file, line=3, end_line=5
-                    ),
+                    source_location=SourceLocation(file=test_file, line=3, end_line=5),
                     children=[
                         Section(
                             title="Components",
                             level=2,
                             path="architecture.components",
-                            source_location=SourceLocation(
-                                file=test_file, line=7, end_line=9
-                            ),
+                            source_location=SourceLocation(file=test_file, line=7, end_line=9),
                         )
                     ],
                 ),
@@ -1171,9 +1139,7 @@ The runtime also uses atomic operations.
                     title="Runtime",
                     level=1,
                     path="runtime",
-                    source_location=SourceLocation(
-                        file=test_file, line=11, end_line=13
-                    ),
+                    source_location=SourceLocation(file=test_file, line=11, end_line=13),
                 ),
             ],
         )
@@ -1211,25 +1177,19 @@ class TestGetSuggestions:
                             title="Goals",
                             level=2,
                             path="introduction.goals",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=5
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=5),
                         ),
                         Section(
                             title="Quality Goals",
                             level=2,
                             path="introduction.quality-goals",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                         ),
                         Section(
                             title="Stakeholders",
                             level=2,
                             path="introduction.stakeholders",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=15
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=15),
                         ),
                     ],
                 ),
@@ -1260,17 +1220,13 @@ class TestGetSuggestions:
                             title="Building Blocks",
                             level=2,
                             path="architecture.building-blocks",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=5
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=5),
                         ),
                         Section(
                             title="Runtime View",
                             level=2,
                             path="architecture.runtime",
-                            source_location=SourceLocation(
-                                file=Path("test.adoc"), line=10
-                            ),
+                            source_location=SourceLocation(file=Path("test.adoc"), line=10),
                         ),
                     ],
                 ),
@@ -1390,25 +1346,19 @@ class TestGetSuggestionsFilePrefixFormat:
                     title="Installation Guide",
                     level=0,
                     path="guides/install",
-                    source_location=SourceLocation(
-                        file=Path("guides/install.adoc"), line=1
-                    ),
+                    source_location=SourceLocation(file=Path("guides/install.adoc"), line=1),
                 ),
                 Section(
                     title="Prerequisites",
                     level=1,
                     path="guides/install:prerequisites",
-                    source_location=SourceLocation(
-                        file=Path("guides/install.adoc"), line=5
-                    ),
+                    source_location=SourceLocation(file=Path("guides/install.adoc"), line=5),
                 ),
                 Section(
                     title="Steps",
                     level=1,
                     path="guides/install:steps",
-                    source_location=SourceLocation(
-                        file=Path("guides/install.adoc"), line=10
-                    ),
+                    source_location=SourceLocation(file=Path("guides/install.adoc"), line=10),
                 ),
             ],
         )
@@ -1432,9 +1382,7 @@ class TestGetSuggestionsFilePrefixFormat:
                         title="Installation",
                         level=0,
                         path="guides/install",
-                        source_location=SourceLocation(
-                            file=Path("guides/install.adoc"), line=1
-                        ),
+                        source_location=SourceLocation(file=Path("guides/install.adoc"), line=1),
                     ),
                 ],
             ),
@@ -1446,9 +1394,7 @@ class TestGetSuggestionsFilePrefixFormat:
                         title="Configuration",
                         level=0,
                         path="guides/config",
-                        source_location=SourceLocation(
-                            file=Path("guides/config.adoc"), line=1
-                        ),
+                        source_location=SourceLocation(file=Path("guides/config.adoc"), line=1),
                     ),
                 ],
             ),
@@ -1472,17 +1418,13 @@ class TestGetSuggestionsFilePrefixFormat:
                     title="API Reference",
                     level=0,
                     path="docs/api/reference",
-                    source_location=SourceLocation(
-                        file=Path("docs/api/reference.adoc"), line=1
-                    ),
+                    source_location=SourceLocation(file=Path("docs/api/reference.adoc"), line=1),
                 ),
                 Section(
                     title="Endpoints",
                     level=1,
                     path="docs/api/reference:endpoints",
-                    source_location=SourceLocation(
-                        file=Path("docs/api/reference.adoc"), line=5
-                    ),
+                    source_location=SourceLocation(file=Path("docs/api/reference.adoc"), line=5),
                 ),
             ],
         )
@@ -1506,17 +1448,13 @@ class TestGetSuggestionsFilePrefixFormat:
                         title="Installation",
                         level=0,
                         path="guides/install",
-                        source_location=SourceLocation(
-                            file=Path("guides/install.adoc"), line=1
-                        ),
+                        source_location=SourceLocation(file=Path("guides/install.adoc"), line=1),
                     ),
                     Section(
                         title="Prerequisites",
                         level=1,
                         path="guides/install:prerequisites",
-                        source_location=SourceLocation(
-                            file=Path("guides/install.adoc"), line=5
-                        ),
+                        source_location=SourceLocation(file=Path("guides/install.adoc"), line=5),
                     ),
                 ],
             ),
@@ -1528,17 +1466,13 @@ class TestGetSuggestionsFilePrefixFormat:
                         title="Advanced",
                         level=0,
                         path="guides/advanced",
-                        source_location=SourceLocation(
-                            file=Path("guides/advanced.adoc"), line=1
-                        ),
+                        source_location=SourceLocation(file=Path("guides/advanced.adoc"), line=1),
                     ),
                     Section(
                         title="Prerequisites",
                         level=1,
                         path="guides/advanced:prerequisites",
-                        source_location=SourceLocation(
-                            file=Path("guides/advanced.adoc"), line=5
-                        ),
+                        source_location=SourceLocation(file=Path("guides/advanced.adoc"), line=5),
                     ),
                 ],
             ),
@@ -1562,17 +1496,13 @@ class TestGetSuggestionsFilePrefixFormat:
                     title="Endpoints",
                     level=0,
                     path="api/endpoints",
-                    source_location=SourceLocation(
-                        file=Path("api/endpoints.adoc"), line=1
-                    ),
+                    source_location=SourceLocation(file=Path("api/endpoints.adoc"), line=1),
                 ),
                 Section(
                     title="GET",
                     level=1,
                     path="api/endpoints:get",
-                    source_location=SourceLocation(
-                        file=Path("api/endpoints.adoc"), line=5
-                    ),
+                    source_location=SourceLocation(file=Path("api/endpoints.adoc"), line=5),
                     children=[
                         Section(
                             title="Parameters",
@@ -1588,9 +1518,7 @@ class TestGetSuggestionsFilePrefixFormat:
                     title="POST",
                     level=1,
                     path="api/endpoints:post",
-                    source_location=SourceLocation(
-                        file=Path("api/endpoints.adoc"), line=20
-                    ),
+                    source_location=SourceLocation(file=Path("api/endpoints.adoc"), line=20),
                     children=[
                         Section(
                             title="Parameters",

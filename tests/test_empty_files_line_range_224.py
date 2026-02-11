@@ -44,6 +44,7 @@ class TestEmptyFilesLineRange:
         assert result.exit_code == 0
 
         import json
+
         data = json.loads(result.output)
 
         # Find all sections and check line ranges
@@ -76,6 +77,7 @@ class TestEmptyFilesLineRange:
         assert result.exit_code == 0
 
         import json
+
         data = json.loads(result.output)
 
         # Find the normal document
