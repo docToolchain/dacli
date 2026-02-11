@@ -66,9 +66,7 @@ Architecture description.
         from dacli.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(sample_docs), "--format", "json", "str"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "str"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -107,9 +105,7 @@ Architecture description.
         from dacli.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(sample_docs), "--format", "json", "meta"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "meta"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -120,9 +116,7 @@ Architecture description.
         from dacli.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(sample_docs), "--format", "json", "el"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "el"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -133,9 +127,7 @@ Architecture description.
         from dacli.cli import cli
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(sample_docs), "--format", "json", "val"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(sample_docs), "--format", "json", "val"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -288,8 +280,14 @@ This section covers authentication topics.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs), "--format", "json",
-                "search", "authentication", "--limit", "1"
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "search",
+                "authentication",
+                "--limit",
+                "1",
             ],
         )
 
@@ -305,8 +303,14 @@ This section covers authentication topics.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs), "--format", "json",
-                "search", "authentication", "--max-results", "1"
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "search",
+                "authentication",
+                "--max-results",
+                "1",
             ],
         )
 
@@ -430,9 +434,7 @@ print("hello")
 """)
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"])
 
         # Should have exit code 0 (warnings) or 4 (errors)
         assert result.exit_code in (0, 4)
@@ -440,9 +442,9 @@ print("hello")
         # Should report warning about unclosed block
         all_issues = data.get("errors", []) + data.get("warnings", [])
         unclosed_issues = [
-            i for i in all_issues
-            if "unclosed" in i.get("type", "").lower()
-            or "unclosed" in i.get("message", "").lower()
+            i
+            for i in all_issues
+            if "unclosed" in i.get("type", "").lower() or "unclosed" in i.get("message", "").lower()
         ]
         assert len(unclosed_issues) >= 1, f"Expected unclosed block warning, got: {all_issues}"
 
@@ -463,17 +465,15 @@ print("hello")
 """)
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"])
 
         assert result.exit_code in (0, 4)
         data = json.loads(result.output)
         all_issues = data.get("errors", []) + data.get("warnings", [])
         unclosed_issues = [
-            i for i in all_issues
-            if "unclosed" in i.get("type", "").lower()
-            or "unclosed" in i.get("message", "").lower()
+            i
+            for i in all_issues
+            if "unclosed" in i.get("type", "").lower() or "unclosed" in i.get("message", "").lower()
         ]
         assert len(unclosed_issues) >= 1, f"Expected unclosed table warning, got: {all_issues}"
 
@@ -512,19 +512,14 @@ This is normal content.
 """)
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"])
 
         assert result.exit_code in (0, 4)
         data = json.loads(result.output)
         all_issues = data.get("errors", []) + data.get("warnings", [])
 
         # Find all unclosed block warnings
-        unclosed_issues = [
-            i for i in all_issues
-            if "unclosed" in i.get("type", "").lower()
-        ]
+        unclosed_issues = [i for i in all_issues if "unclosed" in i.get("type", "").lower()]
 
         # BUG: Currently only 1 warning is generated (the table)
         # FIX: Should detect BOTH unclosed blocks (code + table)
@@ -535,12 +530,12 @@ This is normal content.
 
         # Verify we have both types
         warning_types = [i.get("type", "") for i in unclosed_issues]
-        assert "unclosed_block" in warning_types, (
-            f"Expected 'unclosed_block' warning for code block, got: {warning_types}"
-        )
-        assert "unclosed_table" in warning_types, (
-            f"Expected 'unclosed_table' warning for table, got: {warning_types}"
-        )
+        assert (
+            "unclosed_block" in warning_types
+        ), f"Expected 'unclosed_block' warning for code block, got: {warning_types}"
+        assert (
+            "unclosed_table" in warning_types
+        ), f"Expected 'unclosed_table' warning for table, got: {warning_types}"
 
     def test_validate_valid_document_no_warnings(self, tmp_path):
         """Valid documents should not have unclosed block warnings."""
@@ -561,19 +556,14 @@ Content after.
 """)
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"]
-        )
+        result = runner.invoke(cli, ["--docs-root", str(tmp_path), "--format", "json", "validate"])
 
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["valid"] is True
         # Should not have unclosed block warnings
         all_issues = data.get("errors", []) + data.get("warnings", [])
-        unclosed_issues = [
-            i for i in all_issues
-            if "unclosed" in i.get("type", "").lower()
-        ]
+        unclosed_issues = [i for i in all_issues if "unclosed" in i.get("type", "").lower()]
         assert len(unclosed_issues) == 0
 
 
@@ -717,9 +707,7 @@ Content from doc2.
         runner = CliRunner()
 
         # Compare output with and without verbose (single file, no warnings)
-        result_default = runner.invoke(
-            cli, ["--docs-root", str(tmp_path), "structure"]
-        )
+        result_default = runner.invoke(cli, ["--docs-root", str(tmp_path), "structure"])
         result_verbose = runner.invoke(
             cli, ["--docs-root", str(tmp_path), "--verbose", "structure"]
         )
@@ -889,10 +877,12 @@ class TestCliGitignoreOptions:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
+                "--docs-root",
+                str(tmp_path),
                 "--no-gitignore",
                 "--include-hidden",
-                "--format", "json",
+                "--format",
+                "json",
                 "metadata",
             ],
         )
@@ -942,7 +932,7 @@ class TestCliHelpImprovements:
         assert result.exit_code == 0
         # Check for alias display format
         assert "(str)" in result.output  # structure alias
-        assert "(s)" in result.output    # search alias
+        assert "(s)" in result.output  # search alias
         assert "(sec)" in result.output  # section alias
 
     def test_typo_suggestion_for_similar_command(self):
@@ -1143,11 +1133,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs),
-                "--format", "json",
-                "insert", "test:introduction",
-                "--position", "after",
-                "--content", "== New Section\\n\\nNew content here.\\n",
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "insert",
+                "test:introduction",
+                "--position",
+                "after",
+                "--content",
+                "== New Section\\n\\nNew content here.\\n",
             ],
         )
 
@@ -1171,11 +1166,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs),
-                "--format", "json",
-                "insert", "test:components",
-                "--position", "append",
-                "--content", "=== Testing\\n\\nTesting details.\\n",
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "insert",
+                "test:components",
+                "--position",
+                "append",
+                "--content",
+                "=== Testing\\n\\nTesting details.\\n",
             ],
         )
 
@@ -1205,11 +1205,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs),
-                "--format", "json",
-                "insert", "test:components",
-                "--position", "before",
-                "--content", "== Prerequisites\\n\\nBefore components.\\n",
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "insert",
+                "test:components",
+                "--position",
+                "before",
+                "--content",
+                "== Prerequisites\\n\\nBefore components.\\n",
             ],
         )
 
@@ -1233,11 +1238,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs),
-                "--format", "json",
-                "insert", "test:introduction",
-                "--position", "after",
-                "--content", "== Goals\\n\\nProject goals.\\n",
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "insert",
+                "test:introduction",
+                "--position",
+                "after",
+                "--content",
+                "== Goals\\n\\nProject goals.\\n",
             ],
         )
 
@@ -1265,11 +1275,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(sample_docs),
-                "--format", "json",
-                "insert", "test:introduction",
-                "--position", "after",
-                "--content", "-",
+                "--docs-root",
+                str(sample_docs),
+                "--format",
+                "json",
+                "insert",
+                "test:introduction",
+                "--position",
+                "after",
+                "--content",
+                "-",
             ],
             input=stdin_content,
         )
@@ -1295,11 +1310,16 @@ Final thoughts.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "insert", "test:section-a",
-                "--position", "after",
-                "--content", "## New Section\\n\\nNew content.\\n",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "insert",
+                "test:section-a",
+                "--position",
+                "after",
+                "--content",
+                "## New Section\\n\\nNew content.\\n",
             ],
         )
 
@@ -1357,11 +1377,16 @@ Architecture content.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "insert", "test:introduction",
-                "--position", "after",
-                "--content", "== New Section\\n\\nNew content.\\n",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "insert",
+                "test:introduction",
+                "--position",
+                "after",
+                "--content",
+                "== New Section\\n\\nNew content.\\n",
             ],
         )
 
@@ -1408,10 +1433,14 @@ class TestCliUpdateCommand:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "update", "test:parent",
-                "--content", "New content.",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "update",
+                "test:parent",
+                "--content",
+                "New content.",
             ],
         )
 
@@ -1436,10 +1465,14 @@ class TestCliUpdateCommand:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "update", "test:parent",
-                "--content", "New content.",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "update",
+                "test:parent",
+                "--content",
+                "New content.",
             ],
         )
 
@@ -1464,10 +1497,14 @@ class TestCliUpdateCommand:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "update", "test:section",
-                "--content", "-",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "update",
+                "test:section",
+                "--content",
+                "-",
             ],
             input=stdin_content,
         )
@@ -1495,10 +1532,14 @@ class TestCliUpdateCommand:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "update", "test:original-section",
-                "--content", "-",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "update",
+                "test:original-section",
+                "--content",
+                "-",
             ],
             input=stdin_content,
         )
@@ -1524,10 +1565,14 @@ class TestCliUpdateCommand:
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "update", "test:original-section",
-                "--content", "-",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "update",
+                "test:original-section",
+                "--content",
+                "-",
             ],
             input=stdin_content,
         )
@@ -1571,11 +1616,16 @@ Content B.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "insert", "test:section-a",
-                "--position", "after",
-                "--content", "Additional text without heading.",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "insert",
+                "test:section-a",
+                "--position",
+                "after",
+                "--content",
+                "Additional text without heading.",
             ],
         )
 
@@ -1621,11 +1671,16 @@ Content B.
         result = runner.invoke(
             cli,
             [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "insert", "test:section-a",
-                "--position", "after",
-                "--content", "Additional text without heading.",
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "insert",
+                "test:section-a",
+                "--position",
+                "after",
+                "--content",
+                "Additional text without heading.",
             ],
         )
 
@@ -1701,8 +1756,16 @@ code here
         # Section path includes document prefix: "test:mixed-section"
         result = runner.invoke(
             cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements",
-             "--type", "code", "test:mixed-section"],
+            [
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "elements",
+                "--type",
+                "code",
+                "test:mixed-section",
+            ],
         )
 
         assert result.exit_code == 0
@@ -1738,8 +1801,7 @@ print("in child")
         # Filter by parent section without recursive - should get 0 elements
         result = runner.invoke(
             cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements",
-             "test:parent-section"],
+            ["--docs-root", str(tmp_path), "--format", "json", "elements", "test:parent-section"],
         )
 
         assert result.exit_code == 0
@@ -1770,8 +1832,15 @@ print("in child")
         # Filter by parent section with recursive - should include child elements
         result = runner.invoke(
             cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements",
-             "test:parent-section", "--recursive"],
+            [
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "elements",
+                "test:parent-section",
+                "--recursive",
+            ],
         )
 
         assert result.exit_code == 0
@@ -1807,8 +1876,15 @@ level 3 code
         runner = CliRunner()
         result = runner.invoke(
             cli,
-            ["--docs-root", str(tmp_path), "--format", "json", "elements",
-             "test:level-1", "--recursive"],
+            [
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "elements",
+                "test:level-1",
+                "--recursive",
+            ],
         )
 
         assert result.exit_code == 0

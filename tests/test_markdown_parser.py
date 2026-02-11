@@ -23,9 +23,7 @@ class TestMarkdownStructureParserBasic:
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# Test\n")
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -42,9 +40,7 @@ class TestHeadingExtraction:
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# Main Title\n")
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -70,9 +66,7 @@ Text...
 ### Sub-Unterkapitel
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -110,9 +104,7 @@ Text...
 ###### H6
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -135,9 +127,7 @@ Text...
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# Title ###\n")
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -154,9 +144,7 @@ class TestHeadingPaths:
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# Haupttitel\n")
             f.flush()
             file_path = Path(f.name)
@@ -180,9 +168,7 @@ class TestHeadingPaths:
 ### Sub-Unterkapitel
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -204,9 +190,7 @@ class TestHeadingPaths:
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# My Great Title!\n")
             f.flush()
             file_path = Path(f.name)
@@ -274,9 +258,7 @@ Second introduction content.
 
 Third introduction content.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -310,9 +292,7 @@ First details.
 
 Second details.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -348,9 +328,7 @@ Parent 1 details.
 
 Parent 2 details.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -376,9 +354,7 @@ class TestSourceLocation:
 ## Chapter
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -404,9 +380,7 @@ Some content.
 Chapter content.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -430,9 +404,7 @@ Content 1.
 Content 2.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -461,9 +433,7 @@ author: Max Mustermann
 # Content
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -483,9 +453,7 @@ tags: [design, architecture]
 # Content
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -507,9 +475,7 @@ author:
 # Content
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -529,9 +495,7 @@ title: Frontmatter Title
 # Heading Title
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -546,9 +510,7 @@ title: Frontmatter Title
         content = """# Just a heading
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -567,9 +529,7 @@ invalid: [not closed
 # Content
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -589,9 +549,7 @@ title: Test
 # Heading
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -616,9 +574,7 @@ def hello():
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -640,9 +596,7 @@ console.log("test");
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -663,9 +617,7 @@ plain text
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -687,9 +639,7 @@ code
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -716,9 +666,7 @@ javascript code
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -739,9 +687,7 @@ puts "hello"
 ~~~
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -761,13 +707,12 @@ def hello():
     print("Hello")
 """  # Note: Missing closing fence
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 
             import logging
+
             with caplog.at_level(logging.WARNING):
                 doc = parser.parse_file(Path(f.name))
 
@@ -796,9 +741,7 @@ def hello():
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -824,9 +767,7 @@ function test() {
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -850,9 +791,7 @@ function test() {
 ```
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -878,9 +817,7 @@ class TestTableRecognition:
 | Cell 4   | Cell 5   | Cell 6   |
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -904,9 +841,7 @@ class TestTableRecognition:
 | 5 | 6 |
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -928,9 +863,7 @@ Some text.
 | 1 | 2 |
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -952,9 +885,7 @@ class TestImageExtraction:
 ![Alt text](path/to/image.png)
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -975,9 +906,7 @@ class TestImageExtraction:
 ![Diagram](diagram.png "A diagram")
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -995,9 +924,7 @@ class TestImageExtraction:
 ![img](test.png)
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -1275,9 +1202,7 @@ class TestInterfaceMethods:
 ## Chapter
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -1295,9 +1220,7 @@ class TestInterfaceMethods:
 
         parser = MarkdownStructureParser()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write("# Title\n")
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -1319,9 +1242,7 @@ code
 ![img](test.png)
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -1343,9 +1264,7 @@ code
 ![img](test.png)
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             doc = parser.parse_file(Path(f.name))
@@ -1379,9 +1298,7 @@ Setext Title
 More content.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 
@@ -1408,9 +1325,7 @@ Setext Section
 Content here.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 
@@ -1437,9 +1352,7 @@ Setext Title
 Content.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 
@@ -1475,9 +1388,7 @@ Some content.
 More content after horizontal rule.
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 
@@ -1498,9 +1409,7 @@ More content after horizontal rule.
 ============
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -1522,9 +1431,7 @@ More content after horizontal rule.
 ============
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             f.flush()
 

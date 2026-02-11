@@ -86,6 +86,6 @@ class TestElementsInvalidType:
 
             assert result.exit_code == 0, f"Failed for type: {element_type}"
             assert "Warning:" not in result.output, f"Unexpected warning for: {element_type}"
-            assert "Unknown element type" not in result.output, (
-                f"Unexpected unknown for: {element_type}"
-            )
+            assert (
+                "Unknown element type" not in result.output
+            ), f"Unexpected unknown for: {element_type}"

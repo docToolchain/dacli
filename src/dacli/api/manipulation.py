@@ -207,29 +207,17 @@ def insert_content(
         if request.position == "before":
             # Insert before the section starts
             insert_line = start_line
-            new_lines = (
-                lines[: start_line - 1]
-                + [content]
-                + lines[start_line - 1 :]
-            )
+            new_lines = lines[: start_line - 1] + [content] + lines[start_line - 1 :]
         elif request.position == "after":
             # Issue #208: Insert after the section AND all its children
             # Use _get_section_end_with_children to include all descendants
             end_with_children = _get_section_end_with_children(section, file_path)
             insert_line = end_with_children + 1
-            new_lines = (
-                lines[:end_with_children]
-                + [content]
-                + lines[end_with_children:]
-            )
+            new_lines = lines[:end_with_children] + [content] + lines[end_with_children:]
         else:  # append
             # Append content at end of section (before the last line/children)
             insert_line = end_line
-            new_lines = (
-                lines[: end_line - 1]
-                + [content]
-                + lines[end_line - 1 :]
-            )
+            new_lines = lines[: end_line - 1] + [content] + lines[end_line - 1 :]
 
         new_file_content = "".join(new_lines)
         _file_handler.write_file(file_path, new_file_content)

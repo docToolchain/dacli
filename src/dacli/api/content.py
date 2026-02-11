@@ -115,9 +115,7 @@ def search_content(request: SearchRequest) -> SearchResponse:
     description="Returns all elements of a specific type, optionally filtered by section.",
 )
 def get_elements(
-    type: str = Query(
-        description="Element type: admonition, code, image, list, plantuml, table"
-    ),
+    type: str = Query(description="Element type: admonition, code, image, list, plantuml, table"),
     path: str | None = Query(
         default=None,
         description="Optional section path to filter elements",

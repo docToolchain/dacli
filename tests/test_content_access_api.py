@@ -33,9 +33,7 @@ def sample_index() -> StructureIndex:
                         title="Goals and Performance",
                         level=2,
                         path="/introduction/goals",
-                        source_location=SourceLocation(
-                            file=Path("docs/intro.adoc"), line=10
-                        ),
+                        source_location=SourceLocation(file=Path("docs/intro.adoc"), line=10),
                     ),
                 ],
             ),
@@ -49,17 +47,13 @@ def sample_index() -> StructureIndex:
                         title="Performance Requirements",
                         level=2,
                         path="/quality/performance",
-                        source_location=SourceLocation(
-                            file=Path("docs/quality.adoc"), line=15
-                        ),
+                        source_location=SourceLocation(file=Path("docs/quality.adoc"), line=15),
                     ),
                     Section(
                         title="Security",
                         level=2,
                         path="/quality/security",
-                        source_location=SourceLocation(
-                            file=Path("docs/quality.adoc"), line=30
-                        ),
+                        source_location=SourceLocation(file=Path("docs/quality.adoc"), line=30),
                     ),
                 ],
             ),
@@ -67,17 +61,13 @@ def sample_index() -> StructureIndex:
                 title="Decisions",
                 level=1,
                 path="/decisions",
-                source_location=SourceLocation(
-                    file=Path("docs/decisions.adoc"), line=1
-                ),
+                source_location=SourceLocation(file=Path("docs/decisions.adoc"), line=1),
                 children=[
                     Section(
                         title="ADR-004 Atomic Write Operations",
                         level=2,
                         path="/decisions/adr-004",
-                        source_location=SourceLocation(
-                            file=Path("docs/decisions.adoc"), line=20
-                        ),
+                        source_location=SourceLocation(file=Path("docs/decisions.adoc"), line=20),
                     ),
                 ],
             ),
@@ -109,9 +99,7 @@ def sample_index() -> StructureIndex:
             ),
             Element(
                 type="plantuml",
-                source_location=SourceLocation(
-                    file=Path("docs/decisions.adoc"), line=30
-                ),
+                source_location=SourceLocation(file=Path("docs/decisions.adoc"), line=30),
                 attributes={"format": "svg", "name": "adr-diagram"},
                 parent_section="/decisions/adr-004",
             ),
@@ -168,9 +156,7 @@ class TestSearchEndpoint:
 
     def test_search_no_matches(self, client: TestClient):
         """AC-UC04-02: Search without matches returns empty list."""
-        response = client.post(
-            "/api/v1/search", json={"query": "xyznonexistentterm"}
-        )
+        response = client.post("/api/v1/search", json={"query": "xyznonexistentterm"})
         data = response.json()
 
         assert response.status_code == 200
@@ -236,9 +222,7 @@ class TestSearchEndpoint:
 
     def test_search_results_sorted_by_score(self, client: TestClient):
         """Search results are sorted by score descending."""
-        response = client.post(
-            "/api/v1/search", json={"query": "Performance"}
-        )
+        response = client.post("/api/v1/search", json={"query": "Performance"})
         data = response.json()
 
         if len(data["results"]) > 1:
@@ -313,9 +297,7 @@ class TestElementsEndpoint:
 
     def test_get_elements_with_path_filter(self, client: TestClient):
         """AC-UC05-02: Get elements filtered by section path."""
-        response = client.get(
-            "/api/v1/elements?type=table&path=/quality/performance"
-        )
+        response = client.get("/api/v1/elements?type=table&path=/quality/performance")
         data = response.json()
 
         assert response.status_code == 200

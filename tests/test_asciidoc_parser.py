@@ -173,9 +173,7 @@ Second introduction content.
 
 Third introduction content.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".adoc", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".adoc", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -209,9 +207,7 @@ First details.
 
 Second details.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".adoc", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".adoc", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -247,9 +243,7 @@ Parent 1 details.
 
 Parent 2 details.
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".adoc", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".adoc", delete=False) as f:
             f.write(content)
             f.flush()
             file_path = Path(f.name)
@@ -398,15 +392,10 @@ class TestIncludeDirectives:
 
         root = doc.sections[0]
         # Find the included section
-        included_section = next(
-            s for s in root.children if s.title == "Eingebundener Abschnitt"
-        )
+        included_section = next(s for s in root.children if s.title == "Eingebundener Abschnitt")
 
         # Source location should reference the included file
-        assert (
-            included_section.source_location.file
-            == FIXTURES_DIR / "include_partial.adoc"
-        )
+        assert included_section.source_location.file == FIXTURES_DIR / "include_partial.adoc"
         assert included_section.source_location.resolved_from is not None
         assert (
             included_section.source_location.resolved_from.file
@@ -599,13 +588,12 @@ Alice -> Bob: Test
 
         # All lists should have end_line set (not None)
         for elem in list_elements:
-            assert elem.source_location.end_line is not None, (
-                f"List element at line {elem.source_location.line} has no end_line"
-            )
+            assert (
+                elem.source_location.end_line is not None
+            ), f"List element at line {elem.source_location.line} has no end_line"
             # end_line should be >= start line
             assert elem.source_location.end_line >= elem.source_location.line, (
-                f"end_line {elem.source_location.end_line} < line "
-                f"{elem.source_location.line}"
+                f"end_line {elem.source_location.end_line} < line " f"{elem.source_location.line}"
             )
 
     def test_list_end_line_spans_all_items(self):
@@ -618,24 +606,22 @@ Alice -> Bob: Test
         list_elements = [e for e in doc.elements if e.type == "list"]
 
         # Unordered list: lines 46-48 (3 items)
-        unordered = [e for e in list_elements
-                     if e.attributes.get("list_type") == "unordered"]
+        unordered = [e for e in list_elements if e.attributes.get("list_type") == "unordered"]
         assert len(unordered) >= 1
         ul = unordered[0]
         assert ul.source_location.line == 46
-        assert ul.source_location.end_line == 48, (
-            f"Unordered list should end at line 48, got {ul.source_location.end_line}"
-        )
+        assert (
+            ul.source_location.end_line == 48
+        ), f"Unordered list should end at line 48, got {ul.source_location.end_line}"
 
         # Ordered list: lines 52-54 (3 items)
-        ordered = [e for e in list_elements
-                   if e.attributes.get("list_type") == "ordered"]
+        ordered = [e for e in list_elements if e.attributes.get("list_type") == "ordered"]
         assert len(ordered) >= 1
         ol = ordered[0]
         assert ol.source_location.line == 52
-        assert ol.source_location.end_line == 54, (
-            f"Ordered list should end at line 54, got {ol.source_location.end_line}"
-        )
+        assert (
+            ol.source_location.end_line == 54
+        ), f"Ordered list should end at line 54, got {ol.source_location.end_line}"
 
 
 class TestCrossReferences:
@@ -669,9 +655,7 @@ class TestCrossReferences:
         doc = parser.parse_file(FIXTURES_DIR / "with_xrefs.adoc")
 
         # Find xref with custom text
-        xref_with_text = next(
-            (x for x in doc.cross_references if x.text), None
-        )
+        xref_with_text = next((x for x in doc.cross_references if x.text), None)
         assert xref_with_text is not None
         assert xref_with_text.text in ["Einleitung", "den Details"]
 
@@ -869,9 +853,9 @@ graph LR
             doc = parser.parse_file(temp_file)
 
             mermaid_elements = [e for e in doc.elements if e.type == "mermaid"]
-            assert len(mermaid_elements) == 1, (
-                "Mermaid blocks should be extracted as 'mermaid' type elements"
-            )
+            assert (
+                len(mermaid_elements) == 1
+            ), "Mermaid blocks should be extracted as 'mermaid' type elements"
         finally:
             temp_file.unlink()
 
@@ -940,9 +924,9 @@ graph TD
             doc = parser.parse_file(temp_file)
 
             ditaa_elements = [e for e in doc.elements if e.type == "ditaa"]
-            assert len(ditaa_elements) == 1, (
-                "Ditaa blocks should be extracted as 'ditaa' type elements"
-            )
+            assert (
+                len(ditaa_elements) == 1
+            ), "Ditaa blocks should be extracted as 'ditaa' type elements"
         finally:
             temp_file.unlink()
 
@@ -1210,9 +1194,7 @@ class TestElementEndLine:
         admonition_elements = [e for e in doc.elements if e.type == "admonition"]
         assert len(admonition_elements) == 2
         # NOTE is on line 38
-        note = next(
-            e for e in admonition_elements if e.attributes.get("admonition_type") == "NOTE"
-        )
+        note = next(e for e in admonition_elements if e.attributes.get("admonition_type") == "NOTE")
         assert note.source_location.line == 38
         assert note.source_location.end_line == 38  # Single line
         # WARNING is on line 40

@@ -84,7 +84,6 @@ class CircularIncludeError(Exception):
         super().__init__(f"Circular include detected: {chain_str} -> {file_path.name}")
 
 
-
 @dataclass
 class IncludeInfo:
     """Information about a resolved include directive.
@@ -205,9 +204,7 @@ class AsciidocStructureParser:
             relative = Path(file_path.name)
         return strip_doc_extension(relative)
 
-    def get_section(
-        self, doc: AsciidocDocument, path: str
-    ) -> Section | None:
+    def get_section(self, doc: AsciidocDocument, path: str) -> Section | None:
         """Get a section by its hierarchical path.
 
         Args:
@@ -219,9 +216,7 @@ class AsciidocStructureParser:
         """
         return find_section_by_path(doc.sections, path)
 
-    def get_elements(
-        self, doc: AsciidocDocument, element_type: str | None = None
-    ) -> list[Element]:
+    def get_elements(self, doc: AsciidocDocument, element_type: str | None = None) -> list[Element]:
         """Get elements from a document, optionally filtered by type.
 
         Args:
@@ -281,14 +276,10 @@ class AsciidocStructureParser:
         lines = self._filter_conditionals(lines, attributes)
 
         # Expand includes and collect include info
-        expanded_lines, includes = self._expand_includes(
-            lines, file_path, _depth, current_chain
-        )
+        expanded_lines, includes = self._expand_includes(lines, file_path, _depth, current_chain)
 
         # Parse sections with attribute substitution
-        sections, title = self._parse_sections(
-            expanded_lines, file_path, attributes
-        )
+        sections, title = self._parse_sections(expanded_lines, file_path, attributes)
 
         # Calculate end_line for all sections
         self._compute_end_lines(sections, expanded_lines)
@@ -415,9 +406,7 @@ class AsciidocStructureParser:
 
         return attributes
 
-    def _filter_conditionals(
-        self, lines: list[str], attributes: dict[str, str]
-    ) -> list[str]:
+    def _filter_conditionals(self, lines: list[str], attributes: dict[str, str]) -> list[str]:
         """Filter lines based on ifdef/ifndef/endif conditional blocks (Issue #14).
 
         Processes conditional directives and returns only the lines that should
@@ -854,11 +843,7 @@ class AsciidocStructureParser:
         for line_text, source_file, line_num, resolved_from in lines:
             # Issue #207: Track current section for parent_section (but skip if inside blocks)
             in_any_block = (
-                in_code_block
-                or in_plantuml_block
-                or in_mermaid_block
-                or in_ditaa_block
-                or in_table
+                in_code_block or in_plantuml_block or in_mermaid_block or in_ditaa_block or in_table
             )
             if not in_any_block:
                 section_match = SECTION_PATTERN.match(line_text)
@@ -867,6 +852,7 @@ class AsciidocStructureParser:
                     # Apply attribute substitution to section titles so they match
                     # the substituted titles stored in `sections`.
                     if attributes:
+
                         def _sub_attr(match: re.Match) -> str:
                             name = match.group(1)
                             return attributes.get(name, match.group(0))
@@ -917,8 +903,13 @@ class AsciidocStructureParser:
                         plantuml_content = []  # Initialize content tracking (Issue #159)
                         name, fmt = pending_plantuml_info
                         element = self._create_diagram_element(
-                            "plantuml", name, fmt, source_file, line_num,
-                            resolved_from, current_section_path,
+                            "plantuml",
+                            name,
+                            fmt,
+                            source_file,
+                            line_num,
+                            resolved_from,
+                            current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -929,8 +920,13 @@ class AsciidocStructureParser:
                         mermaid_content = []  # Initialize content tracking (Issue #159)
                         name, fmt = pending_mermaid_info
                         element = self._create_diagram_element(
-                            "mermaid", name, fmt, source_file, line_num,
-                            resolved_from, current_section_path,
+                            "mermaid",
+                            name,
+                            fmt,
+                            source_file,
+                            line_num,
+                            resolved_from,
+                            current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -941,8 +937,13 @@ class AsciidocStructureParser:
                         ditaa_content = []  # Initialize content tracking (Issue #159)
                         name, fmt = pending_ditaa_info
                         element = self._create_diagram_element(
-                            "ditaa", name, fmt, source_file, line_num,
-                            resolved_from, current_section_path,
+                            "ditaa",
+                            name,
+                            fmt,
+                            source_file,
+                            line_num,
+                            resolved_from,
+                            current_section_path,
                         )
                         elements.append(element)
                         open_blocks.append(element)
@@ -1076,8 +1077,11 @@ class AsciidocStructureParser:
                     current_list_type = "unordered"
                     list_content = []  # Initialize content tracking (Issue #159)
                     current_list_element = self._create_list_element(
-                        "unordered", source_file, line_num,
-                        resolved_from, current_section_path,
+                        "unordered",
+                        source_file,
+                        line_num,
+                        resolved_from,
+                        current_section_path,
                     )
                     elements.append(current_list_element)
                 # Collect list item content (Issue #159)
@@ -1097,8 +1101,11 @@ class AsciidocStructureParser:
                     current_list_type = "ordered"
                     list_content = []  # Initialize content tracking (Issue #159)
                     current_list_element = self._create_list_element(
-                        "ordered", source_file, line_num,
-                        resolved_from, current_section_path,
+                        "ordered",
+                        source_file,
+                        line_num,
+                        resolved_from,
+                        current_section_path,
                     )
                     elements.append(current_list_element)
                 # Collect list item content (Issue #159)
@@ -1114,8 +1121,11 @@ class AsciidocStructureParser:
                     # Start of a new description list
                     current_list_type = "description"
                     current_list_element = self._create_list_element(
-                        "description", source_file, line_num,
-                        resolved_from, current_section_path,
+                        "description",
+                        source_file,
+                        line_num,
+                        resolved_from,
+                        current_section_path,
                     )
                     elements.append(current_list_element)
                 elif current_list_element is not None:
@@ -1148,9 +1158,7 @@ class AsciidocStructureParser:
         # Issue #157: ALL unclosed blocks should be detected, not just the last one
         for unclosed_block in open_blocks:
             source_file = unclosed_block.source_location.file
-            max_line = max(
-                line_num for _, file, line_num, _ in lines if file == source_file
-            )
+            max_line = max(line_num for _, file, line_num, _ in lines if file == source_file)
             unclosed_block.source_location.end_line = max_line
 
             # Add warning for unclosed block (Issue #148)
@@ -1158,9 +1166,7 @@ class AsciidocStructureParser:
             block_line = unclosed_block.source_location.line
             if block_type == "table":
                 warning_type = WarningType.UNCLOSED_TABLE
-                warning_msg = (
-                    f"Table starting at line {block_line} is not properly closed"
-                )
+                warning_msg = f"Table starting at line {block_line} is not properly closed"
             else:
                 warning_type = WarningType.UNCLOSED_BLOCK
                 warning_msg = (
@@ -1168,12 +1174,14 @@ class AsciidocStructureParser:
                     "is not properly closed"
                 )
 
-            warnings.append(ParseWarning(
-                type=warning_type,
-                file=source_file,
-                line=block_line,
-                message=warning_msg,
-            ))
+            warnings.append(
+                ParseWarning(
+                    type=warning_type,
+                    file=source_file,
+                    line=block_line,
+                    message=warning_msg,
+                )
+            )
 
         # Save list content if list is still open at end of file (Issue #159)
         if current_list_element is not None and list_content:

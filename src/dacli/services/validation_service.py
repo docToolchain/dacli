@@ -42,11 +42,13 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
             rel_path = file_path.relative_to(docs_root_resolved)
         except ValueError:
             rel_path = file_path
-        errors.append({
-            "type": "circular_include",
-            "path": str(rel_path),
-            "message": circ_error["message"],
-        })
+        errors.append(
+            {
+                "type": "circular_include",
+                "path": str(rel_path),
+                "message": circ_error["message"],
+            }
+        )
         # Track all files involved in circular includes
         circular_files.add(file_path.resolve())
         for chain_path in circ_error["include_chain"]:
@@ -71,11 +73,13 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                 rel_path = doc_file.relative_to(docs_root_resolved)
             except ValueError:
                 rel_path = doc_file
-            warnings.append({
-                "type": "orphaned_file",
-                "path": str(rel_path),
-                "message": "File is not included in any document",
-            })
+            warnings.append(
+                {
+                    "type": "orphaned_file",
+                    "path": str(rel_path),
+                    "message": "File is not included in any document",
+                }
+            )
 
     # Collect parse warnings from all documents (Issue #148)
     for doc in index._documents:
@@ -84,11 +88,13 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                 rel_path = pw.file.relative_to(docs_root_resolved)
             except ValueError:
                 rel_path = pw.file
-            warnings.append({
-                "type": pw.type.value,
-                "path": f"{rel_path}:{pw.line}",
-                "message": pw.message,
-            })
+            warnings.append(
+                {
+                    "type": pw.type.value,
+                    "path": f"{rel_path}:{pw.line}",
+                    "message": pw.message,
+                }
+            )
 
     # Issue #268: Include duplicate-path warnings from index build
     for build_warning in index._build_warnings:
@@ -96,13 +102,16 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
             # Parse the warning string to extract the path
             # Format: "Duplicate section path: 'path' (first at file:line, duplicate at file:line)"
             import re
+
             match = re.search(r"Duplicate section path: '([^']+)'", build_warning)
             dup_path = match.group(1) if match else "unknown"
-            warnings.append({
-                "type": "duplicate_path",
-                "path": dup_path,
-                "message": build_warning,
-            })
+            warnings.append(
+                {
+                    "type": "duplicate_path",
+                    "path": dup_path,
+                    "message": build_warning,
+                }
+            )
 
     # Issue #219: Check for unresolved includes
     for doc in index._documents:
@@ -119,12 +128,14 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                         rel_target = include.target_path.relative_to(docs_root_resolved)
                     except ValueError:
                         rel_target = include.target_path
-                    errors.append({
-                        "type": "unresolved_include",
-                        "path": f"{rel_source}:{source_loc.line}",
-                        "include_path": str(rel_target),
-                        "message": f"Include file '{rel_target}' not found",
-                    })
+                    errors.append(
+                        {
+                            "type": "unresolved_include",
+                            "path": f"{rel_source}:{source_loc.line}",
+                            "include_path": str(rel_target),
+                            "message": f"Include file '{rel_target}' not found",
+                        }
+                    )
 
     # Calculate validation time
     elapsed_ms = int((time.time() - start_time) * 1000)

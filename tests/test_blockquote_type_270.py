@@ -17,16 +17,22 @@ class TestBlockquoteElementType:
         doc.write_text("# Test\n\n> A blockquote\n")
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "--docs-root", str(tmp_path),
-            "--format", "json",
-            "elements",
-            "--type", "blockquote",
-        ])
-
-        assert "Unknown element type" not in result.output, (
-            f"blockquote rejected as unknown: {result.output}"
+        result = runner.invoke(
+            cli,
+            [
+                "--docs-root",
+                str(tmp_path),
+                "--format",
+                "json",
+                "elements",
+                "--type",
+                "blockquote",
+            ],
         )
+
+        assert (
+            "Unknown element type" not in result.output
+        ), f"blockquote rejected as unknown: {result.output}"
 
     def test_valid_types_match_help_text(self):
         """All types listed in --help must be in valid_types."""
@@ -48,17 +54,24 @@ class TestBlockquoteElementType:
         # Get all valid types from the Element model's type field
         # The Literal type annotation lists all valid values
         import typing
+
         type_hints = typing.get_type_hints(Element)
         # Element.type is Literal["code", "table", ...]
         literal_args = typing.get_args(type_hints["type"])
 
         for etype in literal_args:
-            result = runner.invoke(cli, [
-                "--docs-root", str(tmp_path),
-                "--format", "json",
-                "elements",
-                "--type", etype,
-            ])
-            assert "Unknown element type" not in result.output, (
-                f"Element type '{etype}' rejected by CLI but defined in model"
+            result = runner.invoke(
+                cli,
+                [
+                    "--docs-root",
+                    str(tmp_path),
+                    "--format",
+                    "json",
+                    "elements",
+                    "--type",
+                    etype,
+                ],
             )
+            assert (
+                "Unknown element type" not in result.output
+            ), f"Element type '{etype}' rejected by CLI but defined in model"

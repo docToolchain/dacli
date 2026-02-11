@@ -93,9 +93,7 @@ def client(sample_index: StructureIndex) -> TestClient:
 class TestUpdateSection:
     """Tests for PUT /api/v1/section/{path} endpoint."""
 
-    def test_update_section_returns_200(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_returns_200(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: PUT /section/{path} returns 200 for successful update."""
         response = client.put(
             "/api/v1/section/introduction",
@@ -103,9 +101,7 @@ class TestUpdateSection:
         )
         assert response.status_code == 200
 
-    def test_update_section_success_response(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_success_response(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: Successful update returns expected fields."""
         response = client.put(
             "/api/v1/section/introduction",
@@ -118,9 +114,7 @@ class TestUpdateSection:
         assert "location" in data
         assert "file" in data["location"]
 
-    def test_update_section_content_written(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_content_written(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: Content is actually written to file."""
         new_content = "== Introduction\n\nCompletely new content here.\n"
         client.put(
@@ -144,9 +138,7 @@ class TestUpdateSection:
         data = response.json()
         assert data["detail"]["error"]["code"] == "PATH_NOT_FOUND"
 
-    def test_update_section_preserve_title_default(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_preserve_title_default(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: preserve_title defaults to true."""
         # Update with content that doesn't include title
         response = client.put(
@@ -160,9 +152,7 @@ class TestUpdateSection:
         file_content = doc_file.read_text(encoding="utf-8")
         assert "== Introduction" in file_content
 
-    def test_update_section_preserve_title_false(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_preserve_title_false(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: preserve_title=false replaces everything."""
         response = client.put(
             "/api/v1/section/introduction",
@@ -177,17 +167,13 @@ class TestUpdateSection:
         file_content = doc_file.read_text(encoding="utf-8")
         assert "== New Title" in file_content
 
-    def test_update_section_atomic_on_error(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_update_section_atomic_on_error(self, client: TestClient, temp_doc_dir: Path):
         """UC-03: Original file unchanged if write fails."""
         doc_file = temp_doc_dir / "test.adoc"
         original_content = doc_file.read_text(encoding="utf-8")
 
         # Mock file handler instance to raise an error
-        with patch(
-            "dacli.api.manipulation._file_handler.update_section"
-        ) as mock_update:
+        with patch("dacli.api.manipulation._file_handler.update_section") as mock_update:
             from dacli.file_handler import FileWriteError
 
             mock_update.side_effect = FileWriteError("Simulated write failure")
@@ -221,9 +207,7 @@ class TestUpdateSection:
 class TestInsertContent:
     """Tests for POST /api/v1/section/{path}/insert endpoint."""
 
-    def test_insert_after_returns_200(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_insert_after_returns_200(self, client: TestClient, temp_doc_dir: Path):
         """UC-09: POST /section/{path}/insert returns 200."""
         response = client.post(
             "/api/v1/section/introduction/insert",
@@ -234,9 +218,7 @@ class TestInsertContent:
         )
         assert response.status_code == 200
 
-    def test_insert_after_success_response(
-        self, client: TestClient, temp_doc_dir: Path
-    ):
+    def test_insert_after_success_response(self, client: TestClient, temp_doc_dir: Path):
         """UC-09: Successful insert returns expected fields."""
         response = client.post(
             "/api/v1/section/introduction/insert",

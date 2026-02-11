@@ -123,7 +123,7 @@ Result of structure validation.
   }],
   "warnings": [{
     "type": "string",
-    "path": "string", 
+    "path": "string",
     "message": "string"
   }]
 }

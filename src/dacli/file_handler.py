@@ -72,15 +72,11 @@ class FileSystemHandler:
         except PermissionError as e:
             raise FileReadError(f"Permission denied reading file: {path}") from e
         except UnicodeDecodeError as e:
-            raise FileReadError(
-                f"Encoding error reading file (not valid UTF-8): {path}"
-            ) from e
+            raise FileReadError(f"Encoding error reading file (not valid UTF-8): {path}") from e
         except OSError as e:
             raise FileReadError(f"Error reading file {path}: {e}") from e
 
-    def read_lines(
-        self, path: Path | str, start: int, end: int
-    ) -> list[str]:
+    def read_lines(self, path: Path | str, start: int, end: int) -> list[str]:
         """Read specific line range from file.
 
         Args:
@@ -109,9 +105,7 @@ class FileSystemHandler:
 
         total_lines = len(lines)
         if end > total_lines:
-            raise ValueError(
-                f"End line ({end}) exceeds file length ({total_lines} lines)"
-            )
+            raise ValueError(f"End line ({end}) exceeds file length ({total_lines} lines)")
 
         # Convert to 0-based index and extract range
         return lines[start - 1 : end]
@@ -154,9 +148,7 @@ class FileSystemHandler:
                 temp_created = True
                 logger.debug(f"Wrote temp file: {temp_path}")
             except PermissionError as e:
-                raise FileWriteError(
-                    f"Permission denied writing to {temp_path}"
-                ) from e
+                raise FileWriteError(f"Permission denied writing to {temp_path}") from e
             except OSError as e:
                 raise FileWriteError(f"Error writing temp file {temp_path}: {e}") from e
 
@@ -167,9 +159,7 @@ class FileSystemHandler:
                 temp_created = False  # temp file is now the target
                 logger.debug(f"Replaced {path} with temp file")
             except OSError as e:
-                raise FileWriteError(
-                    f"Error during atomic replace of {path}: {e}"
-                ) from e
+                raise FileWriteError(f"Error during atomic replace of {path}: {e}") from e
 
             # Step 4: Delete backup (success path)
             if backup_created:
@@ -183,15 +173,11 @@ class FileSystemHandler:
 
         except FileWriteError:
             # Re-raise FileWriteError after cleanup
-            self._cleanup_on_error(
-                path, backup_path, temp_path, backup_created, temp_created
-            )
+            self._cleanup_on_error(path, backup_path, temp_path, backup_created, temp_created)
             raise
         except Exception as e:
             # Unexpected error - cleanup and wrap
-            self._cleanup_on_error(
-                path, backup_path, temp_path, backup_created, temp_created
-            )
+            self._cleanup_on_error(path, backup_path, temp_path, backup_created, temp_created)
             raise FileWriteError(f"Unexpected error writing {path}: {e}") from e
 
     def _cleanup_on_error(
@@ -268,9 +254,7 @@ class FileSystemHandler:
 
         total_lines = len(lines)
         if end_line > total_lines:
-            raise ValueError(
-                f"End line ({end_line}) exceeds file length ({total_lines} lines)"
-            )
+            raise ValueError(f"End line ({end_line}) exceeds file length ({total_lines} lines)")
 
         # Build new content:
         # - Lines before start_line

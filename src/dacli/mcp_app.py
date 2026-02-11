@@ -706,15 +706,14 @@ def _build_index(
             _find_cycles(adoc_file.resolve(), [])
 
         for circ_file in circular_files:
-            message = (
-                f"Circular include detected: {circ_file.name} "
-                f"is part of an include cycle"
+            message = f"Circular include detected: {circ_file.name} " f"is part of an include cycle"
+            circular_include_errors.append(
+                {
+                    "file": circ_file,
+                    "include_chain": list(circular_files),
+                    "message": message,
+                }
             )
-            circular_include_errors.append({
-                "file": circ_file,
-                "include_chain": list(circular_files),
-                "message": message,
-            })
 
     logger.info(
         f"Found {len(all_adoc_files)} AsciiDoc files, "
@@ -730,11 +729,13 @@ def _build_index(
         except CircularIncludeError as e:
             # Issue #251: Catch circular includes during parsing too
             logger.warning("Circular include in %s: %s", adoc_file, e)
-            circular_include_errors.append({
-                "file": adoc_file,
-                "include_chain": e.include_chain,
-                "message": str(e),
-            })
+            circular_include_errors.append(
+                {
+                    "file": adoc_file,
+                    "include_chain": e.include_chain,
+                    "message": str(e),
+                }
+            )
         except Exception as e:
             # Log but continue with other files
             logger.warning("Failed to parse %s: %s", adoc_file, e)
@@ -763,5 +764,3 @@ def _build_index(
 
     # Issue #251: Store circular include errors on the index for validation
     index._circular_include_errors = circular_include_errors
-
-

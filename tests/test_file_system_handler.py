@@ -66,9 +66,7 @@ class TestReadFile:
 
         assert "not found" in str(exc_info.value).lower()
 
-    def test_read_file_permission_denied(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_read_file_permission_denied(self, handler: FileSystemHandler, temp_file: Path):
         """FileReadError for permission denied."""
         # Make file unreadable
         os.chmod(temp_file, 0o000)
@@ -80,9 +78,7 @@ class TestReadFile:
             # Restore permissions for cleanup
             os.chmod(temp_file, 0o644)
 
-    def test_read_file_encoding_error(
-        self, handler: FileSystemHandler, tmp_path: Path
-    ):
+    def test_read_file_encoding_error(self, handler: FileSystemHandler, tmp_path: Path):
         """FileReadError for invalid UTF-8."""
         file_path = tmp_path / "invalid.adoc"
         # Write invalid UTF-8 bytes
@@ -114,16 +110,12 @@ class TestReadLines:
         lines = handler.read_lines(temp_file, start=2, end=4)
         assert lines == ["Line 2\n", "Line 3\n", "Line 4\n"]
 
-    def test_read_lines_single_line(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_read_lines_single_line(self, handler: FileSystemHandler, temp_file: Path):
         """Read single line."""
         lines = handler.read_lines(temp_file, start=3, end=3)
         assert lines == ["Line 3\n"]
 
-    def test_read_lines_first_line(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_read_lines_first_line(self, handler: FileSystemHandler, temp_file: Path):
         """Read first line."""
         lines = handler.read_lines(temp_file, start=1, end=1)
         assert lines == ["Line 1\n"]
@@ -146,27 +138,19 @@ class TestReadLines:
             handler.read_lines(temp_file, start=4, end=2)
         assert "start" in str(exc_info.value).lower()
 
-    def test_read_lines_invalid_range_zero_start(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_read_lines_invalid_range_zero_start(self, handler: FileSystemHandler, temp_file: Path):
         """Error when start is 0 (1-based indexing)."""
         with pytest.raises(ValueError) as exc_info:
             handler.read_lines(temp_file, start=0, end=2)
-        assert "1-based" in str(exc_info.value).lower() or "start" in str(
-            exc_info.value
-        ).lower()
+        assert "1-based" in str(exc_info.value).lower() or "start" in str(exc_info.value).lower()
 
-    def test_read_lines_out_of_bounds(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_read_lines_out_of_bounds(self, handler: FileSystemHandler, temp_file: Path):
         """Error when range exceeds file length."""
         with pytest.raises(ValueError) as exc_info:
             handler.read_lines(temp_file, start=1, end=100)
         assert "line" in str(exc_info.value).lower()
 
-    def test_read_lines_file_not_found(
-        self, handler: FileSystemHandler, tmp_path: Path
-    ):
+    def test_read_lines_file_not_found(self, handler: FileSystemHandler, tmp_path: Path):
         """FileReadError for non-existent file."""
         with pytest.raises(FileReadError):
             handler.read_lines(tmp_path / "nonexistent.adoc", start=1, end=1)
@@ -180,18 +164,14 @@ class TestReadLines:
 class TestWriteFile:
     """Tests for write_file() method with atomic backup strategy."""
 
-    def test_write_file_success(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_write_file_success(self, handler: FileSystemHandler, temp_file: Path):
         """Successfully write file."""
         new_content = "New content\nSecond line\n"
         handler.write_file(temp_file, new_content)
 
         assert temp_file.read_text(encoding="utf-8") == new_content
 
-    def test_write_file_creates_new(
-        self, handler: FileSystemHandler, tmp_path: Path
-    ):
+    def test_write_file_creates_new(self, handler: FileSystemHandler, tmp_path: Path):
         """Create new file if doesn't exist."""
         new_file = tmp_path / "new_file.adoc"
         handler.write_file(new_file, "Brand new content\n")
@@ -199,18 +179,14 @@ class TestWriteFile:
         assert new_file.exists()
         assert new_file.read_text(encoding="utf-8") == "Brand new content\n"
 
-    def test_write_file_no_backup_remains(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_write_file_no_backup_remains(self, handler: FileSystemHandler, temp_file: Path):
         """No .bak file remains after successful write."""
         handler.write_file(temp_file, "New content\n")
 
         backup_file = temp_file.with_suffix(temp_file.suffix + ".bak")
         assert not backup_file.exists()
 
-    def test_write_file_no_tmp_remains(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_write_file_no_tmp_remains(self, handler: FileSystemHandler, temp_file: Path):
         """No .tmp file remains after successful write."""
         handler.write_file(temp_file, "New content\n")
 
@@ -246,9 +222,7 @@ class TestWriteFile:
         # Original should be unchanged
         assert temp_file.read_text(encoding="utf-8") == original_content
 
-    def test_write_file_permission_denied(
-        self, handler: FileSystemHandler, tmp_path: Path
-    ):
+    def test_write_file_permission_denied(self, handler: FileSystemHandler, tmp_path: Path):
         """FileWriteError for permission denied."""
         # Create read-only directory
         readonly_dir = tmp_path / "readonly"
@@ -271,9 +245,7 @@ class TestWriteFile:
 class TestUpdateSection:
     """Tests for update_section() method."""
 
-    def test_update_section_middle(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_middle(self, handler: FileSystemHandler, temp_file: Path):
         """Update middle section of file."""
         handler.update_section(
             temp_file, start_line=2, end_line=4, new_content="New Line 2\nNew Line 3\n"
@@ -282,9 +254,7 @@ class TestUpdateSection:
         content = temp_file.read_text(encoding="utf-8")
         assert content == "Line 1\nNew Line 2\nNew Line 3\nLine 5\n"
 
-    def test_update_section_first_line(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_first_line(self, handler: FileSystemHandler, temp_file: Path):
         """Update first line."""
         handler.update_section(temp_file, start_line=1, end_line=1, new_content="New First Line\n")
 
@@ -292,9 +262,7 @@ class TestUpdateSection:
         assert content.startswith("New First Line\n")
         assert "Line 2" in content
 
-    def test_update_section_last_line(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_last_line(self, handler: FileSystemHandler, temp_file: Path):
         """Update last line."""
         handler.update_section(temp_file, start_line=5, end_line=5, new_content="New Last Line\n")
 
@@ -302,9 +270,7 @@ class TestUpdateSection:
         assert content.endswith("New Last Line\n")
         assert "Line 4" in content
 
-    def test_update_section_expand(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_expand(self, handler: FileSystemHandler, temp_file: Path):
         """Update section with more lines than original."""
         handler.update_section(
             temp_file,
@@ -316,9 +282,7 @@ class TestUpdateSection:
         lines = temp_file.read_text(encoding="utf-8").splitlines(keepends=True)
         assert len(lines) == 7  # Was 5, replaced 1 with 3
 
-    def test_update_section_shrink(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_shrink(self, handler: FileSystemHandler, temp_file: Path):
         """Update section with fewer lines than original."""
         handler.update_section(
             temp_file, start_line=2, end_line=4, new_content="Single replacement\n"
@@ -327,23 +291,17 @@ class TestUpdateSection:
         lines = temp_file.read_text(encoding="utf-8").splitlines(keepends=True)
         assert len(lines) == 3  # Was 5, replaced 3 with 1
 
-    def test_update_section_invalid_range(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_invalid_range(self, handler: FileSystemHandler, temp_file: Path):
         """Error for invalid line range."""
         with pytest.raises(ValueError):
             handler.update_section(temp_file, start_line=4, end_line=2, new_content="content")
 
-    def test_update_section_out_of_bounds(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_out_of_bounds(self, handler: FileSystemHandler, temp_file: Path):
         """Error when range exceeds file."""
         with pytest.raises(ValueError):
             handler.update_section(temp_file, start_line=1, end_line=100, new_content="content")
 
-    def test_update_section_atomic(
-        self, handler: FileSystemHandler, temp_file: Path
-    ):
+    def test_update_section_atomic(self, handler: FileSystemHandler, temp_file: Path):
         """Update is atomic - no .bak or .tmp files remain."""
         handler.update_section(temp_file, start_line=2, end_line=3, new_content="Updated\n")
 
@@ -353,9 +311,7 @@ class TestUpdateSection:
         assert not backup_file.exists()
         assert not tmp_file.exists()
 
-    def test_update_section_file_not_found(
-        self, handler: FileSystemHandler, tmp_path: Path
-    ):
+    def test_update_section_file_not_found(self, handler: FileSystemHandler, tmp_path: Path):
         """FileReadError for non-existent file."""
         with pytest.raises(FileReadError):
             handler.update_section(

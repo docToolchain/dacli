@@ -121,13 +121,13 @@ start
 
 if (Index available?) then (yes)
   :Load structure from index;
-  
+
   if (max_depth specified?) then (yes)
     :Filter structure by depth;
   else (no)
     :Use complete structure;
   endif
-  
+
   :Format structure as JSON;
   :Send response to client;
 else (no)
@@ -186,16 +186,16 @@ start
 if (Path found?) then (yes)
   :Get SectionLocation from index;
   note right: file, start_line, end_line
-  
+
   :Open file;
-  
+
   if (File readable?) then (yes)
     :Read lines from start_line to end_line;
     :Send content as response;
   else (no)
     :HTTP 500 - File not readable;
   endif
-  
+
 else (no)
   :HTTP 404 - Path not found;
 endif
@@ -257,11 +257,11 @@ start
 
 if (Path found?) then (yes)
   :Determine SectionLocation;
-  
+
   :Create backup (.bak);
-  
+
   :Write new content to .tmp;
-  
+
   if (Write successful?) then (yes)
     :Replace original file with .tmp;
     :Delete backup;
@@ -272,7 +272,7 @@ if (Path found?) then (yes)
     :Restore backup;
     :HTTP 500 - Write error;
   endif
-  
+
 else (no)
   :HTTP 404 - Path not found;
 endif
@@ -323,19 +323,19 @@ start
 
 if (Query valid?) then (yes)
   :Consult search index;
-  
+
   :For each indexed section|
   if (Query in section?) then (yes)
     :Store match with context;
   endif
-  
+
   if (Matches found?) then (yes)
     :Sort matches by relevance;
     :HTTP 200 with match list;
   else (no)
     :HTTP 200 with empty list;
   endif
-  
+
 else (no)
   :HTTP 400 - Invalid query;
 endif
@@ -388,7 +388,7 @@ start
 
 if (Type supported?) then (yes)
   :Filter index by type;
-  
+
   :Collect elements;
   note right
     For each element:
@@ -396,7 +396,7 @@ if (Type supported?) then (yes)
     - Preview/Title
     - Position
   end note
-  
+
   :HTTP 200 with element list;
 else (no)
   :HTTP 400 - Unknown type;
@@ -450,7 +450,7 @@ start
 
 if (Path specified?) then (yes)
   :Search section in index;
-  
+
   if (Found?) then (yes)
     :Collect section metadata;
   else (no)
@@ -581,28 +581,28 @@ start
 :Scan files (*.adoc, *.md);
 
 if (Files found?) then (yes)
-  
+
   while (More files?) is (yes)
     :Load next file;
-    
+
     :Call parser;
-    
+
     if (Parse successful?) then (yes)
       :Create AST;
-      
+
       :Resolve includes;
       note right: Recursive, with cycle detection
-      
+
       :Insert sections into index;
     else (no)
       :Log error;
       :Skip file;
     endif
   endwhile (no)
-  
+
   :Finalize index;
   :Server ready;
-  
+
 else (no)
   :Warning: No files;
   :Empty index;
@@ -657,7 +657,7 @@ start
 
 if (Valid?) then (yes)
   :Determine target line;
-  
+
   switch (position)
   case (before)
     :Line = start_line;
@@ -666,12 +666,12 @@ if (Valid?) then (yes)
   case (append)
     :Line = within section;
   endswitch
-  
+
   :Create backup;
   :Insert content;
   :Save atomically;
   :Update index;
-  
+
   :HTTP 200 - Success;
 else (no)
   :HTTP 400 - Invalid parameters;
@@ -727,12 +727,12 @@ start
 
 if (Element found?) then (yes)
   :Determine element boundaries;
-  
+
   :Create backup;
   :Replace element with new content;
   :Save atomically;
   :Update index;
-  
+
   :HTTP 200 - Success;
 else (no)
   :HTTP 404 - Element not found;

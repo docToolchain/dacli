@@ -62,12 +62,11 @@ def _process_escape_sequences(content: str) -> str:
     # Process escape sequences in order (most specific first)
     # Must process \\\\ first to avoid double-processing
     return (
-        content
-        .replace('\\\\', '\x00')  # Temp marker for literal backslash
-        .replace('\\n', '\n')
-        .replace('\\t', '\t')
-        .replace('\\r', '\r')
-        .replace('\x00', '\\')  # Restore literal backslash
+        content.replace("\\\\", "\x00")  # Temp marker for literal backslash
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\\r", "\r")
+        .replace("\x00", "\\")  # Restore literal backslash
     )
 
 
@@ -123,6 +122,7 @@ def _get_section_append_line(
 
     return max_end_line
 
+
 # Exit codes as specified in 06_cli_specification.adoc
 EXIT_SUCCESS = 0
 EXIT_ERROR = 1
@@ -157,8 +157,12 @@ COMMAND_TO_ALIAS = {v: k for k, v in COMMAND_ALIASES.items()}
 
 # Global options that users commonly misplace after the command (Issue #176)
 GLOBAL_OPTIONS = {
-    "--format", "--pretty", "--verbose", "--docs-root",
-    "--no-gitignore", "--include-hidden",
+    "--format",
+    "--pretty",
+    "--verbose",
+    "--docs-root",
+    "--no-gitignore",
+    "--include-hidden",
 }
 
 
@@ -206,8 +210,7 @@ class AliasedGroup(click.Group):
                 suggestion = self._get_suggestion(cmd_name)
                 if suggestion:
                     raise click.UsageError(
-                        f"No such command '{cmd_name}'.\n\n"
-                        f"Did you mean: {suggestion}"
+                        f"No such command '{cmd_name}'.\n\n" f"Did you mean: {suggestion}"
                     ) from e
             raise
 
@@ -306,6 +309,7 @@ def format_output(ctx: CliContext, data: dict) -> str:
     elif ctx.output_format == "yaml":
         try:
             import yaml
+
             return yaml.dump(data, default_flow_style=False)
         except ImportError:
             return json.dumps(data, indent=2, default=str)
@@ -366,7 +370,8 @@ Examples:
     help="Pretty-print output for human readability",
 )
 @click.option(
-    "--verbose", "-v",
+    "--verbose",
+    "-v",
     is_flag=True,
     default=False,
     help="Show warning messages (default: only errors are shown)",
@@ -409,12 +414,14 @@ def cli(
     )
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli structure                    # Full structure
   dacli structure --max-depth 1      # Only top-level sections
   dacli --format json str            # JSON output using alias
-""")
+"""
+)
 @click.option("--max-depth", type=int, default=None, help="Maximum depth to return")
 @pass_context
 def structure(ctx: CliContext, max_depth: int | None):
@@ -430,12 +437,14 @@ def structure(ctx: CliContext, max_depth: int | None):
     click.echo(format_output(ctx, result))
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli section introduction           # Read 'introduction' section
   dacli section api.endpoints          # Read nested section
   dacli --format json sec api          # JSON output using alias
-""")
+"""
+)
 @click.argument("path")
 @pass_context
 def section(ctx: CliContext, path: str):
@@ -512,7 +521,8 @@ Examples:
   dacli sections-at-level 1        # All top-level chapters
   dacli sections-at-level 2        # All second-level sections
   dacli --format json lv 1         # JSON output using alias
-""")
+""",
+)
 @click.argument("level", type=int)
 @pass_context
 def sections_at_level(ctx: CliContext, level: int):
@@ -525,7 +535,7 @@ def sections_at_level(ctx: CliContext, level: int):
         raise click.BadParameter(
             f"Level must be non-negative, got {level}. "
             "Document hierarchies start at level 0 (document root).",
-            param_hint="level"
+            param_hint="level",
         )
 
     sections = ctx.index.get_sections_at_level(level)
@@ -537,18 +547,19 @@ def sections_at_level(ctx: CliContext, level: int):
     click.echo(format_output(ctx, result))
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli search "authentication"              # Search all docs
   dacli search "API" --scope api             # Search within 'api' section
   dacli search "error" --limit 5             # Limit results
   dacli --format json s "database"           # JSON output using alias
-""")
+"""
+)
 @click.argument("query")
 @click.option("--scope", default=None, help="Path prefix to limit search scope")
 @click.option(
-    "--max-results", "--limit", type=int, default=20,
-    help="Maximum results to return (default: 20)"
+    "--max-results", "--limit", type=int, default=20, help="Maximum results to return (default: 20)"
 )
 @pass_context
 def search(ctx: CliContext, query: str, scope: str | None, max_results: int):
@@ -598,7 +609,8 @@ def search(ctx: CliContext, query: str, scope: str | None, max_results: int):
     click.echo(format_output(ctx, result))
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli elements                             # All elements (metadata only)
   dacli elements --type code                 # Only code blocks
@@ -606,19 +618,36 @@ Examples:
   dacli elements --include-content --content-limit 10  # First 10 lines only
   dacli elements api --recursive             # Elements in 'api' and subsections
   dacli --format json el --type image        # JSON output using alias
-""")
+"""
+)
 @click.argument("section_path", required=False, default=None)
-@click.option("--type", "element_type", default=None,
-              help="Element type: admonition, blockquote, code, image, list, plantuml, table")
-@click.option("--recursive", is_flag=True, default=False,
-              help="Include elements from child sections")
-@click.option("--include-content", is_flag=True, default=False,
-              help="Include element content (Issue #159)")
-@click.option("--content-limit", type=int, default=None,
-              help="Limit content to first N lines (requires --include-content)")
+@click.option(
+    "--type",
+    "element_type",
+    default=None,
+    help="Element type: admonition, blockquote, code, image, list, plantuml, table",
+)
+@click.option(
+    "--recursive", is_flag=True, default=False, help="Include elements from child sections"
+)
+@click.option(
+    "--include-content", is_flag=True, default=False, help="Include element content (Issue #159)"
+)
+@click.option(
+    "--content-limit",
+    type=int,
+    default=None,
+    help="Limit content to first N lines (requires --include-content)",
+)
 @pass_context
-def elements(ctx: CliContext, section_path: str | None, element_type: str | None,
-             recursive: bool, include_content: bool, content_limit: int | None):
+def elements(
+    ctx: CliContext,
+    section_path: str | None,
+    element_type: str | None,
+    recursive: bool,
+    include_content: bool,
+    content_limit: int | None,
+):
     """Get elements (code blocks, tables, images) from documentation."""
     # Issue #225: Validate element type and warn if invalid
     valid_types = {"code", "table", "image", "plantuml", "admonition", "list", "blockquote"}
@@ -667,12 +696,14 @@ def elements(ctx: CliContext, section_path: str | None, element_type: str | None
     click.echo(format_output(ctx, result))
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli metadata                     # Project-level metadata
   dacli metadata introduction        # Section metadata
   dacli --format json meta           # JSON output using alias
-""")
+"""
+)
 @click.argument("path", required=False, default=None)
 @pass_context
 def metadata(ctx: CliContext, path: str | None):
@@ -687,11 +718,13 @@ def metadata(ctx: CliContext, path: str | None):
     click.echo(format_output(ctx, result))
 
 
-@cli.command(epilog="""
+@cli.command(
+    epilog="""
 Examples:
   dacli validate                     # Check for issues
   dacli --format json val            # JSON output using alias
-""")
+"""
+)
 @pass_context
 def validate(ctx: CliContext):
     """Validate the document structure."""
@@ -708,8 +741,9 @@ def validate(ctx: CliContext):
 @click.option("--no-preserve-title", is_flag=True, help="Don't preserve original title")
 @click.option("--expected-hash", default=None, help="Hash for optimistic locking")
 @pass_context
-def update(ctx: CliContext, path: str, content: str, no_preserve_title: bool,
-           expected_hash: str | None):
+def update(
+    ctx: CliContext, path: str, content: str, no_preserve_title: bool, expected_hash: str | None
+):
     """Update the content of a section."""
     # CLI-specific: read from stdin if "-", otherwise process escape sequences
     if content == "-":
@@ -742,8 +776,12 @@ def update(ctx: CliContext, path: str, content: str, no_preserve_title: bool,
 
 @cli.command()
 @click.argument("path")
-@click.option("--position", required=True, type=click.Choice(["before", "after", "append"]),
-              help="Where to insert: before, after, or append")
+@click.option(
+    "--position",
+    required=True,
+    type=click.Choice(["before", "after", "append"]),
+    help="Where to insert: before, after, or append",
+)
 @click.option("--content", required=True, help="Content to insert")
 @pass_context
 def insert(ctx: CliContext, path: str, position: str, content: str):

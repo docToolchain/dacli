@@ -167,9 +167,7 @@ class StructureIndex:
         """
         return self._file_to_sections.get(file_path, [])
 
-    def get_suggestions(
-        self, requested_path: str, max_suggestions: int = 5
-    ) -> list[str]:
+    def get_suggestions(self, requested_path: str, max_suggestions: int = 5) -> list[str]:
         """Get path suggestions for a non-existent path.
 
         Finds similar paths using prefix and suffix matching.
@@ -368,7 +366,8 @@ class StructureIndex:
                 # Prefix match: include elements from child sections
                 # Match exact path or path followed by separator (. or :)
                 elements = [
-                    e for e in elements
+                    e
+                    for e in elements
                     if e.parent_section == section_path
                     or e.parent_section.startswith(section_path + ".")
                     or e.parent_section.startswith(section_path + ":")
@@ -512,12 +511,10 @@ class StructureIndex:
             "sections_with_content": len(self._section_content),
             "index_ready": self._index_ready,
             "sections_by_level": {
-                level: len(sections)
-                for level, sections in self._level_to_sections.items()
+                level: len(sections) for level, sections in self._level_to_sections.items()
             },
             "elements_by_type": {
-                etype: len(elements)
-                for etype, elements in self._type_to_elements.items()
+                etype: len(elements) for etype, elements in self._type_to_elements.items()
             },
         }
 

@@ -26,15 +26,11 @@ class TestGetDependenciesStructureIndex:
             elements=[],
             includes=[
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=tmp_path / "main.adoc", line=5
-                    ),
+                    source_location=SourceLocation(file=tmp_path / "main.adoc", line=5),
                     target_path=tmp_path / "chapters" / "intro.adoc",
                 ),
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=tmp_path / "main.adoc", line=10
-                    ),
+                    source_location=SourceLocation(file=tmp_path / "main.adoc", line=10),
                     target_path=tmp_path / "chapters" / "setup.adoc",
                 ),
             ],
@@ -73,9 +69,7 @@ class TestGetDependenciesStructureIndex:
             elements=[],
             includes=[
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=tmp_path / "arc42.adoc", line=3
-                    ),
+                    source_location=SourceLocation(file=tmp_path / "arc42.adoc", line=3),
                     target_path=tmp_path / "chapters" / "01_intro.adoc",
                 ),
             ],
@@ -87,9 +81,7 @@ class TestGetDependenciesStructureIndex:
             elements=[],
             includes=[
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=tmp_path / "manual.adoc", line=2
-                    ),
+                    source_location=SourceLocation(file=tmp_path / "manual.adoc", line=2),
                     target_path=tmp_path / "installation.adoc",
                 ),
             ],
@@ -127,9 +119,7 @@ class TestGetDependenciesStructureIndex:
             elements=[],
             includes=[
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=tmp_path / "main.adoc", line=1
-                    ),
+                    source_location=SourceLocation(file=tmp_path / "main.adoc", line=1),
                     target_path=tmp_path / "other.adoc",
                 ),
             ],
@@ -150,9 +140,7 @@ class TestGetDependenciesStructureIndex:
             elements=[],
             includes=[
                 IncludeInfo(
-                    source_location=SourceLocation(
-                        file=docs / "main.adoc", line=1
-                    ),
+                    source_location=SourceLocation(file=docs / "main.adoc", line=1),
                     target_path=docs / "sub" / "chapter.adoc",
                 ),
             ],
