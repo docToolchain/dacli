@@ -5,4 +5,4 @@ through hierarchical, content-aware access via the Model Context Protocol (MCP).
 """
 
 
-__version__ = "0.4.35"
+__version__ = "0.4.36"

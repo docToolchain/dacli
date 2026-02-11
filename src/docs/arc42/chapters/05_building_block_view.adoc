@@ -162,6 +162,11 @@ Key classes:
 * **MarkdownStructureParser** — Parses `.md` files by scanning folder hierarchies. Supports YAML frontmatter for metadata.
 * **parser_utils** — Shared functions: `slugify`, `strip_doc_extension`, `find_section_by_path`, `collect_all_sections`.
 
+For the internal structure of each parser (Level 4: Code), see the component specifications:
+
+* link:../../spec/05_asciidoc_parser.adoc[AsciiDoc Parser Specification] — includes state machine diagram, include resolution algorithm, and data models
+* link:../../spec/04_markdown_parser.adoc[Markdown Parser Specification] — includes state machine diagram, folder hierarchy rules, and data models
+
 === Component Responsibilities
 
 The following table maps components to the MCP tools:
