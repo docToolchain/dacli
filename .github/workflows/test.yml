@@ -23,6 +23,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
+      - name: Check dependencies for vulnerabilities
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit
+
       - name: Run linting
         run: uv run ruff check
 
