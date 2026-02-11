@@ -10,8 +10,6 @@ jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
-    # Only run on upstream repository, not on forks
-    if: github.repository == 'docToolchain/dacli'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +30,8 @@ jobs:
           uv run pytest --cov=src/dacli --cov-report=xml --cov-report=term-missing
 
       - name: SonarCloud Scan
+        # Optional: fails gracefully on forks without SONAR_TOKEN
+        continue-on-error: ${{ github.repository != 'docToolchain/dacli' }}
         uses: SonarSource/sonarcloud-github-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
