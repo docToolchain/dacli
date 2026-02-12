@@ -8,13 +8,16 @@
 
 The dacli CLI module requires risk classification according to the Risk Radar framework to determine appropriate security and quality assurance measures. The assessment evaluates five dimensions:
 
-| Dimension | Score | Level | Evidence |
-|-----------|-------|-------|----------|
-| Code Type | 2 | Business Logic | Click commands, service layer orchestration (`src/dacli/cli.py`, `src/dacli/services/`) |
-| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files |
-| Deployment | 1 | Internal tool | Command-line tool for documentation teams |
-| Data Sensitivity | 1 | Internal business data | Operates on internal documentation |
-| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git |
+[cols="2,1,2,5"]
+|===
+| Dimension | Score | Level | Evidence
+
+| Code Type | 2 | Business Logic | Click commands, service layer orchestration (`src/dacli/cli.py`, `src/dacli/services/`)
+| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files
+| Deployment | 1 | Internal tool | Command-line tool for documentation teams
+| Data Sensitivity | 1 | Internal business data | Operates on internal documentation
+| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git
+|===
 
 *Decision:*
 

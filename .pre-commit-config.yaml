@@ -25,3 +25,13 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: mixed-line-ending
+
+  # AsciiDoc linter (local hook - requires dev dependencies)
+  - repo: local
+    hooks:
+      - id: asciidoc-linter
+        name: AsciiDoc Linter
+        entry: uv run asciidoc-linter
+        language: system
+        files: \.(adoc|asciidoc)$
+        args: [--format, plain]

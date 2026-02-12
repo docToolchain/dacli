@@ -8,13 +8,16 @@
 
 The dacli-mcp MCP server module requires risk classification according to the Risk Radar framework to determine appropriate security and quality assurance measures. The assessment evaluates five dimensions:
 
-| Dimension | Score | Level | Evidence |
-|-----------|-------|-------|----------|
-| Code Type | 2 | Business Logic | MCP tools, service layer (`src/dacli/mcp_app.py`, `src/dacli/services/`) |
-| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files |
-| Deployment | 1 | Internal tool | MCP server for LLM integration in internal workflows |
-| Data Sensitivity | 1 | Internal business data | Operates on internal documentation |
-| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git |
+[cols="2,1,2,5"]
+|===
+| Dimension | Score | Level | Evidence
+
+| Code Type | 2 | Business Logic | MCP tools, service layer (`src/dacli/mcp_app.py`, `src/dacli/services/`)
+| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files
+| Deployment | 1 | Internal tool | MCP server for LLM integration in internal workflows
+| Data Sensitivity | 1 | Internal business data | Operates on internal documentation
+| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git
+|===
 
 **Note:** Initial consideration was given to Code Type score 3 (API/Database Queries) since the module exposes API endpoints (MCP tools). However, user confirmed score 2 as these are internal service APIs without public exposure or direct database access.
 

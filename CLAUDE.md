@@ -64,6 +64,40 @@ Development happens on a fork to keep `upstream/main` stable for `uv tool instal
 - Documentation, Issues, Pull-Requests etc. is always written in english
 - use responsible-vibe-mcp wherever suitable
 
+### AsciiDoc Linting
+
+The project uses [asciidoc-linter](https://github.com/docToolchain/asciidoc-linter) as a pre-commit hook to catch AsciiDoc syntax errors.
+
+**Known Issues (as of 2026-02-11):**
+
+- **WS001 false positives**: Linter incorrectly flags `*bold*` and `**bold**` syntax as list markers needing spaces
+  - These warnings can be safely ignored - the syntax is correct AsciiDoc
+  - See [asciidoc-linter#41](https://github.com/docToolchain/asciidoc-linter/issues/41)
+  - All ADR files (ADR-001 through ADR-013) trigger these false positives
+
+- **Markdown tables NOT detected**: Linter does not catch Markdown table syntax (`|---|---|`) in AsciiDoc files
+  - See [asciidoc-linter#38](https://github.com/docToolchain/asciidoc-linter/issues/38)
+  - Manual review required for table syntax
+
+**Workaround for commits:**
+
+When committing changes to `.adoc` files, the pre-commit hook may fail due to WS001 false positives:
+
+```bash
+# If only false positives (verify manually):
+git commit --no-verify -m "your message"
+
+# Or fix the linter output and commit normally
+git commit -m "your message"
+```
+
+**Real errors to watch for:**
+- Incorrect table syntax (Markdown vs AsciiDoc)
+- Heading hierarchy issues (HEAD001-003)
+- Unterminated blocks (BLOCK001)
+
+The linter runs on **all `.adoc` and `.asciidoc` files** in the repository.
+
 ## Commands
 
 ```bash

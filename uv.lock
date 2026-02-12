@@ -34,6 +34,14 @@ wheels = [
 ]
 
 [[package]]
+name = "asciidoc-linter"
+version = "0.1.0"
+source = { git = "https://github.com/docToolchain/asciidoc-linter.git#cf450fe070ad60979440b3819ddaec927a8c4ce8" }
+dependencies = [
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "attrs"
 version = "25.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -393,6 +401,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "asciidoc-linter" },
     { name = "hypothesis" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -404,6 +413,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "asciidoc-linter", marker = "extra == 'dev'", git = "https://github.com/docToolchain/asciidoc-linter.git" },
     { name = "click", specifier = ">=8.3.1" },
     { name = "cryptography", specifier = ">=46.0.5" },
     { name = "fastapi", specifier = ">=0.115.0" },

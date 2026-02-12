@@ -35,6 +35,7 @@ Issues = "https://github.com/docToolchain/dacli/issues"
 
 [project.optional-dependencies]
 dev = [
+    "asciidoc-linter @ git+https://github.com/docToolchain/asciidoc-linter.git",
     "hypothesis>=6.0.0",
     "pre-commit>=4.0.0",
     "pytest>=8.0.0",
@@ -54,6 +55,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dacli"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
