@@ -1,0 +1,64 @@
+=== ADR-011: Risk Classification - dacli CLI (Tier 2)
+
+*Status:* Accepted (2026-02-11)
+
+*Deciders:* Development Team + Claude Code
+
+*Context:*
+
+The dacli CLI module requires risk classification according to the Risk Radar framework to determine appropriate security and quality assurance measures. The assessment evaluates five dimensions:
+
+| Dimension | Score | Level | Evidence |
+|-----------|-------|-------|----------|
+| Code Type | 2 | Business Logic | Click commands, service layer orchestration (`src/dacli/cli.py`, `src/dacli/services/`) |
+| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files |
+| Deployment | 1 | Internal tool | Command-line tool for documentation teams |
+| Data Sensitivity | 1 | Internal business data | Operates on internal documentation |
+| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git |
+
+*Decision:*
+
+Classify **dacli CLI** as **Tier 2 — Extended Assurance** (determined by max(Code Type=2, Language=2, Blast Radius=2)).
+
+This tier requires:
+
+* **Tier 1 measures:** Linter & formatter, pre-commit hooks, dependency vulnerability scanning, CI with automated tests
+* **Tier 2 measures:** SAST (CodeQL), property-based testing (Hypothesis), code quality gates (SonarCloud), AI-assisted code review, PR review policy with sampling
+
+*Consequences:*
+
+**Positive:**
+
+* Clear security baseline established for the project
+* Comprehensive testing strategy (713 automated tests + property-based tests with 1,100+ generated cases)
+* Automated gates prevent common vulnerabilities (dependency CVEs, code quality issues)
+* SonarCloud integration provides continuous quality monitoring
+* PR review policy balances thoroughness with development velocity (20-30% sampling)
+
+**Negative:**
+
+* Additional CI pipeline duration (~2-3 minutes for SAST and quality gate checks)
+* Developer onboarding overhead (pre-commit hooks, review policy understanding)
+* Maintenance burden for Tier 2 tooling (CodeQL queries, SonarCloud configuration)
+
+==== Pugh Matrix: Risk Tier Selection
+
+[cols="3,1,1,1"]
+|===
+| Criterion | Tier 2 (Baseline) | Tier 1 (Lower) | Tier 3 (Higher)
+
+| Code Complexity Coverage | 0 | - | +
+| Language Risk Mitigation | 0 | - | +
+| Data Loss Prevention | 0 | - | +
+| Development Velocity | 0 | + | -
+| CI/CD Pipeline Complexity | 0 | + | -
+| **Total** | **0** | **-1** | **0**
+|===
+
+_Legend: + better than baseline, 0 same as baseline, - worse than baseline_
+
+**Tier 1 rejected:** Insufficient coverage for business logic complexity and blast radius (data loss risk). Missing SAST and property-based testing would leave gaps in quality assurance.
+
+**Tier 3 rejected:** Not cost-justified. The module is an internal tool without public-facing deployment or sensitive PII. Branch protection and fuzzing would be overkill for the current risk profile.
+
+**Tier 2 selected:** Balanced approach matching the actual risk profile (business logic + dynamic typing + recoverable data loss). Provides strong automated gates without excessive overhead.

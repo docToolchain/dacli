@@ -1,0 +1,140 @@
+=== ADR-013: Security Mitigations - Tier 2 Implementation
+
+*Status:* Accepted (2026-02-11)
+
+*Deciders:* Development Team + Claude Code
+
+*Context:*
+
+Following the Tier 2 risk classification for both dacli CLI and dacli-mcp modules (see ADR-011 and ADR-012), the project requires implementation of comprehensive security and quality assurance measures. The Risk Radar framework mandates cumulative mitigations: all Tier 1 measures plus all Tier 2 measures.
+
+Both modules share the same codebase (`src/dacli/`), so mitigations are applied repository-wide rather than per module.
+
+*Decision:*
+
+Implement **all required Tier 1 and Tier 2 mitigation measures** as repository-wide protections:
+
+**Tier 1 — Automated Gates:**
+
+. **Linter & Formatter:** Ruff configured in `pyproject.toml` with enforced rules (E, F, I, N, W, UP) and 100-character line length
+. **Pre-Commit Hooks:** Configured via `.pre-commit-config.yaml` (commit 68d6ae4) with Ruff checks
+. **Dependency Vulnerability Scanning:** `pip-audit` integrated in CI pipeline (commit fee56b6)
+. **CI Build & Unit Tests:** GitHub Actions workflow (`.github/workflows/test.yml`) running 713 automated tests with coverage reporting
+
+**Tier 2 — Extended Assurance:**
+
+. **SAST (Static Application Security Testing):** CodeQL workflow with `security-extended` query suite (commit fead47e), runs on upstream repository only
+. **AI-Assisted Code Review:** Claude Code review workflow (`.github/workflows/claude-code-review.yml`) for automated PR analysis
+. **Property-Based Testing:** Hypothesis framework (commit 87a965d) with 11 property-based tests generating 1,100+ test cases (`tests/test_property_based.py`)
+. **Code Quality Gate:** SonarCloud integration (commit fb4c8ad) via `.github/workflows/sonarcloud.yml` and `sonar-project.properties`
+. **PR Review Policy with Sampling:** Risk-based review policy documented in `.github/PR_REVIEW_POLICY.md` (commit efb868f):
+  * 100% review for security-sensitive changes, breaking changes, architecture changes
+  * 20-30% sampling for bug fixes, refactoring, tests, documentation
+  * Auto-merge eligible: non-security dependency updates, formatting fixes, PATCH version bumps
+
+**Security Fixes Applied:**
+
+* `cryptography` upgraded from 46.0.3 → 46.0.5 (CVE-2026-26007 mitigation)
+* `pip` upgraded from 24.0 → 26.0.1
+* Commit: 7766e90
+
+*Consequences:*
+
+**Positive:**
+
+* **100% mitigation coverage** for both Tier 1 (4/4 measures) and Tier 2 (5/5 measures)
+* **Zero known vulnerabilities** (pip-audit clean)
+* **Comprehensive test coverage:** 713 unit/integration tests + 11 property-based tests (1,100+ generated cases)
+* **Continuous quality monitoring:** SonarCloud provides ongoing code quality metrics and technical debt tracking
+* **Automated security scanning:** CodeQL runs on every push to main, catching potential vulnerabilities before production
+* **Efficient review process:** Sampling policy (20-30%) balances thoroughness with development velocity
+* **Developer experience:** Pre-commit hooks catch issues locally before CI, reducing feedback loop time
+
+**Negative:**
+
+* **CI pipeline duration increase:** ~2-3 minutes added for SAST (CodeQL) and quality gate (SonarCloud) checks
+* **Developer onboarding overhead:** New contributors must understand pre-commit hooks, review policy, and quality standards
+* **Maintenance burden:**
+  - CodeQL query suite updates needed for new Python versions
+  - SonarCloud project configuration requires manual setup and token management
+  - Hypothesis tests may need strategy refinement as edge cases are discovered
+* **External service dependencies:**
+  - SonarCloud outages block PRs (mitigated by making check non-blocking in fork workflow)
+  - CodeQL only runs on upstream repository (not on fork PRs)
+* **False positive handling:** SAST tools may flag intentional patterns (e.g., dynamic code in MCP server), requiring suppression annotations
+
+==== Pugh Matrix: Mitigation Strategy
+
+[cols="3,1,1,1"]
+|===
+| Criterion | Repository-wide (Baseline) | Module-specific | Tier 1 Only
+
+| Implementation Simplicity | 0 | - | +
+| Coverage Completeness | 0 | 0 | -
+| Maintenance Burden | 0 | - | +
+| Risk Mitigation Effectiveness | 0 | 0 | -
+| Compliance with Tier 2 | 0 | 0 | -
+| **Total** | **0** | **-2** | **-1**
+|===
+
+_Legend: + better than baseline, 0 same as baseline, - worse than baseline_
+
+**Module-specific approach rejected:** Both modules share the same codebase (`src/dacli/`). Applying mitigations per module would duplicate CI checks, complicate maintenance, and provide no additional risk reduction.
+
+**Tier 1 only rejected:** Insufficient coverage for Tier 2 classification. Missing SAST, property-based testing, and quality gates would leave critical gaps in security and quality assurance.
+
+**Repository-wide Tier 1+2 selected:** Simplest implementation, consistent protection across all entry points (CLI and MCP), compliant with Risk Radar tier requirements.
+
+==== Alternative Mitigation Measures Considered
+
+**Static Type Checking (mypy):**
+
+* **Rejected for Tier 1:** Python project without strict typing. Retrofitting type annotations to 64+ files would be high effort with moderate benefit. FastMCP framework uses dynamic features that complicate type checking.
+* **Future consideration:** May be added incrementally as codebase matures, but not required for current Tier 2 classification.
+
+**Fuzzing (AFL, cargo-fuzz):**
+
+* **Not required for Tier 2:** Fuzzing is a Tier 3 measure. The project's internal tool deployment context and recoverable data loss blast radius don't justify the complexity and CI time cost of continuous fuzzing.
+
+**Branch Protection:**
+
+* **Not required for Tier 2:** Branch protection (required status checks, mandatory reviews) is a Tier 3 measure. Current PR review policy with sampling (20-30%) provides adequate oversight for internal tool risk profile.
+
+==== Implementation Timeline
+
+All mitigations implemented between 2026-02-09 and 2026-02-11 as part of PR #279:
+
+. Pre-commit hooks: commit 68d6ae4
+. Dependency vulnerability scanning (pip-audit): commit fee56b6
+. Security fixes (cryptography, pip): commit 7766e90
+. CodeQL SAST workflow: commit fead47e
+. Property-based tests (Hypothesis): commit 87a965d
+. SonarCloud quality gate: commit fb4c8ad
+. PR review policy: commit efb868f
+
+**Verification:** All 713 tests passing, CI green, pip-audit clean, CodeQL and SonarCloud integrated.
+
+==== Module-Specific Notes
+
+**PR Review Policy - Differential Application:**
+
+While most mitigations are truly repository-wide, the PR review policy applies differentially based on change type (not module):
+
+* **100% mandatory review:**
+  - Security-sensitive changes (auth, crypto, file system ops with user paths)
+  - Breaking changes (public API, CLI interface, configuration format)
+  - Architecture changes (new components, core parsers, data model)
+  - Release preparation (MINOR/MAJOR version bumps)
+
+* **20-30% sampling review:**
+  - Bug fixes (prioritize critical bugs)
+  - Internal refactoring (prioritize complex changes)
+  - Test additions (prioritize property-based/integration tests)
+  - Documentation updates (prioritize user-facing docs)
+
+* **Auto-merge eligible:**
+  - Dependency updates (PATCH, non-security, passing CI)
+  - Formatting/linting fixes (no logic changes)
+  - PATCH version bumps (small fixes, no API changes)
+
+This differential approach ensures critical changes receive thorough review while maintaining development velocity for lower-risk changes.
