@@ -1,0 +1,66 @@
+=== ADR-012: Risk Classification - dacli-mcp (Tier 2)
+
+*Status:* Accepted (2026-02-11)
+
+*Deciders:* Development Team + Claude Code
+
+*Context:*
+
+The dacli-mcp MCP server module requires risk classification according to the Risk Radar framework to determine appropriate security and quality assurance measures. The assessment evaluates five dimensions:
+
+| Dimension | Score | Level | Evidence |
+|-----------|-------|-------|----------|
+| Code Type | 2 | Business Logic | MCP tools, service layer (`src/dacli/mcp_app.py`, `src/dacli/services/`) |
+| Language | 2 | Dynamically typed | Python 3.12+ — 100% `.py` files |
+| Deployment | 1 | Internal tool | MCP server for LLM integration in internal workflows |
+| Data Sensitivity | 1 | Internal business data | Operates on internal documentation |
+| Blast Radius | 2 | Data loss (recoverable) | Could corrupt docs, recoverable from git |
+
+**Note:** Initial consideration was given to Code Type score 3 (API/Database Queries) since the module exposes API endpoints (MCP tools). However, user confirmed score 2 as these are internal service APIs without public exposure or direct database access.
+
+*Decision:*
+
+Classify **dacli-mcp** as **Tier 2 — Extended Assurance** (determined by max(Code Type=2, Language=2, Blast Radius=2)).
+
+This tier requires the same mitigation measures as dacli CLI (both modules share the same codebase):
+
+* **Tier 1 measures:** Linter & formatter, pre-commit hooks, dependency vulnerability scanning, CI with automated tests
+* **Tier 2 measures:** SAST (CodeQL), property-based testing (Hypothesis), code quality gates (SonarCloud), AI-assisted code review, PR review policy with sampling
+
+*Consequences:*
+
+**Positive:**
+
+* Consistent risk management across both module entry points (CLI and MCP server)
+* Shared codebase benefits from unified quality gates and testing strategy
+* MCP tools benefit from the same 713 automated tests + property-based tests
+* FastMCP framework integration validated by comprehensive test suite
+
+**Negative:**
+
+* MCP-specific edge cases may need additional test coverage beyond shared tests
+* Tool invocation patterns (JSON-RPC) differ from CLI patterns, requiring careful validation
+
+==== Pugh Matrix: Risk Tier Selection
+
+[cols="3,1,1,1"]
+|===
+| Criterion | Tier 2 (Baseline) | Tier 1 (Lower) | Tier 3 (Higher)
+
+| API Exposure Risk | 0 | - | +
+| Language Risk Mitigation | 0 | - | +
+| Data Loss Prevention | 0 | - | +
+| Development Velocity | 0 | + | -
+| Tool Integration Complexity | 0 | + | -
+| **Total** | **0** | **-1** | **0**
+|===
+
+_Legend: + better than baseline, 0 same as baseline, - worse than baseline_
+
+**Tier 1 rejected:** Insufficient for an API-like interface (MCP tools). Missing SAST and property-based testing would leave gaps in tool invocation validation and edge case coverage.
+
+**Tier 3 rejected:** Not cost-justified. The MCP server is for internal LLM integration, not public-facing. The deployment context (internal tool) doesn't warrant branch protection, fuzzing, or penetration testing.
+
+**Tier 2 selected:** Appropriate for internal API-like interfaces with business logic. Provides SAST coverage for potential injection vulnerabilities and property-based tests for tool parameter validation without excessive overhead.
+
+**Shared codebase note:** Both dacli CLI and dacli-mcp modules share the same source code (`src/dacli/`). Entry points differ (`dacli.cli:cli` vs `dacli.main:main`), but risk profile and protection measures are identical. All mitigations are applied repository-wide.

@@ -313,3 +313,9 @@ _Updated by `/risk-mitigate` on 2026-02-11_
 **Security fixes applied**: cryptography>=46.0.5, pip 26.0.1 (commit 7766e90)
 
 **Note:** Both modules share the same codebase and mitigations. Entry points differ (`dacli.cli:cli` vs `dacli.main:main`), but risk profile and protection measures are identical.
+
+**Architecture Decision Records:**
+
+* link:src/docs/arc42/adr/ADR-011.adoc[ADR-011: Risk Classification - dacli CLI (Tier 2)]
+* link:src/docs/arc42/adr/ADR-012.adoc[ADR-012: Risk Classification - dacli-mcp (Tier 2)]
+* link:src/docs/arc42/adr/ADR-013.adoc[ADR-013: Security Mitigations - Tier 2 Implementation]
