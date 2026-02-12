@@ -52,3 +52,15 @@ include::../adr/ADR-009.adoc[]
 ---
 
 include::../adr/ADR-010.adoc[]
+
+---
+
+include::../adr/ADR-011.adoc[]
+
+---
+
+include::../adr/ADR-012.adoc[]
+
+---
+
+include::../adr/ADR-013.adoc[]
