@@ -33,6 +33,7 @@ settings.json
 
 # Build output
 build/
+dist/
 
 # Serena working directory
 .serena/
