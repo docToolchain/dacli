@@ -29,7 +29,7 @@ from dacli import __version__
 from dacli.asciidoc_parser import AsciidocStructureParser
 from dacli.file_handler import FileReadError, FileSystemHandler, FileWriteError
 from dacli.markdown_parser import MarkdownStructureParser
-from dacli.mcp_app import _build_index
+from dacli.index_builder import build_index
 from dacli.services import (
     compute_hash,
     get_project_metadata,
@@ -290,7 +290,7 @@ class CliContext:
         self.markdown_parser = MarkdownStructureParser(base_path=docs_root)
 
         # Build index
-        _build_index(
+        build_index(
             docs_root,
             self.index,
             self.asciidoc_parser,

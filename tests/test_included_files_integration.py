@@ -5,7 +5,7 @@ Tests the full flow: finding files, scanning includes, filtering, parsing, index
 
 from dacli.asciidoc_parser import AsciidocStructureParser
 from dacli.markdown_parser import MarkdownStructureParser
-from dacli.mcp_app import _build_index
+from dacli.index_builder import build_index as _build_index
 from dacli.structure_index import StructureIndex
 
 
