@@ -1,0 +1,371 @@
+=== ADR-014: Multi-Root Documentation Sources
+
+Status:: Proposed (2026-03-11)
+
+Deciders:: Development Team
+
+Context::
+
+`dacli` currently operates on a single `--docs-root` directory. All documents within that root are treated equally: readable, searchable, and writable. Real-world usage reveals scenarios where a user works on _one_ documentation project but needs _contextual knowledge_ from related, separate documentation sources — without re-explaining that context every session, without duplicating content, and without risking unintended modifications.
+
+Decision::
+
+Introduce **multi-root support** with two access modes:
+
+workspace:: Read-write. The documentation being actively worked on.
+reference:: Read-only. Referenceable documentation of related (sub-)projects. References are stable by definition — ideally versioned, tagged, or at minimum at a known git commit and not dirty. How the reference is provided (local checkout, `https://`, `file://`, InitContainer, sidecar) is an operational detail outside of dacli's concern.
+
+==== Motivating Scenarios
+
+Scenario 1 — Industrial Product Portfolio::
+A portfolio of 2 base products and 8 add-ons. Add-ons share common infrastructure and protocol specifications with the base products. When working on Add-On 3's documentation, the user needs read-only access to the base product docs, shared conventions, and protocol specs. These sources use structured ID conventions (e.g., `FR-P1-01` for Functional Requirement Product 1 No. 01, `QR-I2-12` for Quality Requirement Infrastructure 2 No. 12) that enable cross-referencing across project boundaries. Each sub-project publishes to a known base URL (e.g., `https://kb.company.tld/family-01/hf-util`).
+
+Scenario 2 — Yocto/OpenEmbedded Layer Stack::
+A Yocto project with 14 layers (3 OE-Core, 4 OE, 3 Community, 2 vendor, 1 BSP, 1 Application). When working on the Application Layer documentation, the user needs context from lower layers (API contracts, board support, build system conventions) as read-only reference.
+
+Scenario 3 — Specification and Template Co-Development::
+A new documentation template is being specified (spec) and implemented (template) simultaneously. Both are actively developed and reference each other — requiring two writable workspaces with mutual visibility.
+
+==== Documentation Ecosystem Context
+
+Real-world documentation rarely exists in isolation. Projects combine multiple documentation frameworks and source types:
+
+Structured frameworks:: arc42 (architecture), req42 (requirements), tpo42 (arc42+req42 integrated), ops42 (operations, in spec phase), quality42, aim42
+Generated references:: Doxygen, Javadoc, Sphinx (Python, CMake), POD (CPAN)
+Design artifacts:: SysML models, circuit diagrams, Canvas formats
+Combined frameworks:: tpo42 demonstrates that a single documentation root can contain multiple framework documents (one `arc42.adoc` and one `req42.adoc` with explicit semantic mappings between chapters)
+
+Not all reference sources conform to a template framework. Doxygen output, hardware schematics, and SysML models are valuable context but have no "template type." The architecture must accommodate this diversity.
+
+==== Current Limitations
+
+The single-root architecture forces users to either:
+
+* Re-explain shared context to the LLM every session (wasteful, error-prone, violates DRY)
+* Merge all docs into one root (risks unintended modifications, violates SPOT)
+* Run multiple dacli-mcp instances (loses cross-root search, complex setup, no write protection)
+
+Additionally, dacli currently parses all `*.md` files including files like `LLM.md` or `CLAUDE.md` without distinguishing their purpose from regular documentation. The document role classification introduced in this ADR addresses this by annotating each parsed document with its role (`documentation` or `project-meta`).
+
+==== Relationship to Existing ADRs and Issues
+
+* ADR-001 (File system as truth): Each root remains an independent file system source of truth
+* ADR-002 (In-memory index): Index must span multiple roots with namespace separation
+* #185 / ADR-007 (SQLite Index): Persistent index could cache multi-root structures efficiently
+* #265 (RAG/sqlite-vec): Vector search across multiple roots would multiply the value of RAG
+
+==== CLI Parameter Format
+
+Sources are specified using explicit key=value parameters. This avoids delimiter-based path heuristics that would break across platforms (Windows drive letters, IBM System i/z volumes, UNC paths). As a bonus, the `path` key naturally extends to URIs — enabling future support for remote sources (`smb://`, `https://`, `dav://`) with local paths as implicit `file:`.
+
+[source,bash]
+----
+# Full specification with all attributes
+--workspace name=addon-3,type=arc42,path=/projects/customer-a/addon-3/docs
+--reference name=base-prd1,type=arc42,path=/projects/customer-a/base-product/docs
+--reference name=common-prot,type=tpo42,path=/projects/customer-a/serial-protocol/docs
+--reference name=infra-foo,type=req42,path=/projects/customer-a/infra-foo/docs
+
+# Without type (Doxygen output, schematics, SysML, ...)
+--reference name=hw-schematics,path=/projects/customer-a/hw-docs
+--reference name=libfoo-api,path=/projects/customer-a/libfoo/html
+
+# Cross-platform — no path heuristics needed
+--reference name=legacy-docs,path=C:\Projects\legacy\docs
+--reference name=mainframe,path=/QSYS.LIB/MYLIB.LIB/DOCS.FILE
+
+# URIs for remote or mounted sources (future)
+--reference name=team-wiki,path=smb://fileserver/docs/wiki
+--reference name=published,path=https://kb.company.tld/family-01/base-product
+
+# Backward compatible: --docs-root becomes workspace, name derived from directory
+dacli-mcp --docs-root /path/to/docs
+----
+
+Required keys::
+name::: Clarifies the namespace
+path::: Clarifies the path to this _document root_
+
+Optional keys::
+type::: (template framework),
+spec::: (framework specification source — see below).
+Unknown keys::: rejected (forward compatibility for future attributes like `base_url`).
+
+The `spec` key::: tells the LLM where to learn about an unfamiliar framework. Three forms:
+
+Omitted:::: LLM relies on its own knowledge (sufficient for well-known frameworks like arc42)
+Path:::: `spec=/path/to/req42-guide` — dacli serves the spec as a reference document, the LLM reads it on demand
+MCP URI:::: `spec=mcp://req42-server` — a dedicated MCP server provides framework guidance on demand, keeping the LLM's context focused on what is currently relevant
+
+[source,bash]
+----
+# arc42: LLM knows it, no spec needed
+--workspace name=addon-3,type=arc42,path=/projects/addon-3/docs
+
+# req42: less known, point to the framework docs
+--reference name=infra-foo,type=req42,spec=/path/to/req42-templates,path=/projects/infra-foo/docs
+
+# ops42: in development, dedicated MCP server for active guidance
+--workspace name=my-service,type=ops42,spec=mcp://ops42-guide,path=/projects/my-service/docs
+----
+
+==== Namespace Separation
+
+Each root's `name` becomes its namespace. Section paths are prefixed with the namespace, using the existing path format convention (colon separates namespace from document/section path):
+
+.Example: Scenario 1 configuration
+[source,bash]
+----
+--workspace  name=addon-3,type=arc42,path=/projects/customer-a/addon-3/docs
+--reference  name=base-prd1,type=arc42,path=/projects/customer-a/base-product/docs
+--reference  name=common-prot,type=tpo42,path=/projects/customer-a/serial-protocol/docs
+--reference  name=hw-schematics,path=/projects/customer-a/hw-docs
+----
+
+.Resulting section paths
+----
+addon-3:api.endpoints              <-- workspace (read-write)
+base-prd1:api.core-protocol        <-- reference (read-only)
+common-prot:glossar                <-- reference (read-only)
+hw-schematics:connector-pinout     <-- reference (read-only, no template type)
+----
+
+For tpo42-style roots containing multiple framework documents, the namespace applies to the root. The individual documents (arc42, req42) appear as the first segment of the dot-separated path within that namespace. This preserves the existing convention of using the colon only once:
+
+----
+my-product:arc42.introduction-and-goals    <-- tpo42 root, arc42 document
+my-product:req42.business-goals            <-- tpo42 root, req42 document
+----
+
+**Namespace collisions:** If two roots specify the same `name`, dacli rejects the configuration at startup with a clear error message. Names must be unique across all workspace and reference declarations.
+
+==== New Tool: `get_namespaces`
+
+Multi-root introduces a new tool as the entry point for LLM orientation:
+
+.Parameters
+None
+
+.Returns
+[source,json]
+----
+{
+  "namespaces": [
+    {
+      "name": "addon-3",
+      "type": "arc42",
+      "mode": "workspace",
+      "documents": [
+        {"slug": "arc42", "role": "documentation", "format": "asciidoc", "sections": 28},
+        {"slug": "readme", "role": "project-meta", "format": "markdown", "sections": 3},
+        {"slug": "claude", "role": "project-meta", "format": "markdown", "sections": 5}
+      ]
+    },
+    {
+      "name": "base-prd1",
+      "type": "arc42",
+      "mode": "reference",
+      "documents": [
+        {"slug": "arc42", "role": "documentation", "format": "asciidoc", "sections": 42},
+        {"slug": "api", "role": "documentation", "format": "openapi", "sections": 15},
+        {"slug": "install", "role": "project-meta", "format": "markdown", "sections": 3}
+      ]
+    },
+    {
+      "name": "common-prot",
+      "type": "tpo42",
+      "mode": "reference",
+      "documents": [
+        {"slug": "arc42", "role": "documentation", "format": "asciidoc", "sections": 20},
+        {"slug": "req42", "role": "documentation", "format": "asciidoc", "sections": 14}
+      ]
+    },
+    {
+      "name": "hw-schematics",
+      "type": null,
+      "mode": "reference",
+      "documents": [
+        {"slug": "pinouts", "role": "documentation", "format": "asciidoc", "sections": 12}
+      ]
+    }
+  ],
+  "total_namespaces": 4
+}
+----
+
+Each document within a namespace carries a `role`:
+
+[cols="2,4"]
+|===
+| Role | Description
+
+| `documentation` | Inhaltliche Dokumentation — the core business of dacli (Default). Covers structured frameworks (arc42, req42, OpenAPI/Swagger, Canvas, ...) as well as generated references (Doxygen, Sphinx, POD, Javadoc).
+| `project-meta` | Project-specific meta files and helpers (README.md, LLM.md, CLAUDE.md, TODO.md, INSTALL.md, ROADMAP.adoc, CHANGELOG.md, ...).
+|===
+
+The `type` on the root level identifies _which_ framework the documentation follows (e.g., `arc42`, `tpo42`, `openapi`). The `role` distinguishes the core documentation content from project-level meta files. Both are parsed and searchable — but the role helps the reader (human or LLM) understand the document's purpose.
+
+This tool answers: "What documentation sources are available, what kind are they, what roles do their documents serve, and can I write to them?" The LLM calls this first, then uses `get_structure` with a namespace scope to drill into specific roots.
+
+NOTE: In single-root mode (`--docs-root`), `get_namespaces` returns one entry with `mode: "workspace"` and a name derived from the directory. Existing tools continue to work without namespace prefixes for backward compatibility.
+
+==== Tool Behavior by Access Mode
+
+[cols="2,1,1"]
+|===
+| Tool | workspace | reference
+
+| `get_namespaces` | Full | Full
+| `get_structure` | Full | Full
+| `get_section` | Full | Full
+| `get_sections_at_level` | Full | Full
+| `search` | Full | Full
+| `get_elements` | Full | Full
+| `get_metadata` | Full | Full
+| `get_dependencies` | Full | Full
+| `validate_structure` | Full | Full
+| `update_section` | Allowed | *Rejected*
+| `insert_content` | Allowed | *Rejected*
+|===
+
+Write operations on reference roots return a clear error:
+
+[source,json]
+----
+{
+  "success": false,
+  "error": "Cannot modify 'base-prd1:api.core-protocol': source is mounted as read-only reference. Use --workspace instead of --reference to enable writes."
+}
+----
+
+==== Cross-Root Search and Navigation
+
+All read tools operate across all roots by default. Results are annotated with namespace and access mode:
+
+[source,json]
+----
+{
+  "query": "QR-I2-12",
+  "results": [
+    {"path": "infra-foo:quality-requirements.qr-i2-12", "source": "reference", "score": 0.95},
+    {"path": "addon-3:requirements.references", "source": "workspace", "score": 0.42}
+  ],
+  "total_results": 2
+}
+----
+
+The existing `scope` parameter can filter by namespace: `search(query="auth", scope="base-prd1")`.
+
+==== Extended Metadata
+
+With multi-root, `get_namespaces` provides structural orientation (what roots exist, their documents and roles). `get_metadata()` complements this with quantitative data that `get_namespaces` does not cover:
+
+Without path:: Aggregated statistics — total word count, last modified timestamp, formats in use
+With namespace-prefixed path:: Section-level statistics — word count, last modified, subsection count
+
+The existing `get_metadata` response structure remains unchanged. Section paths simply gain namespace prefixes in multi-root mode.
+
+==== What dacli Does NOT Do
+
+Interpret template/framework semantics:: The `type` on a root (arc42, openapi, canvas, ...) is an opaque annotation. dacli does not know the chapter structure of arc42 or the path/schema layout of OpenAPI. Understanding what a framework _means_ is the job of a dedicated template MCP server or the LLM's own knowledge. Initial parser support covers AsciiDoc and Markdown; additional format parsers (OpenAPI YAML, Doxygen XML, RST, ...) are additive and do not change the multi-root architecture.
+Resolve ID conventions:: Structured IDs like `QR-I2-12` are document content. `search()` finds them. The naming conventions and their meaning are documented in each project's LLM.md and interpreted by the LLM.
+Act on project-meta content:: dacli classifies files like LLM.md, README.md, CLAUDE.md as `role: "project-meta"` — they are parsed and searchable, but dacli does not act on their content. Paths belong in CLI/MCP configuration, not in project-meta files. Project-meta files may reference namespaces by name.
+Know template-level cross-references:: That req42:constraints maps to arc42:architecture-constraints is template knowledge, not dacli knowledge.
+
+===== Consequences
+
+Positive::
+
+Eliminates context re-telling::: Shared knowledge is always available, indexed and searchable across sessions (DRY)
+Prevents accidental modifications::: Reference sources are explicitly read-only (SPOT — content lives in one place)
+Scales to complex projects::: Product portfolios, layer stacks, co-development, and mixed source types are first-class citizens
+Template-agnostic::: Works equally well with arc42, Doxygen, SysML, schematics, or any other documentation format that dacli can parse
+Backward compatible::: `--docs-root` continues to work as a single workspace
+Multiplies value of existing tools::: Search, elements, metadata — all work across roots without additional tool APIs
+Clean separation of concerns::: dacli transports and annotates, template MCP servers interpret
+Enables future features::: Cross-root dependency analysis, portfolio-level dashboards, cross-root RAG (#265)
+Cross-root documentation quality validation::: With namespace awareness, `validate_structure` can detect unreferenced dependencies — e.g., a reference source `base-prd1` is mounted but never mentioned in the workspace's documentation. This provides the raw signal; the _interpretation_ (should `base-prd1` appear in arc42 chapter 3 "Context & Scope" or in req42 chapter 3 "Scope"?) remains the job of the LLM or a template MCP server. Many reference sources should naturally surface in framework chapters like Scope, Building Blocks, Deployment View (arc42) or Scope, Supporting Models, Constraints (req42).
+
+Negative::
+
+Index complexity::: Namespace-aware index with per-root access control adds code complexity to `StructureIndex`
+Path verbosity::: Namespace prefixes make paths longer (`base-prd1:api.core-protocol` vs. `api.core-protocol`)
+Memory footprint::: Multiple large documentation roots increase in-memory index size (mitigated by ADR-007/SQLite persistence)
+Configuration learning curve::: Users must understand the key=value format and workspace vs. reference distinction
+Testing surface::: Combinatorial scenarios (multiple workspaces, mixed modes, with/without types, namespace collisions) increase the test matrix significantly
+
+Neutral::
+
+CLI tool (`dacli` non-MCP)::: would also benefit from multi-root but may have different UX requirements — to be evaluated separately
+No impact::: on file system layout — each root is independent, no cross-root symlinks or includes required
+The LLM.md/CLAUDE.md classification::: issue is addressed by document roles in this ADR — no separate bug fix needed
+
+==== Pugh Matrix: Multi-Root Architecture
+
+[cols="3,1,1,1"]
+|===
+| Criterion | Multi-Root in dacli (Baseline) | Multiple dacli Instances | Merged Single Root
+
+| Cross-Root Search | 0 | - | +
+| Write Protection | 0 | 0 | -
+| Configuration Simplicity | 0 | - | +
+| Namespace Clarity | 0 | - | -
+| Implementation Effort | 0 | + | +
+| Scalability (10+ roots) | 0 | - | -
+| Backward Compatibility | 0 | + | 0
+| LLM Context Efficiency | 0 | - | 0
+| Template-Agnostic Sources | 0 | 0 | 0
+| **Total** | **0** | **-3** | **-1**
+|===
+
+_Legend: + better than baseline, 0 same as baseline, - worse than baseline_
+
+Multiple dacli instances rejected:: Loses cross-root search. Requires the LLM to juggle multiple MCP server tool namespaces. Read-only enforcement possible via `--read-only` flag per instance, but fragmented UX and no unified metadata. Does not scale well beyond 3-4 roots.
+
+Merged single root rejected:: Conflates workspace and reference content. No write protection — risk of modifying shared or upstream documentation. Search results lack provenance. Violates SPOT when content must be duplicated to appear in the merged root.
+
+Multi-root in dacli selected:: Best balance of cross-root visibility, write protection, and unified search. Higher implementation effort justified by real-world scenarios. Template-agnostic design accommodates the full spectrum from structured frameworks (arc42, req42) to generated references (Doxygen, Sphinx) and design artifacts (SysML, schematics).
+
+==== Implementation Phases
+
+. Phase — Core Multi-Root (MVP)
+
+.. Add `--workspace` and `--reference` CLI parameters with key=value parsing (`name`, `path`, optional `type`) — both `dacli` CLI and `dacli-mcp`
+.. Extend `StructureIndex` with namespace-aware storage and per-root access mode
+.. Add access mode check to `update_section` and `insert_content`
+.. Backward compatibility: `--docs-root` maps to `--workspace` with namespace derived from directory name
+.. Namespace collision detection with clear error messages
+.. Role detection via well-known filenames (README.md, LLM.md, CLAUDE.md, CHANGELOG.md, TODO.md, INSTALL.md → `project-meta`, everything else → `documentation`)
+
+. Phase — Enhanced Configuration
+
+.. `.dacli.json` per documentation root for root-specific metadata (analogous to Yocto `layer.conf`) — role overrides, `base_url`, namespace aliases
+.. `spec` key support — path-based (dacli serves the spec as reference) and MCP URI (dedicated framework guidance server, referenced by MCP server ID)
+.. `get_metadata()` per-root breakdown
+
+. Phase — Ecosystem Integration
+
+.. Integration with ADR-007 (SQLite) for persistent multi-root index
+.. Integration with #265 (RAG) for cross-root semantic search
+.. Cross-root dependency analysis (e.g., add-on references base product API)
+.. Cross-root documentation quality validation: detect mounted reference namespaces that are never referenced in the workspace's documentation content, providing a signal for potentially missing context in framework chapters (Scope, Building Blocks, Constraints, ...)
+
+==== Resolved Questions
+
+CLI tool support:: Added in Phase 1. Both `dacli` CLI and `dacli-mcp` support multi-root from the start. Anything else would be service degradation — the documentation positions CLI as "the new way to go."
+
+URI schemes:: Out of scope for this ADR. Each URI scheme (`smb://`, `https://`, `dav://`, ...) should be a dedicated feature request (introduce req42 to this little project) or ADR when the need arises. Phase 1 supports local paths only (`file:` implicit).
+
+Role detection strategy:: Well-known filenames as educated guess (README.md, LLM.md, CLAUDE.md, CHANGELOG.md, TODO.md, INSTALL.md → `project-meta`, everything else → `documentation`). Overridable via `.dacli.json` per root in Phase 2. Covers ~90% of real projects without configuration.
+
+MCP `spec` resolution:: `spec=` references an MCP server ID when available. If the MCP server is reachable, the LLM uses it for on-demand framework guidance. If not, the LLM falls back to its own knowledge. dacli does not resolve or proxy the MCP connection — it passes the server ID through in `get_namespaces` and the LLM decides.
+
+==== Remaining Open Questions
+
+. **`.dacli.json` schema:** What fields should the per-root config file support? Candidates: `role` overrides, `base_url`, namespace alias, `spec` defaults. Should it be JSON or TOML?
+
+==== Related Issues
+
+* #185 — SQLite Index (persistent multi-root index)
+* #265 — RAG/sqlite-vec (cross-root semantic search)
+* #15 — File Watching (auto-detect reference changes)
