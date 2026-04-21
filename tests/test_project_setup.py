@@ -35,3 +35,15 @@ def test_dacli_mcp_can_be_run():
     # Should exit cleanly (0) or with help message
     # We accept both 0 and 2 (argparse help exits with 2 sometimes)
     assert result.returncode in (0, 2), f"Failed with: {result.stderr}"
+
+
+def test_fastmcp_jwt_import_has_no_authlib_jose_deprecation_warning():
+    """Ensure FastMCP JWT auth import does not emit deprecated authlib.jose warning."""
+    result = subprocess.run(
+        [sys.executable, "-W", "default", "-c", "import fastmcp.server.auth.providers.jwt"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, f"Import failed with: {result.stderr}"
+    assert "authlib.jose module is deprecated" not in result.stderr
