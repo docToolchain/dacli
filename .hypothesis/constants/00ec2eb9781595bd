@@ -1,4 +1,0 @@
-# file: /home/runner/work/dacli/dacli/src/dacli/api/navigation.py
-# hypothesis_version: 6.151.6
-
-[404, '.md', '/', '/api/v1', '/section/{path:path}', '/sections', '/structure', 'Get section by path', 'Navigation', 'PATH_NOT_FOUND', 'Section not found', 'asciidoc', 'children', 'code', 'description', 'details', 'end_line', 'error', 'file', 'level', 'line', 'location', 'markdown', 'message', 'model', 'path', 'requested_path', 'sections', 'title', 'total_sections']

@@ -1,4 +1,0 @@
-# file: /home/runner/work/dacli/dacli/src/dacli/services/validation_service.py
-# hypothesis_version: 6.151.6
-
-[1000, '*.adoc', '*.md', 'circular_include', 'duplicate_path', 'errors', 'file', 'include_chain', 'include_path', 'includes', 'message', 'orphaned_file', 'path', 'type', 'unknown', 'unresolved_include', 'valid', 'validation_time_ms', 'warnings']

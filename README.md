@@ -54,6 +54,21 @@ Part of the [docToolchain](https://doctoolchain.org/) ecosystem.
 
 ## Quick Start
 
+### Prerequisites
+
+- Python 3.12 or newer
+- `uv` package manager
+
+Install `uv` (choose one option):
+
+```bash
+# Option 1: official installer (macOS/Linux)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Option 2: via pip
+python -m pip install uv
+```
+
 ### Installation
 
 ```bash
