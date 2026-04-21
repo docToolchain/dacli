@@ -4,6 +4,7 @@ The MCP insert_content tool should insert after ALL descendants,
 not just the section's own content.
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -42,12 +43,7 @@ class TestMcpInsertAfterWithChildren:
         """Issue #229: Insert after parent should go after all children."""
         mcp = create_mcp_server(temp_doc_with_children)
 
-        # Get the insert_content tool
-        insert_tool = None
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "insert_content":
-                insert_tool = tool
-                break
+        insert_tool = asyncio.run(mcp.get_tool("insert_content"))
 
         assert insert_tool is not None, "insert_content tool not found"
 
@@ -79,11 +75,7 @@ class TestMcpInsertAfterWithChildren:
         """Insert after a section without children should work correctly."""
         mcp = create_mcp_server(temp_doc_with_children)
 
-        insert_tool = None
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "insert_content":
-                insert_tool = tool
-                break
+        insert_tool = asyncio.run(mcp.get_tool("insert_content"))
 
         # Insert after "Child Section" (no children)
         result = insert_tool.fn(

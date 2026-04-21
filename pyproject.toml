@@ -1,6 +1,6 @@
 [project]
 name = "dacli"
-version = "0.4.37"
+version = "0.4.38"
 description = "Documentation Access CLI - Navigate and query large documentation projects"
 readme = "README.md"
 license = { text = "MIT" }
@@ -21,7 +21,7 @@ dependencies = [
     "click>=8.3.1",
     "cryptography>=46.0.5",  # Security fix: CVE-2026-26007
     "fastapi>=0.115.0",
-    "fastmcp>=2.14.7,<3",
+    "fastmcp>=3.2.0,<4",
     "pathspec>=1.0.3",
     "pydocket>=0.17.2,<0.19",  # Required by fastmcp 2.14.7
     "pyyaml>=6.0",

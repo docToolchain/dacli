@@ -5,6 +5,7 @@ The MCP insert_content tool should handle blank lines like the CLI does:
 - Add blank line after content when next line is a heading
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -39,11 +40,7 @@ class TestMcpInsertBlankLines:
         """Issue #232: Insert before should add blank line when next is heading."""
         mcp = create_mcp_server(temp_doc_for_blank_lines)
 
-        insert_tool = None
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "insert_content":
-                insert_tool = tool
-                break
+        insert_tool = asyncio.run(mcp.get_tool("insert_content"))
 
         # Insert content before Section 2
         result = insert_tool.fn(
@@ -72,11 +69,7 @@ class TestMcpInsertBlankLines:
         """Issue #232: Insert after should add blank line before next heading."""
         mcp = create_mcp_server(temp_doc_for_blank_lines)
 
-        insert_tool = None
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "insert_content":
-                insert_tool = tool
-                break
+        insert_tool = asyncio.run(mcp.get_tool("insert_content"))
 
         # Insert content after Section 1
         result = insert_tool.fn(
