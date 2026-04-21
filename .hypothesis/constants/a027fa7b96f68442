@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/api/manipulation.py
+# hypothesis_version: 6.151.6
+
+[404, 500, '#', '/', '/api/v1', '/section/{path:path}', '=', 'Manipulation', 'PATH_NOT_FOUND', 'READ_FAILED', 'Section not found', 'WRITE_FAILED', 'after', 'before', 'code', 'description', 'details', 'error', 'file', 'message', 'model', 'reason']

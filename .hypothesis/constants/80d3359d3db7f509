@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/file_handler.py
+# hypothesis_version: 6.151.6
+
+['.bak', '.tmp', 'utf-8']

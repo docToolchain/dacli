@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/asciidoc_parser.py
+# hypothesis_version: 6.151.6
+
+[' -> ', ',', ':', '=', '\\{([^}]+)\\}', '^-{4,}$', '^.+::(\\s+.+)?$', '^\\*+\\s+.+$', '^\\.+\\s+.+$', '^\\|===$', 'admonition', 'admonition_type', 'alt', 'code', 'content', 'description', 'ditaa', 'format', 'image', 'internal', 'language', 'list', 'list_type', 'mermaid', 'name', 'ordered', 'plantuml', 'replace', 'table', 'target', 'unordered', 'utf-8']

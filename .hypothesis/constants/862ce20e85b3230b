@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/services/metadata_service.py
+# hypothesis_version: 6.151.6
+
+['.adoc', '.md', '/', 'asciidoc', 'error', 'file', 'formats', 'last_modified', 'markdown', 'path', 'subsection_count', 'title', 'total_files', 'total_sections', 'total_words', 'word_count']

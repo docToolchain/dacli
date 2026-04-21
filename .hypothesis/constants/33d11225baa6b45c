@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/api/content.py
+# hypothesis_version: 6.151.6
+
+[400, 1000, '/api/v1', '/elements', '/search', 'Content Access', 'Get elements by type', 'INVALID_QUERY', 'INVALID_TYPE', 'Invalid element type', 'admonition', 'code', 'description', 'image', 'list', 'model', 'plantuml', 'table', 'valid_types']

@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/api/dependencies.py
+# hypothesis_version: 6.151.6
+
+[503, 'INDEX_NOT_READY']
