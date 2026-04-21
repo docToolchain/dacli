@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/models.py
+# hypothesis_version: 6.151.6
+
+['Section', '__dataclass_fields__', 'admonition', 'blockquote', 'code', 'external', 'image', 'internal', 'list', 'plantuml', 'table', 'unclosed_block', 'unclosed_table']

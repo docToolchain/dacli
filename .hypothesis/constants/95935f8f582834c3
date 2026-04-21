@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/api/models.py
+# hypothesis_version: 6.151.6
+
+[1000, 'Additional details', 'Content to insert', 'New section content', 'Search query string', 'Section title', 'SectionResponse', 'admonition', 'after', 'append', 'before', 'blockquote', 'code', 'image', 'list', 'plantuml', 'table']

@@ -1,0 +1,4 @@
+# file: /home/runner/work/dacli/dacli/src/dacli/markdown_parser.py
+# hypothesis_version: 6.151.6
+
+['#', '---', '-->', '.', '.md', ':', '<!--', '<!--.*?-->', '^(\\d+)[_-](.+)$', '^-{3,}\\s*$', '^={3,}\\s*$', '^>\\s?(.*)$', '^[\\s]*[-*+]\\s+.+$', '^[\\s]*\\d+\\.\\s+.+$', '^\\|(.+)\\|$', '^\\|[\\s:|-]+\\|$', 'alt', 'blockquote', 'code', 'columns', 'content', 'image', 'index.md', 'language', 'list', 'list_type', 'ordered', 'readme.md', 'rows', 'src', 'table', 'task', 'title', 'unordered', 'utf-8', '|']
