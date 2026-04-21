@@ -1,4 +1,0 @@
-# file: /home/runner/work/dacli/dacli/src/dacli/structure_index.py
-# hypothesis_version: 6.151.6
-
-[0.2, 0.3, 0.7, 1.0, '.', '...', '/', ':', 'children', 'cross_references', 'elements_by_type', 'end_line', 'file', 'include_tree', 'index_ready', 'level', 'line', 'location', 'path', 'sections', 'sections_by_level', 'title', 'total_documents', 'total_elements', 'total_sections', 'utf-8']

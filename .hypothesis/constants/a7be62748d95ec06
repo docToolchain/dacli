@@ -1,4 +1,0 @@
-# file: /home/runner/work/dacli/dacli/src/dacli/mcp_app.py
-# hypothesis_version: 6.151.6
-
-['#', '*.adoc', '*.md', '.', '.adoc', '.asciidoc', '/', ':', '=', 'Index: %s', 'PATH_NOT_FOUND', 'after', 'append', 'asciidoc', 'attributes', 'before', 'code', 'content', 'context', 'count', 'dacli', 'details', 'elements', 'end_line', 'error', 'file', 'format', 'include_chain', 'inserted_at', 'level', 'line', 'location', 'markdown', 'message', 'new_hash', 'parent_section', 'path', 'previous_hash', 'query', 'requested_path', 'results', 'score', 'sections', 'start_line', 'success', 'suggestions', 'title', 'total_results', 'type']

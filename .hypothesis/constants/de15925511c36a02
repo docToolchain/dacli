@@ -1,4 +1,0 @@
-# file: /home/runner/work/dacli/dacli/.venv/bin/pytest
-# hypothesis_version: 6.151.6
-
-['-script.pyw', '.exe', '__main__']
