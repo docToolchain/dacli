@@ -22,8 +22,9 @@ from fastmcp import FastMCP
 from dacli import __version__
 from dacli.asciidoc_parser import AsciidocStructureParser
 from dacli.file_handler import FileReadError, FileSystemHandler, FileWriteError
-from dacli.index_builder import build_index as _build_index
+from dacli.index_builder import build_index as _build_index, count_descendants, find_root_for_file
 from dacli.markdown_parser import MarkdownStructureParser
+from dacli.models import Document, DocumentRoot, detect_document_role
 from dacli.services import (
     compute_hash,
     get_project_metadata,
@@ -100,28 +101,41 @@ def _get_section_append_line(
 
 
 def create_mcp_server(
-    docs_root: Path | str | None = None,
+    roots: list[DocumentRoot] | Path | str | None = None,
     *,
+    docs_root: Path | str | None = None,
     respect_gitignore: bool = True,
     include_hidden: bool = False,
 ) -> FastMCP:
     """Create and configure the MCP server.
 
     Args:
-        docs_root: Root directory containing documentation files.
-                   If None, uses current directory.
+        roots: List of DocumentRoot objects (ADR-014 multi-root mode).
+               For backward compat, also accepts a single Path or str
+               (treated as single workspace root).
+        docs_root: Deprecated single-root path. Converted to single workspace root.
         respect_gitignore: If True, exclude files matching .gitignore patterns.
         include_hidden: If True, include files in hidden directories.
 
     Returns:
         Configured FastMCP instance with all tools registered.
     """
-    # Resolve docs root
-    if docs_root is None:
-        docs_root = Path.cwd()
-    elif isinstance(docs_root, str):
-        docs_root = Path(docs_root)
-    docs_root = docs_root.resolve()
+    # Handle backward compat: Path/str → single workspace root
+    if isinstance(roots, (Path, str)):
+        docs_root = roots
+        roots = None
+
+    if roots is None:
+        if docs_root is None:
+            docs_root = Path.cwd()
+        elif isinstance(docs_root, str):
+            docs_root = Path(docs_root)
+        docs_root = docs_root.resolve()
+        roots = [DocumentRoot(
+            name=docs_root.name,
+            path=docs_root,
+            mode="workspace",
+        )]
 
     # Create server instance
     mcp = FastMCP(
@@ -132,35 +146,79 @@ def create_mcp_server(
     # Initialize components
     index = StructureIndex()
     file_handler = FileSystemHandler()
-    asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
-    markdown_parser = MarkdownStructureParser(base_path=docs_root)
 
     # Build initial index
     _build_index(
-        docs_root,
+        roots,
         index,
-        asciidoc_parser,
-        markdown_parser,
         respect_gitignore=respect_gitignore,
         include_hidden=include_hidden,
     )
 
     def rebuild_index() -> None:
-        """Rebuild the index after file modifications.
-
-        This ensures the index reflects the current state of the file system
-        after write operations like update_section or insert_content.
-        """
+        """Rebuild the index after file modifications."""
         _build_index(
-            docs_root,
+            roots,
             index,
-            asciidoc_parser,
-            markdown_parser,
             respect_gitignore=respect_gitignore,
             include_hidden=include_hidden,
         )
 
     # Register tools
+    @mcp.tool()
+    def get_namespaces() -> dict:
+        """Get available documentation namespaces.
+
+        Use this tool first to understand what documentation sources are
+        available, their access modes, and what documents each contains.
+
+        Returns:
+            'namespaces': List of namespace objects with 'name', 'type',
+            'mode' (workspace/reference), and 'documents' (list with
+            slug, role, format, sections count).
+            'total_namespaces': Number of namespaces.
+        """
+        namespaces = []
+        for root in roots:
+            # Collect documents belonging to this root
+            root_docs = []
+            for doc in index._documents:
+                try:
+                    doc.file_path.resolve().relative_to(root.path)
+                except ValueError:
+                    continue
+
+                # Determine format from file extension
+                ext = doc.file_path.suffix.lower()
+                doc_format = "asciidoc" if ext in (".adoc", ".asciidoc") else "markdown"
+
+                # Count sections in this document
+                section_count = len(doc.sections)
+                for s in doc.sections:
+                    section_count += count_descendants(s)
+
+                # Derive slug from filename
+                slug = doc.file_path.stem.lower()
+
+                root_docs.append({
+                    "slug": slug,
+                    "role": detect_document_role(doc.file_path),
+                    "format": doc_format,
+                    "sections": section_count,
+                })
+
+            namespaces.append({
+                "name": root.name,
+                "type": root.doc_type,
+                "mode": root.mode,
+                "documents": root_docs,
+            })
+
+        return {
+            "namespaces": namespaces,
+            "total_namespaces": len(namespaces),
+        }
+
     @mcp.tool()
     def get_structure(max_depth: int | None = None) -> dict:
         """Get the hierarchical document structure.
@@ -437,6 +495,18 @@ def create_mcp_server(
             Success status with 'success', 'path', 'location', 'previous_hash',
             and 'new_hash' for optimistic locking support.
         """
+        # ADR-014: Check access mode before write
+        section_obj = index.get_section(path)
+        if section_obj is not None:
+            root = find_root_for_file(roots, section_obj.source_location.file)
+            if root is not None and root.mode == "reference":
+                return {
+                    "success": False,
+                    "error": f"Cannot modify '{path}': source is mounted as "
+                    f"read-only reference (namespace '{root.name}'). "
+                    f"Use --workspace instead of --reference to enable writes.",
+                }
+
         result = service_update_section(
             index=index,
             file_handler=file_handler,
@@ -445,7 +515,6 @@ def create_mcp_server(
             preserve_title=preserve_title,
             expected_hash=expected_hash,
         )
-        # Rebuild index to reflect file changes if update was successful
         if result.get("success", False):
             rebuild_index()
         return result
@@ -485,6 +554,16 @@ def create_mcp_server(
         section = index.get_section(normalized_path)
         if section is None:
             return {"success": False, "error": f"Section '{normalized_path}' not found"}
+
+        # ADR-014: Check access mode before write
+        root = find_root_for_file(roots, section.source_location.file)
+        if root is not None and root.mode == "reference":
+            return {
+                "success": False,
+                "error": f"Cannot modify '{normalized_path}': source is mounted as "
+                f"read-only reference (namespace '{root.name}'). "
+                f"Use --workspace instead of --reference to enable writes.",
+            }
 
         file_path = section.source_location.file
         start_line = section.source_location.line
@@ -628,6 +707,6 @@ def create_mcp_server(
             'warnings': List of warning objects (orphaned_file, unclosed_block, unclosed_table).
             'validation_time_ms': Time taken for validation in milliseconds.
         """
-        return service_validate_structure(index, docs_root)
+        return service_validate_structure(index, [r.path for r in roots])
 
     return mcp

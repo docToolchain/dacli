@@ -4,7 +4,12 @@ This module provides the CLI entry point for running the MCP server.
 The server can be configured via command line arguments or environment variables.
 
 Usage:
+    # Single-root (backward compatible):
     uv run dacli-mcp --docs-root /path/to/docs
+
+    # Multi-root (ADR-014):
+    uv run dacli-mcp --workspace name=my-project,path=/path/to/docs \
+                     --reference name=base-api,path=/path/to/api-docs
 
     Or with environment variable:
     PROJECT_PATH=/path/to/docs uv run dacli-mcp
@@ -29,6 +34,7 @@ from pathlib import Path
 
 from dacli import __version__
 from dacli.mcp_app import create_mcp_server
+from dacli.root_config import RootConfigError, resolve_roots
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -46,8 +52,25 @@ def create_parser() -> argparse.ArgumentParser:
         "--docs-root",
         type=str,
         default=None,
-        help="Root directory containing documentation files. "
-        "Can also be set via PROJECT_PATH environment variable.",
+        help="Root directory containing documentation files (single-root mode). "
+        "Can also be set via PROJECT_PATH environment variable. "
+        "Cannot be combined with --workspace/--reference.",
+    )
+    parser.add_argument(
+        "--workspace",
+        action="append",
+        default=None,
+        metavar="name=X,path=Y[,type=Z]",
+        help="Read-write documentation root (repeatable). "
+        "Required keys: name, path. Optional: type.",
+    )
+    parser.add_argument(
+        "--reference",
+        action="append",
+        default=None,
+        metavar="name=X,path=Y[,type=Z]",
+        help="Read-only documentation root (repeatable). "
+        "Required keys: name, path. Optional: type.",
     )
     parser.add_argument(
         "--no-gitignore",
@@ -64,19 +87,19 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_docs_root(args_docs_root: str | None) -> Path:
-    """Determine the documentation root directory.
+def get_docs_root(args_docs_root: str | None) -> Path | None:
+    """Determine the documentation root directory from legacy options.
 
     Priority:
     1. Command line argument (--docs-root)
     2. PROJECT_PATH environment variable
-    3. Current working directory
+    3. None (caller decides default)
 
     Args:
         args_docs_root: Value from command line argument (may be None)
 
     Returns:
-        Resolved path to documentation root
+        Resolved path to documentation root, or None if not specified
     """
     if args_docs_root is not None:
         return Path(args_docs_root).resolve()
@@ -85,7 +108,7 @@ def get_docs_root(args_docs_root: str | None) -> Path:
     if env_path:
         return Path(env_path).resolve()
 
-    return Path.cwd()
+    return None
 
 
 def main() -> int:
@@ -98,18 +121,19 @@ def main() -> int:
 
     docs_root = get_docs_root(args.docs_root)
 
-    # Validate docs root exists
-    if not docs_root.exists():
-        print(f"Error: Documentation root does not exist: {docs_root}", file=sys.stderr)
-        return 1
-
-    if not docs_root.is_dir():
-        print(f"Error: Documentation root is not a directory: {docs_root}", file=sys.stderr)
+    try:
+        roots = resolve_roots(
+            workspaces=args.workspace,
+            references=args.reference,
+            docs_root=docs_root,
+        )
+    except RootConfigError as e:
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
     # Create and run MCP server
     mcp = create_mcp_server(
-        docs_root=docs_root,
+        roots=roots,
         respect_gitignore=not args.no_gitignore,
         include_hidden=args.include_hidden,
     )

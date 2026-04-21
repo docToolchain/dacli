@@ -129,15 +129,17 @@ class AsciidocStructureParser:
         max_include_depth: Maximum depth for nested includes (default: 20)
     """
 
-    def __init__(self, base_path: Path, max_include_depth: int = 20):
+    def __init__(self, base_path: Path, max_include_depth: int = 20, namespace: str | None = None):
         """Initialize the parser.
 
         Args:
             base_path: Base path for resolving relative file paths
             max_include_depth: Maximum depth for nested includes
+            namespace: Optional namespace prefix for multi-root mode (ADR-014)
         """
         self.base_path = base_path
         self.max_include_depth = max_include_depth
+        self.namespace = namespace
 
     @staticmethod
     def scan_includes(file_path: Path) -> set[Path]:
@@ -189,6 +191,9 @@ class AsciidocStructureParser:
         The file prefix is the relative path from base_path to file_path,
         without the file extension. This ensures unique paths across documents.
 
+        In multi-root mode (ADR-014), the namespace is prepended with a colon
+        separator, producing paths like 'namespace:file/path:section'.
+
         Issue #266: Only strips known extensions (.md, .adoc) to preserve dots
         in filenames (e.g. version numbers like "report_v1.2.3.adoc").
 
@@ -196,13 +201,16 @@ class AsciidocStructureParser:
             file_path: Path to the document being parsed
 
         Returns:
-            Relative path without extension (e.g., "guides/installation")
+            Relative path without extension, optionally namespace-prefixed
         """
         try:
             relative = file_path.relative_to(self.base_path)
         except ValueError:
             relative = Path(file_path.name)
-        return strip_doc_extension(relative)
+        prefix = strip_doc_extension(relative)
+        if self.namespace is not None:
+            return f"{self.namespace}:{prefix}"
+        return prefix
 
     def get_section(self, doc: AsciidocDocument, path: str) -> Section | None:
         """Get a section by its hierarchical path.

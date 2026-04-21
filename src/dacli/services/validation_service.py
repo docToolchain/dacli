@@ -10,7 +10,25 @@ from dacli.file_utils import find_doc_files
 from dacli.structure_index import StructureIndex
 
 
-def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
+def _relativize(file_path: Path, docs_roots: list[Path]) -> Path:
+    """Make a path relative to the first matching root.
+
+    Args:
+        file_path: Absolute file path
+        docs_roots: List of resolved root paths
+
+    Returns:
+        Relative path, or the original path if no root matches
+    """
+    for root in docs_roots:
+        try:
+            return file_path.relative_to(root)
+        except ValueError:
+            continue
+    return file_path
+
+
+def validate_structure(index: StructureIndex, docs_roots: Path | list[Path]) -> dict:
     """Validate the document structure.
 
     Checks for:
@@ -19,7 +37,7 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
 
     Args:
         index: The structure index to validate.
-        docs_root: Root directory of documentation.
+        docs_roots: Root directory or list of root directories (ADR-014).
 
     Returns:
         Dictionary with:
@@ -28,20 +46,21 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
         - warnings: List of warning objects
         - validation_time_ms: Time taken for validation
     """
+    # Normalize to list for uniform handling
+    if isinstance(docs_roots, Path):
+        docs_roots = [docs_roots]
+    resolved_roots = [r.resolve() for r in docs_roots]
+
     start_time = time.time()
 
     errors: list[dict] = []
     warnings: list[dict] = []
 
     # Issue #251: Report circular include errors explicitly
-    docs_root_resolved = docs_root.resolve()
     circular_files: set[Path] = set()
     for circ_error in index._circular_include_errors:
         file_path = circ_error["file"]
-        try:
-            rel_path = file_path.relative_to(docs_root_resolved)
-        except ValueError:
-            rel_path = file_path
+        rel_path = _relativize(file_path, resolved_roots)
         errors.append(
             {
                 "type": "circular_include",
@@ -49,7 +68,6 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
                 "message": circ_error["message"],
             }
         )
-        # Track all files involved in circular includes
         circular_files.add(file_path.resolve())
         for chain_path in circ_error["include_chain"]:
             circular_files.add(chain_path.resolve())
@@ -57,22 +75,20 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
     # Get all indexed files
     indexed_files = set(index._file_to_sections.keys())
 
-    # Get all doc files in docs_root (respecting gitignore)
+    # Get all doc files across all roots (respecting gitignore)
     all_doc_files: set[Path] = set()
-    for adoc_file in find_doc_files(docs_root, "*.adoc"):
-        all_doc_files.add(adoc_file.resolve())
-    for md_file in find_doc_files(docs_root, "*.md"):
-        all_doc_files.add(md_file.resolve())
+    for docs_root in resolved_roots:
+        for adoc_file in find_doc_files(docs_root, "*.adoc"):
+            all_doc_files.add(adoc_file.resolve())
+        for md_file in find_doc_files(docs_root, "*.md"):
+            all_doc_files.add(md_file.resolve())
 
     # Check for orphaned files (files not indexed)
     # Issue #251: Exclude files involved in circular includes from orphaned detection
     indexed_resolved = {f.resolve() for f in indexed_files}
     for doc_file in all_doc_files:
         if doc_file not in indexed_resolved and doc_file not in circular_files:
-            try:
-                rel_path = doc_file.relative_to(docs_root_resolved)
-            except ValueError:
-                rel_path = doc_file
+            rel_path = _relativize(doc_file, resolved_roots)
             warnings.append(
                 {
                     "type": "orphaned_file",
@@ -84,10 +100,7 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
     # Collect parse warnings from all documents (Issue #148)
     for doc in index._documents:
         for pw in doc.parse_warnings:
-            try:
-                rel_path = pw.file.relative_to(docs_root_resolved)
-            except ValueError:
-                rel_path = pw.file
+            rel_path = _relativize(pw.file, resolved_roots)
             warnings.append(
                 {
                     "type": pw.type.value,
@@ -99,8 +112,6 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
     # Issue #268: Include duplicate-path warnings from index build
     for build_warning in index._build_warnings:
         if "Duplicate section path" in build_warning:
-            # Parse the warning string to extract the path
-            # Format: "Duplicate section path: 'path' (first at file:line, duplicate at file:line)"
             import re
 
             match = re.search(r"Duplicate section path: '([^']+)'", build_warning)
@@ -115,19 +126,12 @@ def validate_structure(index: StructureIndex, docs_root: Path) -> dict:
 
     # Issue #219: Check for unresolved includes
     for doc in index._documents:
-        # Only AsciiDoc documents have includes (check for attribute)
         if hasattr(doc, "includes"):
             for include in doc.includes:
                 if not include.target_path.exists():
                     source_loc = include.source_location
-                    try:
-                        rel_source = source_loc.file.relative_to(docs_root_resolved)
-                    except ValueError:
-                        rel_source = source_loc.file
-                    try:
-                        rel_target = include.target_path.relative_to(docs_root_resolved)
-                    except ValueError:
-                        rel_target = include.target_path
+                    rel_source = _relativize(source_loc.file, resolved_roots)
+                    rel_target = _relativize(include.target_path, resolved_roots)
                     errors.append(
                         {
                             "type": "unresolved_include",

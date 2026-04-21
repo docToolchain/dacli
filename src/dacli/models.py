@@ -10,6 +10,7 @@ Models:
 - Element: Extractable content element (code, table, image, etc.)
 - CrossReference: Internal and external references
 - Document: Base class for parsed documents
+- DocumentRoot: A documentation root with namespace and access mode (ADR-014)
 """
 
 from dataclasses import asdict, dataclass, field
@@ -150,6 +151,49 @@ class Document:
     sections: list[Section] = field(default_factory=list)
     elements: list[Element] = field(default_factory=list)
     parse_warnings: list[ParseWarning] = field(default_factory=list)
+
+
+@dataclass
+class DocumentRoot:
+    """A documentation root with namespace and access mode (ADR-014).
+
+    Each root represents an independent documentation source that is
+    indexed and searchable. Workspace roots are read-write, reference
+    roots are read-only.
+
+    Attributes:
+        name: Namespace identifier (unique across all roots)
+        path: Resolved filesystem path to the documentation root
+        mode: Access mode — 'workspace' (read-write) or 'reference' (read-only)
+        doc_type: Optional framework type annotation (arc42, tpo42, req42, ...)
+    """
+
+    name: str
+    path: Path
+    mode: Literal["workspace", "reference"]
+    doc_type: str | None = None
+
+
+# Well-known filenames classified as project-meta (ADR-014)
+PROJECT_META_STEMS = frozenset({
+    "readme", "llm", "claude", "changelog", "todo",
+    "install", "roadmap", "agents",
+})
+
+
+def detect_document_role(file_path: Path) -> str:
+    """Detect whether a document is content or project metadata.
+
+    Uses well-known filename stems to classify documents.
+    Everything not recognized as project-meta is documentation.
+
+    Args:
+        file_path: Path to the document file
+
+    Returns:
+        'project-meta' for known meta files, 'documentation' otherwise
+    """
+    return "project-meta" if file_path.stem.lower() in PROJECT_META_STEMS else "documentation"
 
 
 def model_to_dict(obj: Any) -> Any:

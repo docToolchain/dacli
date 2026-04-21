@@ -29,7 +29,9 @@ from dacli import __version__
 from dacli.asciidoc_parser import AsciidocStructureParser
 from dacli.file_handler import FileReadError, FileSystemHandler, FileWriteError
 from dacli.markdown_parser import MarkdownStructureParser
-from dacli.index_builder import build_index
+from dacli.index_builder import build_index, count_descendants, find_root_for_file
+from dacli.models import DocumentRoot, detect_document_role
+from dacli.root_config import RootConfigError, resolve_roots
 from dacli.services import (
     compute_hash,
     get_project_metadata,
@@ -140,11 +142,12 @@ COMMAND_ALIASES = {
     "el": "elements",
     "val": "validate",
     "lv": "sections-at-level",
+    "ns": "namespaces",
 }
 
 # Command groups for organized help output (story-based ordering)
 COMMAND_GROUPS = {
-    "Discover": ["structure", "metadata"],
+    "Discover": ["namespaces", "structure", "metadata"],
     "Find": ["search", "sections-at-level"],
     "Read": ["section", "elements"],
     "Validate": ["validate"],
@@ -265,14 +268,31 @@ class CliContext:
 
     def __init__(
         self,
-        docs_root: Path,
-        output_format: str,
-        pretty: bool,
+        roots: list[DocumentRoot] | Path | None = None,
+        output_format: str = "text",
+        pretty: bool = False,
         verbose: bool = False,
         respect_gitignore: bool = True,
         include_hidden: bool = False,
+        *,
+        docs_root: Path | None = None,
     ):
-        self.docs_root = docs_root
+        # Backward compat: accept docs_root kwarg or Path as first arg
+        if isinstance(roots, Path):
+            docs_root = roots
+            roots = None
+        if roots is None:
+            if docs_root is None:
+                docs_root = Path.cwd()
+            self.roots = [DocumentRoot(
+                name=docs_root.name,
+                path=docs_root.resolve(),
+                mode="workspace",
+            )]
+        else:
+            self.roots = roots
+        # Backward compat: first root is the primary docs_root
+        self.docs_root = self.roots[0].path
         self.output_format = output_format
         self.pretty = pretty
         self.verbose = verbose
@@ -286,15 +306,11 @@ class CliContext:
 
         self.index = StructureIndex()
         self.file_handler = FileSystemHandler()
-        self.asciidoc_parser = AsciidocStructureParser(base_path=docs_root)
-        self.markdown_parser = MarkdownStructureParser(base_path=docs_root)
 
-        # Build index
+        # Build index from all roots
         build_index(
-            docs_root,
+            self.roots,
             self.index,
-            self.asciidoc_parser,
-            self.markdown_parser,
             respect_gitignore=respect_gitignore,
             include_hidden=include_hidden,
         )
@@ -353,8 +369,23 @@ Examples:
 @click.option(
     "--docs-root",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help="Documentation root directory (default: current directory)",
+    default=None,
+    help="Documentation root directory (default: current directory). "
+    "Cannot be combined with --workspace/--reference.",
+)
+@click.option(
+    "--workspace",
+    multiple=True,
+    metavar="name=X,path=Y[,type=Z]",
+    help="Read-write documentation root (repeatable). "
+    "Required keys: name, path. Optional: type.",
+)
+@click.option(
+    "--reference",
+    multiple=True,
+    metavar="name=X,path=Y[,type=Z]",
+    help="Read-only documentation root (repeatable). "
+    "Required keys: name, path. Optional: type.",
 )
 @click.option(
     "--format",
@@ -392,7 +423,9 @@ Examples:
 @click.pass_context
 def cli(
     ctx,
-    docs_root: Path,
+    docs_root: Path | None,
+    workspace: tuple[str, ...],
+    reference: tuple[str, ...],
     output_format: str,
     pretty: bool,
     verbose: bool,
@@ -404,14 +437,70 @@ def cli(
     Access documentation structure, content, and metadata from the command line.
     Designed for LLM integration via bash/shell commands.
     """
+    try:
+        roots = resolve_roots(
+            workspaces=list(workspace) if workspace else None,
+            references=list(reference) if reference else None,
+            docs_root=docs_root,
+        )
+    except RootConfigError as e:
+        raise click.UsageError(str(e)) from e
+
     ctx.obj = CliContext(
-        docs_root,
+        roots,
         output_format,
         pretty,
         verbose,
         respect_gitignore=not no_gitignore,
         include_hidden=include_hidden,
     )
+
+
+@cli.command(
+    epilog="""
+Examples:
+  dacli namespaces                   # List all documentation sources
+  dacli --format json ns             # JSON output using alias
+"""
+)
+@pass_context
+def namespaces(ctx: CliContext):
+    """List available documentation namespaces (ADR-014).
+
+    Shows all documentation roots with their access mode (workspace/reference),
+    framework type, and the documents they contain with roles and formats.
+    """
+    ns_list = []
+    for root in ctx.roots:
+        root_docs = []
+        for doc in ctx.index._documents:
+            try:
+                doc.file_path.resolve().relative_to(root.path)
+            except ValueError:
+                continue
+            ext = doc.file_path.suffix.lower()
+            doc_format = "asciidoc" if ext in (".adoc", ".asciidoc") else "markdown"
+            section_count = len(doc.sections)
+            for s in doc.sections:
+                section_count += count_descendants(s)
+            root_docs.append({
+                "slug": doc.file_path.stem.lower(),
+                "role": detect_document_role(doc.file_path),
+                "format": doc_format,
+                "sections": section_count,
+            })
+        ns_list.append({
+            "name": root.name,
+            "type": root.doc_type,
+            "mode": root.mode,
+            "documents": root_docs,
+        })
+
+    result = {
+        "namespaces": ns_list,
+        "total_namespaces": len(ns_list),
+    }
+    click.echo(format_output(ctx, result))
 
 
 @cli.command(
@@ -452,7 +541,10 @@ def section(ctx: CliContext, path: str):
     normalized_path = path.lstrip("/")
 
     # Check for path format issues (Issue #198)
-    corrected_path, had_extra_colons = ctx.index.normalize_path(normalized_path)
+    multi_root = len(ctx.roots) > 1
+    corrected_path, had_extra_colons = ctx.index.normalize_path(
+        normalized_path, multi_root=multi_root,
+    )
 
     section_obj = ctx.index.get_section(normalized_path)
     if section_obj is None:
@@ -728,7 +820,7 @@ Examples:
 @pass_context
 def validate(ctx: CliContext):
     """Validate the document structure."""
-    result = service_validate_structure(ctx.index, ctx.docs_root)
+    result = service_validate_structure(ctx.index, [r.path for r in ctx.roots])
     click.echo(format_output(ctx, result))
 
     if not result["valid"]:
@@ -754,6 +846,19 @@ def update(
     # Issue #250: Warn when content is empty/whitespace-only
     if not processed_content.strip():
         click.echo("Warning: Section content will be cleared.", err=True)
+
+    # ADR-014: Check access mode before write
+    section_obj = ctx.index.get_section(path)
+    if section_obj is not None:
+        root = find_root_for_file(ctx.roots, section_obj.source_location.file)
+        if root is not None and root.mode == "reference":
+            result = {
+                "success": False,
+                "error": f"Cannot modify '{path}': source is mounted as "
+                f"read-only reference (namespace '{root.name}').",
+            }
+            click.echo(format_output(ctx, result))
+            sys.exit(EXIT_WRITE_ERROR)
 
     result = service_update_section(
         index=ctx.index,
@@ -793,6 +898,17 @@ def insert(ctx: CliContext, path: str, position: str, content: str):
         result = {"success": False, "error": f"Section '{normalized_path}' not found"}
         click.echo(format_output(ctx, result))
         sys.exit(EXIT_PATH_NOT_FOUND)
+
+    # ADR-014: Check access mode before write
+    root = find_root_for_file(ctx.roots, section_obj.source_location.file)
+    if root is not None and root.mode == "reference":
+        result = {
+            "success": False,
+            "error": f"Cannot modify '{normalized_path}': source is mounted as "
+            f"read-only reference (namespace '{root.name}').",
+        }
+        click.echo(format_output(ctx, result))
+        sys.exit(EXIT_WRITE_ERROR)
 
     file_path = section_obj.source_location.file
     start_line = section_obj.source_location.line
