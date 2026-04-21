@@ -8,6 +8,7 @@ Bug #244: insert_content with position="after" doesn't add a blank line before
 the next heading when inserted content itself is a heading.
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -236,10 +237,10 @@ class TestBug244InsertAfterBlankLine:
 
     def _get_insert_tool(self, mcp):
         """Helper to get the insert_content tool from MCP server."""
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "insert_content":
-                return tool
-        raise AssertionError("insert_content tool not found")
+        tool = asyncio.run(mcp.get_tool("insert_content"))
+        if tool is None:
+            raise AssertionError("insert_content tool not found")
+        return tool
 
     def test_insert_heading_after_section_blank_line_before_next(self, md_for_insert: Path):
         """Bug #244: When inserting heading content after a section, there should

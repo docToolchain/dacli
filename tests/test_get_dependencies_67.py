@@ -1,5 +1,6 @@
 """Tests for get_dependencies endpoint (Issue #67, Phase 1: include_tree)."""
 
+import asyncio
 from pathlib import Path
 
 from dacli.asciidoc_parser import AsciidocDocument, AsciidocStructureParser, IncludeInfo
@@ -164,8 +165,8 @@ class TestGetDependenciesMCPTool:
         from dacli.mcp_app import create_mcp_server
 
         mcp = create_mcp_server(tmp_path)
-        tool_names = [t.name for t in mcp._tool_manager._tools.values()]
-        assert "get_dependencies" in tool_names
+        tool = asyncio.run(mcp.get_tool("get_dependencies"))
+        assert tool is not None
 
     def test_get_dependencies_tool_returns_structure(self, tmp_path):
         """get_dependencies MCP tool returns include_tree and cross_references."""

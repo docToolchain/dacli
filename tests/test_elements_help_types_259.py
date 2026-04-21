@@ -4,6 +4,7 @@ The help text for `dacli elements --type` should list the actual valid types:
 admonition, code, image, list, plantuml, table (not 'diagram').
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -39,11 +40,7 @@ class TestElementsHelpTypes:
     def test_mcp_tool_docstring_lists_correct_types(self, docs_dir: Path):
         """MCP get_elements tool docstring should list correct types in Args section."""
         mcp = create_mcp_server(docs_dir)
-        elements_tool = None
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == "get_elements":
-                elements_tool = tool
-                break
+        elements_tool = asyncio.run(mcp.get_tool("get_elements"))
         assert elements_tool is not None
         docstring = elements_tool.fn.__doc__
         # The Args section listing valid types should include the correct ones

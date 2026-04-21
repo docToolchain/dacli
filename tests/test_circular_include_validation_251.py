@@ -5,6 +5,7 @@ the validation should report them as "circular_include" errors, not as "orphaned
 warnings.
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -64,9 +65,8 @@ class TestCircularIncludeValidation:
         """Issue #251: Circular includes should be reported as circular_include errors."""
         mcp = create_mcp_server(temp_circular_include)
 
-        # Access validate_structure tool
-        tools = {t.name: t for t in mcp._tool_manager._tools.values()}
-        result = tools["validate_structure"].fn()
+        validate_tool = asyncio.run(mcp.get_tool("validate_structure"))
+        result = validate_tool.fn()
 
         # Should NOT be valid due to circular include
         assert (
@@ -83,8 +83,8 @@ class TestCircularIncludeValidation:
         """Issue #251: Files involved in circular includes should NOT be reported as orphaned."""
         mcp = create_mcp_server(temp_circular_include)
 
-        tools = {t.name: t for t in mcp._tool_manager._tools.values()}
-        result = tools["validate_structure"].fn()
+        validate_tool = asyncio.run(mcp.get_tool("validate_structure"))
+        result = validate_tool.fn()
 
         # Check that no orphaned_file warnings exist for the circular files
         orphaned_warnings = [w for w in result["warnings"] if w["type"] == "orphaned_file"]
@@ -101,8 +101,8 @@ class TestCircularIncludeValidation:
         """Circular include error should include the include chain."""
         mcp = create_mcp_server(temp_circular_include)
 
-        tools = {t.name: t for t in mcp._tool_manager._tools.values()}
-        result = tools["validate_structure"].fn()
+        validate_tool = asyncio.run(mcp.get_tool("validate_structure"))
+        result = validate_tool.fn()
 
         circular_errors = [e for e in result["errors"] if e["type"] == "circular_include"]
         assert len(circular_errors) >= 1
@@ -116,8 +116,8 @@ class TestCircularIncludeValidation:
         """A file that includes itself should be reported as circular_include error."""
         mcp = create_mcp_server(temp_self_circular_include)
 
-        tools = {t.name: t for t in mcp._tool_manager._tools.values()}
-        result = tools["validate_structure"].fn()
+        validate_tool = asyncio.run(mcp.get_tool("validate_structure"))
+        result = validate_tool.fn()
 
         # Should NOT be valid
         assert result["valid"] is False

@@ -4,6 +4,7 @@ Negative values for parameters like max_results, max_depth, level, and
 content_limit should be rejected with a clear error message.
 """
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -50,12 +51,7 @@ class TestSearchNegativeMaxResults:
 
     def test_search_negative_max_results_should_error(self, mcp_server):
         """Issue #220: search with negative max_results should raise error."""
-        # Get the search tool
-        search_tool = None
-        for tool in mcp_server._tool_manager._tools.values():
-            if tool.name == "search":
-                search_tool = tool
-                break
+        search_tool = asyncio.run(mcp_server.get_tool("search"))
 
         assert search_tool is not None, "search tool not found"
 
@@ -69,12 +65,7 @@ class TestGetStructureNegativeMaxDepth:
 
     def test_get_structure_negative_max_depth_should_error(self, mcp_server):
         """Issue #220: get_structure with negative max_depth should raise error."""
-        # Get the get_structure tool
-        get_structure_tool = None
-        for tool in mcp_server._tool_manager._tools.values():
-            if tool.name == "get_structure":
-                get_structure_tool = tool
-                break
+        get_structure_tool = asyncio.run(mcp_server.get_tool("get_structure"))
 
         assert get_structure_tool is not None, "get_structure tool not found"
 
@@ -88,12 +79,7 @@ class TestGetSectionsAtLevelNegativeLevel:
 
     def test_get_sections_at_level_negative_should_error(self, mcp_server):
         """Issue #220: get_sections_at_level with negative level should raise error."""
-        # Get the get_sections_at_level tool
-        get_sections_tool = None
-        for tool in mcp_server._tool_manager._tools.values():
-            if tool.name == "get_sections_at_level":
-                get_sections_tool = tool
-                break
+        get_sections_tool = asyncio.run(mcp_server.get_tool("get_sections_at_level"))
 
         assert get_sections_tool is not None, "get_sections_at_level tool not found"
 
@@ -103,11 +89,7 @@ class TestGetSectionsAtLevelNegativeLevel:
 
     def test_get_sections_at_level_zero_should_error(self, mcp_server):
         """Issue #220: get_sections_at_level with level=0 should raise error."""
-        get_sections_tool = None
-        for tool in mcp_server._tool_manager._tools.values():
-            if tool.name == "get_sections_at_level":
-                get_sections_tool = tool
-                break
+        get_sections_tool = asyncio.run(mcp_server.get_tool("get_sections_at_level"))
 
         assert get_sections_tool is not None
 
@@ -121,12 +103,7 @@ class TestGetElementsNegativeContentLimit:
 
     def test_get_elements_negative_content_limit_should_error(self, mcp_server):
         """Issue #220: get_elements with negative content_limit should raise error."""
-        # Get the get_elements tool
-        get_elements_tool = None
-        for tool in mcp_server._tool_manager._tools.values():
-            if tool.name == "get_elements":
-                get_elements_tool = tool
-                break
+        get_elements_tool = asyncio.run(mcp_server.get_tool("get_elements"))
 
         assert get_elements_tool is not None, "get_elements tool not found"
 
