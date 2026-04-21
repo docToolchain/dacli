@@ -69,6 +69,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 python -m pip install uv
 ```
 
+For Windows, use the `pip` option above or follow the platform-specific installer in the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+
 ### Installation
 
 ```bash
