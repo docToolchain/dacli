@@ -7,6 +7,8 @@ and that the basic module structure works.
 import subprocess
 import sys
 
+import pytest
+
 
 def test_dacli_module_importable():
     """Test that dacli module can be imported."""
@@ -37,6 +39,9 @@ def test_dacli_mcp_can_be_run():
     assert result.returncode in (0, 2), f"Failed with: {result.stderr}"
 
 
+@pytest.mark.xfail(
+    reason="authlib>=1.6.7 deprecates authlib.jose; awaiting fastmcp update to joserfc"
+)
 def test_fastmcp_jwt_import_has_no_authlib_jose_deprecation_warning():
     """Ensure FastMCP JWT auth import does not emit deprecated authlib.jose warning."""
     result = subprocess.run(

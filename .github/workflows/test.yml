@@ -26,7 +26,10 @@ jobs:
       - name: Check dependencies for vulnerabilities
         run: |
           uv pip install pip-audit
-          uv run pip-audit
+          # Ignore CVEs with no fix available:
+          # - CVE-2026-34444 (lupa): transitive dep from pydocket→fakeredis[lua]
+          # - CVE-2026-3219 (pip): pip-audit's own dependency
+          uv run pip-audit --ignore-vuln CVE-2026-34444 --ignore-vuln CVE-2026-3219
 
       - name: Run linting
         run: uv run ruff check
