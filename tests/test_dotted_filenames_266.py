@@ -28,7 +28,7 @@ class TestDottedFilenames:
         assert len(paths) == len(set(paths)), f"Duplicate paths found: {paths}"
 
     def test_cli_context_passes_base_path_to_markdown_parser(self, tmp_path):
-        """CliContext must pass docs_root as base_path to MarkdownStructureParser."""
+        """CliContext must use docs_root as base_path for parsers (Issue #266)."""
         from dacli.cli import CliContext
 
         f1 = tmp_path / "test_v1.2.3.md"
@@ -39,8 +39,9 @@ class TestDottedFilenames:
             output_format="json",
             pretty=False,
         )
-        # The markdown parser should have base_path set
-        assert ctx.markdown_parser.base_path == tmp_path
+        # The index should use relative paths (base_path was correctly set)
+        section = ctx.index.get_section("test_v1.2.3")
+        assert section is not None, "Section should be found with dotted filename path"
 
     def test_file_prefix_without_base_path_strips_only_known_extensions(self, tmp_path):
         """Without base_path, only .md extension should be stripped, not version dots."""

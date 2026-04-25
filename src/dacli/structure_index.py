@@ -286,56 +286,90 @@ class StructureIndex:
         return score
 
     @staticmethod
-    def normalize_path(path: str) -> tuple[str, bool]:
+    def normalize_path(path: str, *, multi_root: bool = False) -> tuple[str, bool]:
         """Normalize a path by converting extra colons to dots.
 
-        The correct path format is:
-        - Colon (:) separates document from first-level section
-        - Dot (.) separates nested sections
-        Example: doc:section.subsection.detail
+        Path formats (ADR-014):
+        - Single-root: 'file/path:section.subsection' (1 colon, extra = typo)
+        - Multi-root:  'namespace:file/path:section.subsection' (2 colons valid)
+
+        In single-root mode, more than 1 colon is a typo.
+        In multi-root mode, 2 colons is valid; 3+ is a typo.
 
         Args:
             path: Path that may contain multiple colons
+            multi_root: Whether multi-root mode is active
 
         Returns:
             Tuple of (normalized_path, had_extra_colons)
-            - normalized_path: Path with extra colons converted to dots
-            - had_extra_colons: True if path had more than one colon
+            - normalized_path: Path with excess colons converted to dots
+            - had_extra_colons: True if normalization was applied
         """
-        if path.count(":") <= 1:
+        colon_count = path.count(":")
+        max_colons = 2 if multi_root else 1
+
+        if colon_count <= max_colons:
             return path, False
 
-        # Split at first colon only
-        parts = path.split(":", 1)
-        if len(parts) == 2:
-            # Convert additional colons in section part to dots
-            file_part = parts[0]
+        if multi_root:
+            # 3+ colons in multi-root: namespace:file:section_with_extra_colons
+            parts = path.split(":", 2)
+            section_part = parts[2].replace(":", ".")
+            return f"{parts[0]}:{parts[1]}:{section_part}", True
+        else:
+            # 2+ colons in single-root: file:section_with_extra_colons
+            parts = path.split(":", 1)
             section_part = parts[1].replace(":", ".")
-            return f"{file_part}:{section_part}", True
+            return f"{parts[0]}:{section_part}", True
 
-        return path, False
+    @staticmethod
+    def parse_path_components(path: str) -> tuple[str | None, str, str]:
+        """Parse a path into namespace, file, and section components.
+
+        Handles all path formats (ADR-014):
+        - 'file/path:section.sub'           → (None, 'file/path', 'section.sub')
+        - 'namespace:file/path:section.sub'  → ('namespace', 'file/path', 'section.sub')
+        - 'namespace:file/path'              → ('namespace', 'file/path', '')
+        - 'file/path'                        → (None, 'file/path', '')
+        - 'section.sub'                      → (None, '', 'section.sub')
+
+        Args:
+            path: Path string in any supported format
+
+        Returns:
+            Tuple of (namespace, file_component, section_component).
+            namespace is None for single-root paths.
+        """
+        colon_count = path.count(":")
+        if colon_count == 2:
+            # Multi-root: namespace:file:section
+            parts = path.split(":", 2)
+            return parts[0], parts[1], parts[2]
+        elif colon_count == 1:
+            # Single-root: file:section
+            parts = path.split(":", 1)
+            return None, parts[0], parts[1]
+        elif "/" in path:
+            # Root section with file path (no colon means no section part)
+            return None, path, ""
+        else:
+            # Legacy format or simple section name
+            return None, "", path
 
     def _parse_path_components(self, path: str) -> tuple[str, str]:
-        """Parse a path into file and section components.
+        """Parse a path into file and section components (legacy API).
 
         Args:
             path: Path in format "file/path:section.subsection" or "file/path"
-                  Also handles legacy format "section.subsection" (no colon, no slash)
 
         Returns:
             Tuple of (file_component, section_component).
-            For legacy paths without colon or slash, returns ("", path) to treat as section.
         """
-        if ":" in path:
-            # New format: file:section
-            parts = path.split(":", 1)
-            return parts[0], parts[1]
-        elif "/" in path:
-            # Root section with file path (no colon means no section part)
-            return path, ""
-        else:
-            # Legacy format or simple section name - treat as section, not file
-            return "", path
+        ns, file_part, section_part = self.parse_path_components(path)
+        if ns is not None:
+            # For similarity matching, include namespace in file component
+            file_part = f"{ns}:{file_part}" if file_part else ns
+        return file_part, section_part
 
     def get_elements(
         self,

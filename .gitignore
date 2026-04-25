@@ -44,3 +44,6 @@ dist/
 
 # Test reports
 report.html
+
+# Hypothesis (property-based testing) cache
+.hypothesis/

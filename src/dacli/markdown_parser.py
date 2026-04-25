@@ -104,20 +104,25 @@ class MarkdownStructureParser:
                    If not provided, file paths are relative to the file's parent.
     """
 
-    def __init__(self, base_path: Path | None = None):
+    def __init__(self, base_path: Path | None = None, namespace: str | None = None):
         """Initialize the parser.
 
         Args:
             base_path: Optional base path for resolving relative file paths.
                        If not provided, file prefixes will be just the filename stem.
+            namespace: Optional namespace prefix for multi-root mode (ADR-014)
         """
         self.base_path = base_path
+        self.namespace = namespace
 
     def _get_file_prefix(self, file_path: Path) -> str:
         """Calculate file prefix for path generation (Issue #130, ADR-008).
 
         The file prefix is the relative path from base_path to file_path,
         without the file extension. This ensures unique paths across documents.
+
+        In multi-root mode (ADR-014), the namespace is prepended with a colon
+        separator, producing paths like 'namespace:file/path:section'.
 
         Issue #266: Only strips known extensions (.md, .adoc) to preserve dots
         in filenames (e.g. version numbers like "report_v1.2.3.md").
@@ -126,7 +131,7 @@ class MarkdownStructureParser:
             file_path: Path to the document being parsed
 
         Returns:
-            Relative path without extension (e.g., "guides/installation")
+            Relative path without extension, optionally namespace-prefixed
         """
         if self.base_path is not None:
             try:
@@ -135,7 +140,10 @@ class MarkdownStructureParser:
                 relative = Path(file_path.name)
         else:
             relative = Path(file_path.name)
-        return strip_doc_extension(relative)
+        prefix = strip_doc_extension(relative)
+        if self.namespace is not None:
+            return f"{self.namespace}:{prefix}"
+        return prefix
 
     def parse_file(self, file_path: Path) -> MarkdownDocument:
         """Parse a single Markdown file.

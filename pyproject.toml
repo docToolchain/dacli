@@ -18,13 +18,19 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "authlib>=1.6.11",  # Security: CVE-2026-28802, CVE-2026-27962, CVE-2026-28490, GHSA-jj8c-mmj3-mmgv
     "click>=8.3.1",
-    "cryptography>=46.0.5",  # Security fix: CVE-2026-26007
+    "cryptography>=46.0.7",  # Security: CVE-2026-34073, CVE-2026-39892
     "fastapi>=0.115.0",
     "fastmcp>=3.2.0,<4",
     "pathspec>=1.0.3",
-    "pydocket>=0.17.2,<0.19",  # Required by fastmcp 2.14.7
+    "pydocket>=0.17.2,<0.19",  # Required by fastmcp
+    "pygments>=2.20.0",  # Security: CVE-2026-4539
+    "pyjwt>=2.12.0",  # Security: CVE-2026-32597
+    "python-dotenv>=1.2.2",  # Security: CVE-2026-28684
+    "python-multipart>=0.0.26",  # Security: CVE-2026-40347
     "pyyaml>=6.0",
+    "requests>=2.33.0",  # Security: CVE-2026-25645
     "uvicorn>=0.30.0",
 ]
 
@@ -38,7 +44,7 @@ dev = [
     "asciidoc-linter @ git+https://github.com/docToolchain/asciidoc-linter.git",
     "hypothesis>=6.0.0",
     "pre-commit>=4.0.0",
-    "pytest>=8.0.0",
+    "pytest>=9.0.3",  # Security: CVE-2025-71176
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
     "pytest-html>=4.0.0",

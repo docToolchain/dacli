@@ -1,8 +1,10 @@
 """Index builder for dacli.
 
-Builds the in-memory StructureIndex from documents in a docs root directory.
+Builds the in-memory StructureIndex from documents in documentation roots.
 This module has no heavy external dependencies (no fastmcp, pydantic, etc.),
 enabling the CLI to be packaged as a lightweight cross-platform zipapp.
+
+Supports both single-root mode (backward compat) and multi-root mode (ADR-014).
 """
 
 import logging
@@ -11,30 +13,119 @@ from pathlib import Path
 from dacli.asciidoc_parser import AsciidocStructureParser, CircularIncludeError
 from dacli.file_utils import find_doc_files
 from dacli.markdown_parser import MarkdownStructureParser
-from dacli.models import Document
-from dacli.structure_index import StructureIndex
+from dacli.models import Document, DocumentRoot
+from dacli.structure_index import Section, StructureIndex
 
 logger = logging.getLogger(__name__)
 
 
+def count_descendants(section: Section) -> int:
+    """Count total descendants of a section recursively."""
+    count = len(section.children)
+    for child in section.children:
+        count += count_descendants(child)
+    return count
+
+
 def build_index(
-    docs_root: Path,
+    roots_or_path: list[DocumentRoot] | Path,
     index: StructureIndex,
+    asciidoc_parser: AsciidocStructureParser | None = None,
+    markdown_parser: MarkdownStructureParser | None = None,
+    *,
+    respect_gitignore: bool = True,
+    include_hidden: bool = False,
+) -> None:
+    """Build the structure index from documents across all roots.
+
+    Supports two calling conventions:
+    1. Multi-root mode (ADR-014): build_index(roots, index, ...)
+       - roots: List of DocumentRoot objects
+       - Parsers are created internally with namespace prefixes
+
+    2. Single-root mode (backward compat): build_index(path, index, parser, parser, ...)
+       - path: Single Path to docs root
+       - Parsers provided by caller
+
+    Args:
+        roots_or_path: List of DocumentRoot objects, or a single Path
+        index: StructureIndex to populate
+        asciidoc_parser: Parser for AsciiDoc (only used in single-root mode)
+        markdown_parser: Parser for Markdown (only used in single-root mode)
+        respect_gitignore: If True, exclude files matching .gitignore patterns
+        include_hidden: If True, include files in hidden directories
+    """
+    # Handle both calling conventions
+    if isinstance(roots_or_path, Path):
+        # Single-root backward compat mode
+        roots = [DocumentRoot(
+            name=roots_or_path.name,
+            path=roots_or_path.resolve(),
+            mode="workspace",
+        )]
+        # Use provided parsers or create defaults
+        if asciidoc_parser is None:
+            asciidoc_parser = AsciidocStructureParser(base_path=roots_or_path)
+        if markdown_parser is None:
+            markdown_parser = MarkdownStructureParser(base_path=roots_or_path)
+        parsers_provided = True
+    else:
+        roots = roots_or_path
+        parsers_provided = False
+
+    multi_root = len(roots) > 1
+    documents: list[Document] = []
+    all_circular_include_errors: list[dict] = []
+
+    for root in roots:
+        # In multi-root mode, create namespaced parsers for each root
+        if not parsers_provided:
+            namespace = root.name if multi_root else None
+            asciidoc_parser = AsciidocStructureParser(
+                base_path=root.path, namespace=namespace,
+            )
+            markdown_parser = MarkdownStructureParser(
+                base_path=root.path, namespace=namespace,
+            )
+
+        root_documents, circular_errors = _build_index_for_root(
+            root.path,
+            asciidoc_parser,
+            markdown_parser,
+            respect_gitignore=respect_gitignore,
+            include_hidden=include_hidden,
+        )
+        documents.extend(root_documents)
+        all_circular_include_errors.extend(circular_errors)
+
+    # Build unified index
+    warnings = index.build_from_documents(documents)
+    for warning in warnings:
+        logger.warning("Index: %s", warning)
+
+    # Issue #251: Store circular include errors on the index for validation
+    index._circular_include_errors = all_circular_include_errors
+
+
+def _build_index_for_root(
+    docs_root: Path,
     asciidoc_parser: AsciidocStructureParser,
     markdown_parser: MarkdownStructureParser,
     *,
     respect_gitignore: bool = True,
     include_hidden: bool = False,
-) -> None:
-    """Build the structure index from documents in docs_root.
+) -> tuple[list[Document], list[dict]]:
+    """Build documents for a single documentation root.
 
     Args:
         docs_root: Root directory containing documentation
-        index: StructureIndex to populate
-        asciidoc_parser: Parser for AsciiDoc files
-        markdown_parser: Parser for Markdown files
+        asciidoc_parser: Parser for AsciiDoc files (may have namespace set)
+        markdown_parser: Parser for Markdown files (may have namespace set)
         respect_gitignore: If True, exclude files matching .gitignore patterns
         include_hidden: If True, include files in hidden directories
+
+    Returns:
+        Tuple of (documents, circular_include_errors)
     """
     documents: list[Document] = []
 
@@ -46,7 +137,6 @@ def build_index(
     )
 
     # Scan for include directives to identify included files (Issue #184)
-    # Included files should not be parsed as separate root documents
     included_files: set[Path] = set()
     for adoc_file in all_adoc_files:
         included_files.update(AsciidocStructureParser.scan_includes(adoc_file))
@@ -55,8 +145,6 @@ def build_index(
     root_adoc_files = [f for f in all_adoc_files if f not in included_files]
 
     # Issue #251: Detect circular includes in the include graph
-    # Files that include each other circularly all end up in included_files
-    # with none of them becoming root documents. Detect these cycles.
     circular_include_errors: list[dict] = []
     if all_adoc_files:
         include_graph: dict[Path, set[Path]] = {}
@@ -89,7 +177,7 @@ def build_index(
             _find_cycles(adoc_file.resolve(), [])
 
         for circ_file in circular_files:
-            message = f"Circular include detected: {circ_file.name} " f"is part of an include cycle"
+            message = f"Circular include detected: {circ_file.name} is part of an include cycle"
             circular_include_errors.append(
                 {
                     "file": circ_file,
@@ -110,7 +198,6 @@ def build_index(
             doc = asciidoc_parser.parse_file(adoc_file)
             documents.append(doc)
         except CircularIncludeError as e:
-            # Issue #251: Catch circular includes during parsing too
             logger.warning("Circular include in %s: %s", adoc_file, e)
             circular_include_errors.append(
                 {
@@ -120,7 +207,6 @@ def build_index(
                 }
             )
         except Exception as e:
-            # Log but continue with other files
             logger.warning("Failed to parse %s: %s", adoc_file, e)
 
     # Find and parse Markdown files
@@ -129,7 +215,6 @@ def build_index(
     ):
         try:
             md_doc = markdown_parser.parse_file(md_file)
-            # Convert MarkdownDocument to Document
             doc = Document(
                 file_path=md_doc.file_path,
                 title=md_doc.title,
@@ -140,10 +225,24 @@ def build_index(
         except Exception as e:
             logger.warning("Failed to parse %s: %s", md_file, e)
 
-    # Build index
-    warnings = index.build_from_documents(documents)
-    for warning in warnings:
-        logger.warning("Index: %s", warning)
+    return documents, circular_include_errors
 
-    # Issue #251: Store circular include errors on the index for validation
-    index._circular_include_errors = circular_include_errors
+
+def find_root_for_file(roots: list[DocumentRoot], file_path: Path) -> DocumentRoot | None:
+    """Find which DocumentRoot a file belongs to.
+
+    Args:
+        roots: List of documentation roots
+        file_path: Absolute path to a file
+
+    Returns:
+        The DocumentRoot containing the file, or None
+    """
+    resolved = file_path.resolve()
+    for root in roots:
+        try:
+            resolved.relative_to(root.path)
+            return root
+        except ValueError:
+            continue
+    return None
