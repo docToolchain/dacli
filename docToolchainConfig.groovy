@@ -82,6 +82,9 @@ microsite.with {
 
     // is your microsite deployed with a context path?
     contextPath = '/'
+    // the address this site is published under, without a trailing slash.
+    // The sitemap is built from it — unset, every entry kept the jBake default.
+    host = 'https://doctoolchain.org/dacli'
     // the folder of a site definition (theme) relative to the docDir+inputPath
     //siteFolder = '../site'
 
